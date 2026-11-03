@@ -1,14 +1,16 @@
-{{-- Link navigasi. Hanya tampil jika route-nya sudah didaftarkan di routes/web.php,
-     sehingga layout tidak error ketika fitur anggota lain belum di-merge. --}}
+{{-- Item navigasi (<li><a>) untuk <ul class="cs-nav-list"> di layout.
+     Hanya tampil jika route-nya sudah didaftarkan di routes/web.php,
+     sehingga layout tidak error ketika fitur anggota lain belum di-merge.
+     Halaman aktif ditandai aria-current="page" (gayanya diatur campus-space.css). --}}
 @props(['route', 'active'])
 
 @if (Route::has($route))
-    <a href="{{ route($route) }}"
-       @class([
-           'rounded-md px-3 py-1.5 font-medium transition',
-           'bg-teal-50 text-teal-800' => request()->routeIs(...(array) $active),
-           'text-slate-600 hover:bg-slate-100 hover:text-slate-900' => ! request()->routeIs(...(array) $active),
-       ])>
-        {{ $slot }}
-    </a>
+    @php
+        $isActive = request()->routeIs(...(array) $active);
+    @endphp
+    <li>
+        <a href="{{ route($route) }}" class="cs-nav-link" @if ($isActive) aria-current="page" @endif>
+            {{ $slot }}
+        </a>
+    </li>
 @endif

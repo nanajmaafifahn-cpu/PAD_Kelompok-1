@@ -1,0 +1,989 @@
+/* =============================================================================
+   campus-space.css — Design tokens & komponen UI Campus Space (FE-04)
+
+   Cara dimuat:
+   - Mode Vite  : di-import oleh resources/css/app.css (setelah Tailwind).
+   - Mode CDN   : bila belum ada build, layouts/app.blade.php menyisipkan file ini
+                  ke <style type="text/tailwindcss"> agar tampilan tetap sama.
+   Karena itu komponen ditulis sebagai CSS biasa berbasis variabel (bukan @apply),
+   sehingga berjalan identik di kedua mode.
+   PENTING: jangan menulis kata "at-import" (simbol @ + import) di mana pun dalam file ini,
+   termasuk di komentar. Script Tailwind CDN hanya menambahkan Tailwind otomatis bila
+   kata tersebut TIDAK ditemukan; jika ada, seluruh utility Tailwind tidak dimuat.
+
+   Isi:
+   1. Design tokens (CSS variables, prefiks --cs-)
+   2. Pemetaan token ke tema Tailwind (utility: bg-primary, text-ink, dst.)
+   3. Base (fokus keyboard, reduced motion)
+   4. Komponen (prefiks .cs- agar tidak bentrok dengan utility Tailwind,
+      misalnya `table` dan `container` yang sudah dipakai Tailwind)
+   5. Variasi status (data-status) untuk badge & indikator
+
+   Komponen berada di @layer components, jadi utility Tailwind tetap bisa
+   menimpanya bila perlu, contoh: class="cs-btn cs-btn-primary w-full".
+   ============================================================================= */
+
+/* -----------------------------------------------------------------------------
+   1. DESIGN TOKENS
+   ----------------------------------------------------------------------------- */
+:root {
+    /* Warna merek & permukaan */
+    --cs-color-primary: #0f766e;          /* teal-700 */
+    --cs-color-primary-hover: #115e59;    /* teal-800 */
+    --cs-color-primary-soft: #f0fdfa;     /* teal-50  */
+    --cs-color-secondary: #4f46e5;        /* indigo-600 */
+    --cs-color-secondary-hover: #4338ca;  /* indigo-700 */
+    --cs-color-secondary-soft: #eef2ff;   /* indigo-50  */
+    --cs-color-background: #f8fafc;       /* slate-50  */
+    --cs-color-surface: #ffffff;
+    --cs-color-surface-muted: #f1f5f9;    /* slate-100 */
+    --cs-color-border: #e2e8f0;           /* slate-200 */
+    --cs-color-border-strong: #cbd5e1;    /* slate-300 */
+    --cs-color-focus: #0d9488;            /* teal-600  */
+
+    /* Teks (kontras ≥ 4.5:1 terhadap surface & background) */
+    --cs-color-text-primary: #0f172a;     /* slate-900 */
+    --cs-color-text-body: #1e293b;        /* slate-800 */
+    --cs-color-text-secondary: #475569;   /* slate-600 */
+    --cs-color-text-muted: #64748b;       /* slate-500 */
+
+    /* Warna semantik: <nama> = teks/garis, -soft = latar, -solid = titik/bar */
+    --cs-color-success: #047857;          /* emerald-700 */
+    --cs-color-success-soft: #ecfdf5;
+    --cs-color-success-solid: #10b981;
+    --cs-color-warning: #b45309;          /* amber-700 */
+    --cs-color-warning-soft: #fffbeb;
+    --cs-color-warning-solid: #f59e0b;
+    --cs-color-danger: #be123c;           /* rose-700 */
+    --cs-color-danger-hover: #9f1239;
+    --cs-color-danger-soft: #fff1f2;
+    --cs-color-danger-solid: #f43f5e;
+    --cs-color-info: #0369a1;             /* sky-700 */
+    --cs-color-info-soft: #f0f9ff;
+    --cs-color-info-solid: #0ea5e9;
+    --cs-color-neutral: #334155;          /* slate-700 */
+    --cs-color-neutral-soft: #f1f5f9;
+    --cs-color-neutral-solid: #94a3b8;
+
+    /* Status live ruang (nilai backend: available | booked | occupied) */
+    --cs-color-available: var(--cs-color-success);
+    --cs-color-available-soft: var(--cs-color-success-soft);
+    --cs-color-available-solid: var(--cs-color-success-solid);
+    --cs-color-booked: var(--cs-color-warning);
+    --cs-color-booked-soft: var(--cs-color-warning-soft);
+    --cs-color-booked-solid: var(--cs-color-warning-solid);
+    --cs-color-occupied: var(--cs-color-info);
+    --cs-color-occupied-soft: var(--cs-color-info-soft);
+    --cs-color-occupied-solid: var(--cs-color-info-solid);
+
+    /* Tipografi */
+    --cs-font-family: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+        'Segoe UI Symbol', 'Noto Color Emoji';
+    --cs-font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+    --cs-text-heading: 1.5rem;            /* h1 halaman */
+    --cs-text-heading-line: 2rem;
+    --cs-text-subheading: 1rem;           /* h2 section */
+    --cs-text-body: 0.875rem;
+    --cs-text-label: 0.875rem;
+    --cs-text-caption: 0.75rem;
+    --cs-text-table: 0.875rem;
+    --cs-text-table-head: 0.75rem;
+    --cs-text-stat: 1.875rem;             /* angka KPI */
+    --cs-font-weight-medium: 500;
+    --cs-font-weight-semibold: 600;
+    --cs-letter-spacing-caps: 0.05em;
+
+    /* Spasi */
+    --cs-space-1: 0.25rem;
+    --cs-space-2: 0.5rem;
+    --cs-space-3: 0.75rem;
+    --cs-space-4: 1rem;
+    --cs-space-5: 1.25rem;
+    --cs-space-6: 1.5rem;
+    --cs-space-8: 2rem;
+    --cs-space-10: 2.5rem;
+
+    /* Radius & bayangan */
+    --cs-radius-sm: 0.375rem;
+    --cs-radius-md: 0.5rem;
+    --cs-radius-lg: 0.75rem;
+    --cs-radius-full: 9999px;
+    --cs-shadow-xs: 0 1px 2px 0 rgb(15 23 42 / 0.05);
+    --cs-shadow-sm: 0 1px 3px 0 rgb(15 23 42 / 0.1), 0 1px 2px -1px rgb(15 23 42 / 0.1);
+    --cs-focus-ring: 0 0 0 3px rgb(13 148 136 / 0.25);
+
+    /* Container */
+    --cs-container-max: 80rem;            /* = max-w-7xl */
+    --cs-container-narrow: 48rem;         /* = max-w-3xl, untuk halaman form */
+    --cs-container-padding: 1rem;
+    --cs-container-padding-wide: 1.5rem;  /* mulai breakpoint sm */
+}
+
+/* -----------------------------------------------------------------------------
+   2. PEMETAAN KE TEMA TAILWIND
+   Token di atas bisa dipakai sebagai utility, mis. bg-primary, text-ink-muted,
+   border-border, bg-available-soft. Breakpoint ditulis eksplisit (nilai sama
+   dengan default Tailwind) sebagai token responsif proyek.
+   ----------------------------------------------------------------------------- */
+@theme {
+    --font-sans: var(--cs-font-family);
+    --font-mono: var(--cs-font-mono);
+
+    --color-primary: var(--cs-color-primary);
+    --color-primary-soft: var(--cs-color-primary-soft);
+    --color-secondary: var(--cs-color-secondary);
+    --color-secondary-soft: var(--cs-color-secondary-soft);
+    --color-background: var(--cs-color-background);
+    --color-surface: var(--cs-color-surface);
+    --color-border: var(--cs-color-border);
+    --color-ink: var(--cs-color-text-primary);
+    --color-ink-body: var(--cs-color-text-body);
+    --color-ink-soft: var(--cs-color-text-secondary);
+    --color-ink-muted: var(--cs-color-text-muted);
+    --color-success: var(--cs-color-success);
+    --color-warning: var(--cs-color-warning);
+    --color-danger: var(--cs-color-danger);
+    --color-info: var(--cs-color-info);
+    --color-available: var(--cs-color-available-solid);
+    --color-booked: var(--cs-color-booked-solid);
+    --color-occupied: var(--cs-color-occupied-solid);
+
+    --breakpoint-sm: 40rem;   /* 640px  */
+    --breakpoint-md: 48rem;   /* 768px  */
+    --breakpoint-lg: 64rem;   /* 1024px */
+    --breakpoint-xl: 80rem;   /* 1280px */
+    --breakpoint-2xl: 96rem;  /* 1536px */
+}
+
+/* -----------------------------------------------------------------------------
+   3. BASE
+   ----------------------------------------------------------------------------- */
+@layer base {
+    body {
+        min-height: 100vh;
+        background-color: var(--cs-color-background);
+        color: var(--cs-color-text-body);
+        font-family: var(--cs-font-family);
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* Fokus keyboard selalu terlihat */
+    :focus-visible {
+        outline: 2px solid var(--cs-color-focus);
+        outline-offset: 2px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        *,
+        ::before,
+        ::after {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+            scroll-behavior: auto !important;
+        }
+    }
+}
+
+/* -----------------------------------------------------------------------------
+   4. KOMPONEN
+   ----------------------------------------------------------------------------- */
+@layer components {
+    /* ---------- Layout ---------- */
+    .cs-container {
+        width: 100%;
+        max-width: var(--cs-container-max);
+        margin-inline: auto;
+        padding-inline: var(--cs-container-padding);
+    }
+
+    .cs-container-narrow {
+        width: 100%;
+        max-width: var(--cs-container-narrow);
+        margin-inline: auto;
+    }
+
+    @media (width >= 40rem) {
+        .cs-container {
+            padding-inline: var(--cs-container-padding-wide);
+        }
+    }
+
+    .cs-skip-link {
+        position: absolute;
+        top: calc(-1 * var(--cs-space-10) - var(--cs-space-4));
+        left: var(--cs-space-4);
+        z-index: 50;
+        border-radius: var(--cs-radius-md);
+        background-color: var(--cs-color-primary);
+        padding: var(--cs-space-2) var(--cs-space-4);
+        color: #ffffff;
+        font-size: var(--cs-text-body);
+        font-weight: var(--cs-font-weight-semibold);
+        text-decoration: none;
+    }
+
+    .cs-skip-link:focus {
+        top: var(--cs-space-4);
+    }
+
+    .cs-site-header {
+        border-bottom: 1px solid var(--cs-color-border);
+        background-color: var(--cs-color-surface);
+    }
+
+    .cs-site-footer {
+        padding-bottom: var(--cs-space-8);
+        color: var(--cs-color-text-muted);
+        font-size: var(--cs-text-caption);
+    }
+
+    /* ---------- Brand & navigasi ---------- */
+    .cs-brand {
+        display: flex;
+        align-items: center;
+        gap: var(--cs-space-2);
+        border-radius: var(--cs-radius-md);
+        text-decoration: none;
+    }
+
+    .cs-brand-mark {
+        display: grid;
+        place-items: center;
+        width: 2rem;
+        height: 2rem;
+        border-radius: var(--cs-radius-md);
+        background-color: var(--cs-color-primary);
+        color: #ffffff;
+        font-size: var(--cs-text-body);
+        font-weight: 700;
+    }
+
+    .cs-brand-name {
+        display: block;
+        color: var(--cs-color-text-primary);
+        font-size: var(--cs-text-body);
+        font-weight: var(--cs-font-weight-semibold);
+        line-height: 1.25;
+    }
+
+    .cs-brand-tagline {
+        display: block;
+        color: var(--cs-color-text-muted);
+        font-size: var(--cs-text-caption);
+        line-height: 1.25;
+    }
+
+    /* Mobile: menu satu baris, kolom sama lebar (tanpa scroll horizontal).
+       Mulai breakpoint sm: kembali ke deret flex di kanan header. */
+    .cs-nav-list {
+        display: grid;
+        grid-auto-columns: minmax(0, 1fr);
+        grid-auto-flow: column;
+        gap: var(--cs-space-1);
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        font-size: 0.8125rem;
+    }
+
+    .cs-nav-link {
+        display: block;
+        border-radius: var(--cs-radius-md);
+        padding: var(--cs-space-2) var(--cs-space-1);
+        color: var(--cs-color-text-secondary);
+        font-weight: var(--cs-font-weight-medium);
+        line-height: 1.25;
+        text-align: center;
+        text-decoration: none;
+        transition: background-color 150ms, color 150ms;
+    }
+
+    /* Layar sangat sempit (< 400px, mis. 360px): kecilkan teks menu agar setiap label satu baris. */
+    @media (width < 25rem) {
+        .cs-nav-list {
+            font-size: var(--cs-text-caption);
+        }
+    }
+
+    @media (width >= 40rem) {
+        .cs-nav-list {
+            display: flex;
+            flex-wrap: wrap;
+            font-size: var(--cs-text-body);
+        }
+
+        .cs-nav-link {
+            padding: 0.375rem var(--cs-space-3);
+        }
+    }
+
+    .cs-nav-link:hover {
+        background-color: var(--cs-color-surface-muted);
+        color: var(--cs-color-text-primary);
+    }
+
+    .cs-nav-link[aria-current='page'] {
+        background-color: var(--cs-color-primary-soft);
+        color: var(--cs-color-primary-hover);
+    }
+
+    /* ---------- Page header ---------- */
+    .cs-page-header {
+        display: flex;
+        flex-direction: column;
+        gap: var(--cs-space-3);
+        margin-bottom: var(--cs-space-6);
+    }
+
+    @media (width >= 40rem) {
+        .cs-page-header {
+            flex-direction: row;
+            align-items: flex-end;
+            justify-content: space-between;
+        }
+    }
+
+    .cs-page-title {
+        color: var(--cs-color-text-primary);
+        font-size: var(--cs-text-heading);
+        font-weight: var(--cs-font-weight-semibold);
+        line-height: var(--cs-text-heading-line);
+    }
+
+    .cs-page-description {
+        margin-top: var(--cs-space-1);
+        color: var(--cs-color-text-secondary);
+        font-size: var(--cs-text-body);
+    }
+
+    .cs-section-title {
+        color: var(--cs-color-text-primary);
+        font-size: var(--cs-text-subheading);
+        font-weight: var(--cs-font-weight-semibold);
+    }
+
+    .cs-section-description {
+        margin-top: var(--cs-space-1);
+        color: var(--cs-color-text-secondary);
+        font-size: var(--cs-text-body);
+    }
+
+    .cs-back-link {
+        display: inline-block;
+        border-radius: var(--cs-radius-sm);
+        color: var(--cs-color-text-secondary);
+        font-size: var(--cs-text-body);
+        text-decoration: none;
+    }
+
+    .cs-back-link:hover {
+        color: var(--cs-color-text-primary);
+        text-decoration: underline;
+    }
+
+    .cs-link {
+        border-radius: var(--cs-radius-sm);
+        color: var(--cs-color-primary);
+        font-weight: var(--cs-font-weight-medium);
+        text-decoration: underline;
+        text-decoration-color: transparent;
+        text-underline-offset: 2px;
+    }
+
+    .cs-link:hover {
+        text-decoration-color: currentColor;
+    }
+
+    /* ---------- Button ---------- */
+    .cs-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: var(--cs-space-2);
+        border: 1px solid transparent;
+        border-radius: var(--cs-radius-md);
+        padding: var(--cs-space-2) var(--cs-space-4);
+        font-size: var(--cs-text-body);
+        font-weight: var(--cs-font-weight-medium);
+        line-height: 1.25rem;
+        text-decoration: none;
+        white-space: nowrap;
+        cursor: pointer;
+        transition: background-color 150ms, border-color 150ms, color 150ms;
+    }
+
+    .cs-btn:disabled,
+    .cs-btn[aria-disabled='true'] {
+        cursor: not-allowed;
+        opacity: 0.6;
+    }
+
+    .cs-btn-primary {
+        background-color: var(--cs-color-primary);
+        color: #ffffff;
+    }
+
+    .cs-btn-primary:hover {
+        background-color: var(--cs-color-primary-hover);
+    }
+
+    .cs-btn-secondary {
+        border-color: var(--cs-color-border-strong);
+        background-color: var(--cs-color-surface);
+        color: var(--cs-color-text-body);
+    }
+
+    .cs-btn-secondary:hover {
+        background-color: var(--cs-color-surface-muted);
+    }
+
+    .cs-btn-ghost {
+        background-color: transparent;
+        color: var(--cs-color-text-secondary);
+    }
+
+    .cs-btn-ghost:hover {
+        background-color: var(--cs-color-surface-muted);
+        color: var(--cs-color-text-primary);
+    }
+
+    .cs-btn-danger {
+        background-color: var(--cs-color-danger);
+        color: #ffffff;
+    }
+
+    .cs-btn-danger:hover {
+        background-color: var(--cs-color-danger-hover);
+    }
+
+    .cs-btn-sm {
+        padding: 0.375rem var(--cs-space-3);
+        font-size: var(--cs-text-caption);
+    }
+
+    /* ---------- Card & statistik ---------- */
+    .cs-card {
+        border: 1px solid var(--cs-color-border);
+        border-radius: var(--cs-radius-lg);
+        background-color: var(--cs-color-surface);
+        box-shadow: var(--cs-shadow-xs);
+    }
+
+    .cs-card-body {
+        padding: var(--cs-space-5);
+    }
+
+    .cs-card-title {
+        color: var(--cs-color-text-secondary);
+        font-size: var(--cs-text-caption);
+        font-weight: var(--cs-font-weight-semibold);
+        letter-spacing: var(--cs-letter-spacing-caps);
+        text-transform: uppercase;
+    }
+
+    .cs-stat-value {
+        color: var(--cs-color-text-primary);
+        font-size: var(--cs-text-stat);
+        font-weight: var(--cs-font-weight-semibold);
+        font-variant-numeric: tabular-nums;
+        line-height: 2.25rem;
+    }
+
+    .cs-stat-unit {
+        color: var(--cs-color-text-muted);
+        font-size: var(--cs-text-body);
+    }
+
+    .cs-caption {
+        color: var(--cs-color-text-muted);
+        font-size: var(--cs-text-caption);
+    }
+
+    /* ---------- Form ---------- */
+    .cs-fieldset {
+        min-width: 0;
+        margin: 0;
+        border: 0;
+        padding: 0;
+    }
+
+    .cs-legend {
+        margin-bottom: var(--cs-space-3);
+        color: var(--cs-color-text-secondary);
+        font-size: var(--cs-text-caption);
+        font-weight: var(--cs-font-weight-semibold);
+        letter-spacing: var(--cs-letter-spacing-caps);
+        text-transform: uppercase;
+    }
+
+    .cs-form-label {
+        display: block;
+        color: var(--cs-color-text-body);
+        font-size: var(--cs-text-label);
+        font-weight: var(--cs-font-weight-medium);
+    }
+
+    .cs-form-required {
+        color: var(--cs-color-danger);
+    }
+
+    .cs-form-control {
+        display: block;
+        width: 100%;
+        margin-top: var(--cs-space-1);
+        border: 1px solid var(--cs-color-border-strong);
+        border-radius: var(--cs-radius-md);
+        background-color: var(--cs-color-surface);
+        padding: var(--cs-space-2) var(--cs-space-3);
+        color: var(--cs-color-text-primary);
+        font-size: var(--cs-text-body);
+        line-height: 1.25rem;
+    }
+
+    .cs-form-control::placeholder {
+        color: var(--cs-color-text-muted);
+    }
+
+    .cs-form-control:focus,
+    .cs-form-control:focus-visible {
+        border-color: var(--cs-color-focus);
+        outline: none;
+        box-shadow: var(--cs-focus-ring);
+    }
+
+    .cs-form-control[aria-invalid='true'] {
+        border-color: var(--cs-color-danger);
+    }
+
+    .cs-form-control[aria-invalid='true']:focus {
+        box-shadow: 0 0 0 3px rgb(190 18 60 / 0.2);
+    }
+
+    .cs-form-hint {
+        margin-top: var(--cs-space-1);
+        color: var(--cs-color-text-muted);
+        font-size: var(--cs-text-caption);
+    }
+
+    .cs-form-error {
+        margin-top: var(--cs-space-1);
+        color: var(--cs-color-danger);
+        font-size: var(--cs-text-caption);
+    }
+
+    .cs-form-actions {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: var(--cs-space-3);
+        border-top: 1px solid var(--cs-color-surface-muted);
+        padding-top: var(--cs-space-5);
+    }
+
+    /* ---------- Alert ---------- */
+    .cs-alert {
+        display: flex;
+        align-items: flex-start;
+        gap: var(--cs-space-3);
+        margin-bottom: var(--cs-space-5);
+        border: 1px solid var(--cs-color-border);
+        border-radius: var(--cs-radius-md);
+        background-color: var(--cs-color-neutral-soft);
+        padding: var(--cs-space-3) var(--cs-space-4);
+        color: var(--cs-color-neutral);
+        font-size: var(--cs-text-body);
+    }
+
+    .cs-alert-icon {
+        font-weight: 700;
+    }
+
+    .cs-alert-title {
+        font-weight: var(--cs-font-weight-semibold);
+    }
+
+    .cs-alert-success {
+        border-color: #a7f3d0;
+        background-color: var(--cs-color-success-soft);
+        color: #065f46;
+    }
+
+    .cs-alert-warning {
+        border-color: #fde68a;
+        background-color: var(--cs-color-warning-soft);
+        color: #92400e;
+    }
+
+    .cs-alert-danger {
+        border-color: #fecdd3;
+        background-color: var(--cs-color-danger-soft);
+        color: #9f1239;
+    }
+
+    .cs-alert-info {
+        border-color: #bae6fd;
+        background-color: var(--cs-color-info-soft);
+        color: #075985;
+    }
+
+    /* ---------- Table ---------- */
+    .cs-table-wrap {
+        /* position: relative agar elemen absolut di dalam tabel (mis. teks .sr-only)
+           ikut terpotong oleh area scroll dan tidak melebarkan halaman. */
+        position: relative;
+        overflow-x: auto;
+        border: 1px solid var(--cs-color-border);
+        border-radius: var(--cs-radius-lg);
+        background-color: var(--cs-color-surface);
+        box-shadow: var(--cs-shadow-xs);
+    }
+
+    .cs-table {
+        min-width: 100%;
+        border-collapse: collapse;
+        font-size: var(--cs-text-table);
+    }
+
+    .cs-table thead {
+        background-color: var(--cs-color-background);
+    }
+
+    .cs-table thead th {
+        padding: var(--cs-space-3) var(--cs-space-4);
+        color: var(--cs-color-text-secondary);
+        font-size: var(--cs-text-table-head);
+        font-weight: var(--cs-font-weight-semibold);
+        letter-spacing: var(--cs-letter-spacing-caps);
+        text-align: left;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+    .cs-table tbody td,
+    .cs-table tbody th {
+        border-top: 1px solid var(--cs-color-border);
+        padding: var(--cs-space-3) var(--cs-space-4);
+        color: var(--cs-color-text-body);
+        font-weight: inherit;
+        text-align: left;
+        vertical-align: top;
+    }
+
+    .cs-table tbody tr:hover {
+        background-color: var(--cs-color-background);
+    }
+
+    .cs-table .cs-cell-num {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+    }
+
+    .cs-table .cs-cell-nowrap {
+        white-space: nowrap;
+    }
+
+    /* Tabel "stacked": di bawah breakpoint md (48rem) setiap baris tampil sebagai kartu
+       dan label kolom diambil dari atribut data-label pada sel. Dipakai pada tabel yang
+       memuat form aksi (booking) agar tidak perlu scroll horizontal di ponsel.
+       Pemakaian: <div class="cs-table-wrap cs-table-wrap-stack"> + <table class="cs-table cs-table-stack">
+       dan <td data-label="Nama kolom">. */
+    @media (width < 48rem) {
+        .cs-table-wrap-stack {
+            overflow: visible;
+            border: 0;
+            background-color: transparent;
+            box-shadow: none;
+        }
+
+        .cs-table-stack,
+        .cs-table-stack tbody,
+        .cs-table-stack tr,
+        .cs-table-stack tbody td,
+        .cs-table-stack tbody th {
+            display: block;
+            width: 100%;
+        }
+
+        .cs-table-stack thead {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+            clip-path: inset(50%);
+            white-space: nowrap;
+        }
+
+        .cs-table-stack tbody tr {
+            margin-bottom: var(--cs-space-3);
+            border: 1px solid var(--cs-color-border);
+            border-radius: var(--cs-radius-lg);
+            background-color: var(--cs-color-surface);
+            padding-block: var(--cs-space-2);
+            box-shadow: var(--cs-shadow-xs);
+        }
+
+        .cs-table-stack tbody tr:hover {
+            background-color: var(--cs-color-surface);
+        }
+
+        .cs-table-stack tbody td,
+        .cs-table-stack tbody th {
+            border-top: 0;
+            padding: var(--cs-space-2) var(--cs-space-4);
+        }
+
+        .cs-table-stack tbody tr > :first-child {
+            border-bottom: 1px solid var(--cs-color-border);
+            padding-bottom: var(--cs-space-3);
+        }
+
+        .cs-table-stack tbody [data-label]::before {
+            content: attr(data-label);
+            display: block;
+            margin-bottom: 0.125rem;
+            color: var(--cs-color-text-muted);
+            font-size: var(--cs-text-caption);
+            font-weight: var(--cs-font-weight-semibold);
+            letter-spacing: var(--cs-letter-spacing-caps);
+            text-transform: uppercase;
+        }
+
+        .cs-table-stack .cs-cell-num {
+            text-align: left;
+        }
+    }
+
+    .cs-code {
+        color: var(--cs-color-text-secondary);
+        font-family: var(--cs-font-mono);
+        font-size: var(--cs-text-caption);
+    }
+
+    /* ---------- Empty state ---------- */
+    .cs-empty-state {
+        padding: var(--cs-space-10) var(--cs-space-4);
+        color: var(--cs-color-text-secondary);
+        font-size: var(--cs-text-body);
+        text-align: center;
+    }
+
+    .cs-empty-state-title {
+        color: var(--cs-color-text-primary);
+        font-weight: var(--cs-font-weight-semibold);
+    }
+
+    /* ---------- Progress bar ---------- */
+    .cs-progress {
+        width: 100%;
+        height: 0.375rem;
+        overflow: hidden;
+        border-radius: var(--cs-radius-full);
+        background-color: var(--cs-color-surface-muted);
+    }
+
+    .cs-progress-bar {
+        height: 100%;
+        max-width: 100%;
+        border-radius: var(--cs-radius-full);
+        background-color: var(--cs-color-primary);
+    }
+
+    /* ---------- Badge & status indicator ----------
+       Warna diambil dari variabel --cs-tone* yang di-set oleh [data-status]
+       (bagian 5). Tanpa data-status yang dikenal, tampil netral. */
+    .cs-badge {
+        display: inline-flex;
+        align-items: center;
+        border-radius: var(--cs-radius-full);
+        background-color: var(--cs-tone-soft, var(--cs-color-neutral-soft));
+        padding: 0.125rem var(--cs-space-2);
+        color: var(--cs-tone, var(--cs-color-neutral));
+        font-size: 0.6875rem;
+        font-weight: var(--cs-font-weight-semibold);
+        letter-spacing: 0.025em;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+    .cs-status-indicator {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+        border-radius: var(--cs-radius-sm);
+        background-color: var(--cs-tone-soft, var(--cs-color-neutral-soft));
+        padding: 0.125rem var(--cs-space-2);
+        color: var(--cs-tone, var(--cs-color-neutral));
+        font-size: var(--cs-text-caption);
+        font-weight: var(--cs-font-weight-medium);
+    }
+
+    .cs-status-dot {
+        display: inline-block;
+        flex-shrink: 0;
+        width: 0.5rem;
+        height: 0.5rem;
+        border-radius: var(--cs-radius-full);
+        background-color: var(--cs-tone-solid, var(--cs-color-neutral-solid));
+    }
+
+    /* ---------- Grup aksi (edit / hapus / batal) ---------- */
+    .cs-actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--cs-space-2);
+    }
+
+    /* ---------- Tabel definisi metrik laporan ---------- */
+    .cs-metric-name {
+        color: var(--cs-color-text-primary);
+        font-weight: var(--cs-font-weight-medium);
+    }
+
+    .cs-metric-value {
+        color: var(--cs-color-text-primary);
+        font-variant-numeric: tabular-nums;
+        font-weight: var(--cs-font-weight-semibold);
+        white-space: nowrap;
+    }
+
+    /* ---------- Tampil hanya saat cetak ---------- */
+    .cs-print-only {
+        display: none;
+    }
+}
+
+/* -----------------------------------------------------------------------------
+   6. CETAK (laporan utilisasi, FE-06)
+   Navigasi, filter, dan tombol aksi disembunyikan; judul, ringkasan, rekomendasi,
+   dan tabel tetap tampil. Warna badge/bar dipertahankan (print-color-adjust).
+   ----------------------------------------------------------------------------- */
+@media print {
+    @page {
+        size: A4 landscape;
+        margin: 12mm;
+    }
+
+    body {
+        min-height: 0;
+        background-color: #ffffff;
+        font-size: 10.5pt;
+    }
+
+    .cs-site-header,
+    .cs-site-footer,
+    .cs-skip-link,
+    .cs-no-print {
+        display: none !important;
+    }
+
+    .cs-print-only {
+        display: block !important;
+    }
+
+    .cs-container {
+        max-width: none;
+        padding-inline: 0;
+    }
+
+    main.cs-container {
+        padding-block: 0;
+    }
+
+    .cs-card,
+    .cs-table-wrap,
+    .cs-alert {
+        box-shadow: none;
+    }
+
+    .cs-card,
+    .cs-alert,
+    .cs-table tbody tr {
+        break-inside: avoid;
+    }
+
+    .cs-table-wrap {
+        overflow: visible;
+    }
+
+    .cs-table thead {
+        display: table-header-group; /* header tabel diulang di setiap halaman */
+    }
+
+    h1,
+    h2,
+    h3 {
+        break-after: avoid;
+    }
+
+    .cs-print-break-before {
+        break-before: page;
+    }
+
+    .cs-badge,
+    .cs-status-indicator,
+    .cs-status-dot,
+    .cs-progress,
+    .cs-progress-bar,
+    .cs-alert {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+}
+
+/* -----------------------------------------------------------------------------
+   5. VARIASI STATUS (nilai backend; huruf besar/kecil diabaikan)
+   Ruang     : available | booked | occupied | maintenance
+   Fasilitas : available | damaged | maintenance
+   Jadwal    : scheduled | cancelled
+   Booking   : pending | approved | rejected | cancelled | checked_in | completed | no_show
+   Kategori  : underutilized | normal | overutilized
+   ----------------------------------------------------------------------------- */
+@layer components {
+    :is([data-status='available' i], [data-status='normal' i]) {
+        --cs-tone: var(--cs-color-available);
+        --cs-tone-soft: var(--cs-color-available-soft);
+        --cs-tone-solid: var(--cs-color-available-solid);
+    }
+
+    :is([data-status='booked' i], [data-status='pending' i], [data-status='underutilized' i]) {
+        --cs-tone: var(--cs-color-booked);
+        --cs-tone-soft: var(--cs-color-booked-soft);
+        --cs-tone-solid: var(--cs-color-booked-solid);
+    }
+
+    :is([data-status='occupied' i], [data-status='checked_in' i]) {
+        --cs-tone: var(--cs-color-occupied);
+        --cs-tone-soft: var(--cs-color-occupied-soft);
+        --cs-tone-solid: var(--cs-color-occupied-solid);
+    }
+
+    :is([data-status='approved' i], [data-status='scheduled' i]) {
+        --cs-tone: var(--cs-color-secondary);
+        --cs-tone-soft: var(--cs-color-secondary-soft);
+        --cs-tone-solid: var(--cs-color-secondary);
+    }
+
+    [data-status='completed' i] {
+        --cs-tone: var(--cs-color-primary);
+        --cs-tone-soft: var(--cs-color-primary-soft);
+        --cs-tone-solid: var(--cs-color-primary);
+    }
+
+    :is(
+        [data-status='maintenance' i],
+        [data-status='damaged' i],
+        [data-status='rejected' i],
+        [data-status='no_show' i],
+        [data-status='overutilized' i]
+    ) {
+        --cs-tone: var(--cs-color-danger);
+        --cs-tone-soft: var(--cs-color-danger-soft);
+        --cs-tone-solid: var(--cs-color-danger-solid);
+    }
+
+    /* cancelled & status lain memakai warna netral bawaan komponen */
+}

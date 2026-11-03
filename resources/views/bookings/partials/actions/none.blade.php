@@ -1,2 +1,2 @@
-{{-- Status tanpa aksi lanjutan (completed, rejected, dll.) --}}
-<span class="text-xs text-slate-400">Tidak ada aksi</span>
+{{-- Status tanpa aksi lanjutan (completed, no_show, cancelled, dll.) --}}
+<span class="text-xs text-ink-muted">Tidak ada aksi</span>
