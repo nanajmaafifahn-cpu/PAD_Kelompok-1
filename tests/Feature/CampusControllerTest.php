@@ -50,6 +50,7 @@ class CampusControllerTest extends TestCase
         $response = $this->post(route('rooms.store'), [
             'academic_unit_id' => $unit->id,
             'code' => 'C301',
+            'type' => 'laboratory',
             'name' => 'Laboratorium C301',
             'building' => 'Gedung C',
             'floor' => '3',
