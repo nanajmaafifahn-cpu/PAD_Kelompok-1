@@ -1469,3 +1469,148 @@ warning: in the working copy of 'docs/ai-usage/sessions/riwayat-aldikarmdhn.md',
  docs/ai-usage/sessions/riwayat-aldikarmdhn.md | 27 ++++++++++++++++++++++++++-
  4 files changed, 53 insertions(+), 1 deletion(-)
 ```
+
+---
+
+## Sesi AI-20261107-125606 — 2026-11-07 12:56:06 +00:00
+
+- **Identitas Git**: aldikarmdhn (`aldikarmdhn@gmail.com`)
+- **Provider AI**: Claude Code
+- **Tujuan**: Menjalankan web secara lokal untuk melihat tampilan
+
+### Prompt Asli
+> cara run webnya sehingga saya bisa liat tampilannya gimana?
+
+### Output / Respons AI
+Server lokal berjalan di http://127.0.0.1:8000
+
+### Ringkasan Perubahan (Before - Work - After)
+- **Before (Kondisi Awal)**: Belum ada .env, database SQLite, dan build asset
+- **Pekerjaan AI**: Membuat .env dari .env.example, key:generate, membuat database.sqlite, migrate --seed, npm run build, php artisan serve
+- **After (Kondisi Akhir)**: Semua halaman utama merespons 200
+- **Pengujian**: Cek HTTP ke /, /rooms, /schedules, /bookings, /bookings/create, /rooms/create
+
+### File Terdampak
+```text
+Tidak ada file yang dimodifikasi (hanya diskusi/analisis).
+```
+
+---
+
+## Sesi AI-20261107-144856 — 2026-11-07 14:48:56 +00:00
+
+- **Identitas Git**: aldikarmdhn (`aldikarmdhn@gmail.com`)
+- **Provider AI**: Claude Code
+- **Tujuan**: Fase 0 perbaikan inti: verifikasi daftar kekurangan A1-F4, review branch QA, analisis Git folder induk
+
+### Prompt Asli
+> Prompt multi-fase perbaikan inti CSLUS (Fase 0-6); kerjakan Fase 0: verifikasi A1-F4 ke kode, review branch origin/feature/PAD-21-qa-seeder-strategy-test dan qa-auditorium-experiment tanpa merge, jelaskan kondisi Git folder induk (F4) dengan 2 opsi, tanyakan branch kerja
+
+### Output / Respons AI
+Tabel verifikasi A1-F4 dengan file:baris aktual; kedua branch QA bisa di-merge tanpa konflik teks dan lulus test pada merge virtual (31 dan 33 test); catatan konflik semantik dengan Fase 1; 2 opsi penyelesaian F4; pertanyaan branch kerja
+
+### Ringkasan Perubahan (Before - Work - After)
+- **Before (Kondisi Awal)**: Branch feature/fe-04-06-frontend, 14 test lulus, perubahan docs/ai-usage belum di-commit
+- **Pekerjaan AI**: Hanya membaca kode dan git; merge-tree virtual + test di scratchpad (di luar repo); tidak ada file proyek yang diubah selain log ini
+- **After (Kondisi Akhir)**: Belum ada perubahan kode; menunggu keputusan branch, merge QA, dan opsi F4
+- **Pengujian**: php artisan test pada merge virtual: FE+QA 31/31 lulus, FE+auditorium 33/33 lulus; branch aktif 14/14 lulus (sesi sebelumnya)
+
+### File Terdampak
+```text
+warning: in the working copy of 'docs/ai-usage/sessions/RIWAYAT-SEMUA-SESI.md', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of 'docs/ai-usage/sessions/riwayat-aldikarmdhn.md', CRLF will be replaced by LF the next time Git touches it
+M	docs/ai-usage/CHANGELOG-AI.md
+M	docs/ai-usage/PROMPT-LOG.md
+M	docs/ai-usage/sessions/RIWAYAT-SEMUA-SESI.md
+M	docs/ai-usage/sessions/riwayat-aldikarmdhn.md
+```
+Diff stat:
+```text
+warning: in the working copy of 'docs/ai-usage/sessions/RIWAYAT-SEMUA-SESI.md', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of 'docs/ai-usage/sessions/riwayat-aldikarmdhn.md', CRLF will be replaced by LF the next time Git touches it
+ docs/ai-usage/CHANGELOG-AI.md                 |  1 +
+ docs/ai-usage/PROMPT-LOG.md                   |  1 +
+ docs/ai-usage/sessions/RIWAYAT-SEMUA-SESI.md  | 25 +++++++++++++++++++++++++
+ docs/ai-usage/sessions/riwayat-aldikarmdhn.md | 27 ++++++++++++++++++++++++++-
+ 4 files changed, 53 insertions(+), 1 deletion(-)
+```
+
+---
+
+## Sesi AI-20261107-145600 — 2026-11-07 14:56:00 +00:00
+
+- **Identitas Git**: aldikarmdhn (`aldikarmdhn@gmail.com`)
+- **Provider AI**: Claude Code
+- **Tujuan**: Menjelaskan ringkas pekerjaan dan perubahan yang sudah dilakukan
+
+### Prompt Asli
+> jelaskan secara simple apa saja yang sudah kamu kerjakan dan ubah?
+
+### Output / Respons AI
+Ringkasan sederhana: hanya membaca dan memeriksa kode, uji merge virtual di scratchpad, belum ada kode yang diubah; yang berubah hanya file log docs/ai-usage
+
+### Ringkasan Perubahan (Before - Work - After)
+- **Before (Kondisi Awal)**: Fase 0 selesai, menunggu keputusan
+- **Pekerjaan AI**: Tidak ada perubahan kode; hanya pencatatan log
+- **After (Kondisi Akhir)**: Masih menunggu keputusan branch, merge QA, akun seeder, dan opsi F4
+- **Pengujian**: Tidak dijalankan
+
+### File Terdampak
+```text
+warning: in the working copy of 'docs/ai-usage/sessions/RIWAYAT-SEMUA-SESI.md', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of 'docs/ai-usage/sessions/riwayat-aldikarmdhn.md', CRLF will be replaced by LF the next time Git touches it
+M	docs/ai-usage/CHANGELOG-AI.md
+M	docs/ai-usage/PROMPT-LOG.md
+M	docs/ai-usage/sessions/RIWAYAT-SEMUA-SESI.md
+M	docs/ai-usage/sessions/riwayat-aldikarmdhn.md
+```
+Diff stat:
+```text
+warning: in the working copy of 'docs/ai-usage/sessions/RIWAYAT-SEMUA-SESI.md', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of 'docs/ai-usage/sessions/riwayat-aldikarmdhn.md', CRLF will be replaced by LF the next time Git touches it
+ docs/ai-usage/CHANGELOG-AI.md                 |  2 +
+ docs/ai-usage/PROMPT-LOG.md                   |  2 +
+ docs/ai-usage/sessions/RIWAYAT-SEMUA-SESI.md  | 65 ++++++++++++++++++++++++++
+ docs/ai-usage/sessions/riwayat-aldikarmdhn.md | 67 ++++++++++++++++++++++++++-
+ 4 files changed, 135 insertions(+), 1 deletion(-)
+```
+
+---
+
+## Sesi AI-20261107-150404 — 2026-11-07 15:04:04 +00:00
+
+- **Identitas Git**: aldikarmdhn (`aldikarmdhn@gmail.com`)
+- **Provider AI**: Claude Code
+- **Tujuan**: PROMPT 1 Fase 0: verifikasi ulang lingkup Fase 0-3, status Git, keputusan branch
+
+### Prompt Asli
+> PROMPT 1 - Perbaikan Fungsional Campus Space (Fase 0-3): kerjakan Fase 0 dulu, laporkan perubahan belum di-commit, tanyakan branch asal
+
+### Output / Respons AI
+Verifikasi ulang: HEAD 6f8de73 tidak berubah, tidak ada perubahan kode; tabel lingkup A1-F4 + D1/E4; review branch QA dan opsi F4 dipakai ulang; menunggu keputusan branch, perubahan docs/ai-usage belum di-commit, merge QA, akun seeder, F4
+
+### Ringkasan Perubahan (Before - Work - After)
+- **Before (Kondisi Awal)**: feature/fe-04-06-frontend, 4 file docs/ai-usage belum di-commit
+- **Pekerjaan AI**: Hanya membaca git dan kode; tidak ada perubahan kode
+- **After (Kondisi Akhir)**: Belum mulai Fase 1; menunggu keputusan
+- **Pengujian**: Tidak dijalankan pada sesi ini (merge virtual sebelumnya: 31/31 dan 33/33 lulus)
+
+### File Terdampak
+```text
+warning: in the working copy of 'docs/ai-usage/sessions/RIWAYAT-SEMUA-SESI.md', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of 'docs/ai-usage/sessions/riwayat-aldikarmdhn.md', CRLF will be replaced by LF the next time Git touches it
+M	docs/ai-usage/CHANGELOG-AI.md
+M	docs/ai-usage/PROMPT-LOG.md
+M	docs/ai-usage/sessions/RIWAYAT-SEMUA-SESI.md
+M	docs/ai-usage/sessions/riwayat-aldikarmdhn.md
+```
+Diff stat:
+```text
+warning: in the working copy of 'docs/ai-usage/sessions/RIWAYAT-SEMUA-SESI.md', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of 'docs/ai-usage/sessions/riwayat-aldikarmdhn.md', CRLF will be replaced by LF the next time Git touches it
+ docs/ai-usage/CHANGELOG-AI.md                 |   3 +
+ docs/ai-usage/PROMPT-LOG.md                   |   3 +
+ docs/ai-usage/sessions/RIWAYAT-SEMUA-SESI.md  | 105 +++++++++++++++++++++++++
+ docs/ai-usage/sessions/riwayat-aldikarmdhn.md | 107 +++++++++++++++++++++++++-
+ 4 files changed, 217 insertions(+), 1 deletion(-)
+```
