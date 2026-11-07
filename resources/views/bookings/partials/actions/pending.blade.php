@@ -1,9 +1,10 @@
 {{-- Status pending -> panel Verify untuk Kepala Lab / Admin Akademik.
      Approve : POST bookings.approve (ApproveBookingRequest).
      Reject  : POST bookings.reject + field rejection_reason, wajib, maks 1000 karakter (RejectBookingRequest).
-     Keduanya mensyaratkan user login ber-role lab_head/admin; tanpa login server membalas 403 (usulan BE-01).
+     Panel hanya tampil untuk role lab_head/admin (BookingPolicy::approve); server tetap menolak role lain (403).
      Galat validasi reject tampil di alert atas halaman (bukan per baris). --}}
 <div class="space-y-2">
+    @can('approve', $booking)
     <form method="POST" action="{{ route('bookings.approve', $booking) }}">
         @csrf
         <button type="submit" class="cs-btn cs-btn-primary cs-btn-sm">
@@ -29,6 +30,9 @@
     </details>
 
     <p class="cs-caption">Kepala Lab / Admin Akademik</p>
+    @else
+    <span class="text-xs text-ink-muted">Menunggu verifikasi pengelola</span>
+    @endcan
 
     {{-- FE-06: Ubah / Batalkan / Hapus (hanya tampil bila route-nya tersedia) --}}
     @include('bookings.partials.manage')

@@ -18,6 +18,19 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
+    public const ROLE_BORROWER = 'borrower';
+    public const ROLE_LAB_HEAD = 'lab_head';
+    public const ROLE_ADMIN = 'admin';
+    public const ROLE_LEADER = 'leader';
+
+    // Satu-satunya tempat label role berbahasa Indonesia (dipakai view & requester_role booking).
+    public const ROLE_LABELS = [
+        self::ROLE_BORROWER => 'Mahasiswa / Dosen',
+        self::ROLE_LAB_HEAD => 'Pengelola Ruang / Kepala Lab',
+        self::ROLE_ADMIN => 'Admin Akademik',
+        self::ROLE_LEADER => 'Pimpinan',
+    ];
+
     /**
      * Get the attributes that should be cast.
      *
@@ -36,12 +49,20 @@ class User extends Authenticatable
         return $this->hasMany(Booking::class);
     }
 
+    public function hasRole(string ...$roles): bool
+    {
+        return in_array($this->getAttribute('role'), $roles, true);
+    }
+
+    public function roleLabel(): string
+    {
+        $role = (string) $this->getAttribute('role');
+
+        return self::ROLE_LABELS[$role] ?? $role;
+    }
+
     public function canApproveBookings(): bool
     {
-        return in_array(
-            $this->getAttribute('role'),
-            ['lab_head', 'admin'],
-            true
-        );
+        return $this->hasRole(self::ROLE_LAB_HEAD, self::ROLE_ADMIN);
     }
 }

@@ -12,8 +12,8 @@ class ApproveBookingRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        // Pengecekan peran spesifik (Kepala Lab / Admin) didelegasikan ke BookingService.
-        return $this->user() !== null;
+        // BookingPolicy::approve (Kepala Lab / Admin); BookingService tetap mengecek ulang.
+        return $this->user()->can('approve', $this->route('booking'));
     }
 
     public function rules(): array

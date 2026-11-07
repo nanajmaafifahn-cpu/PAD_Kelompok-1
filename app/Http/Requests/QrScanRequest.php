@@ -11,7 +11,10 @@ class QrScanRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user() !== null;
+        // BookingPolicy::checkIn / checkOut: hanya pemilik booking.
+        $ability = $this->routeIs('bookings.checkout') ? 'checkOut' : 'checkIn';
+
+        return $this->user()->can($ability, $this->route('booking'));
     }
 
     public function rules(): array

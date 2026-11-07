@@ -3,7 +3,8 @@
      Field qr_token: wajib, maks 64 karakter (QrScanRequest).
      Server menerima check-in mulai 15 menit sebelum jadwal mulai hingga jadwal selesai (Booking::performQrCheckIn).
      Status hanya berubah bila server menerima token; frontend tidak mengubah status apa pun.
-     Mensyaratkan user login; tanpa login server membalas 403 (usulan BE-01). --}}
+     Hanya tampil untuk pemilik booking (BookingPolicy::checkIn); server tetap menolak user lain (403). --}}
+@can('checkIn', $booking)
 <form method="POST" action="{{ route('bookings.checkin', $booking) }}" class="space-y-1.5" data-cs-validate>
     @csrf
     <label for="qr_token_in_{{ $booking->id }}" class="cs-form-label text-xs">
@@ -20,6 +21,9 @@
         Simulasi Scan QR Check-In
     </button>
 </form>
+@else
+<span class="text-xs text-ink-muted">Menunggu check-in pemilik</span>
+@endcan
 
 {{-- FE-06: Batalkan (hanya tampil bila route bookings.cancel tersedia) --}}
 @include('bookings.partials.manage')

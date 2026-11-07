@@ -41,6 +41,19 @@
                     <x-nav-link route="bookings.index" active="bookings.*">Booking</x-nav-link>
                 </ul>
             </nav>
+
+            @auth
+                <div class="flex items-center gap-3 text-sm">
+                    <span>
+                        <span class="block font-medium text-ink">{{ auth()->user()->name }}</span>
+                        <span class="block text-xs text-ink-muted">{{ auth()->user()->roleLabel() }}</span>
+                    </span>
+                    <form method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <button type="submit" class="cs-btn cs-btn-ghost cs-btn-sm">Keluar</button>
+                    </form>
+                </div>
+            @endauth
         </div>
     </header>
 

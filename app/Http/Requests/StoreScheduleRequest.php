@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Schedule;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
@@ -12,8 +13,7 @@ class StoreScheduleRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        // Otorisasi terbuka untuk kebutuhan lingkungan pengembangan lokal.
-        return true;
+        return $this->user()->can('create', Schedule::class);
     }
 
     /**

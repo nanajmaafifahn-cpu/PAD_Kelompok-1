@@ -1,7 +1,8 @@
 {{-- Status checked_in -> simulasi scan QR check-out.
      Field qr_token: wajib, maks 64 karakter (QrScanRequest); token sama dengan saat check-in.
      Status menjadi completed hanya bila server menerima token; frontend tidak mengubah status apa pun.
-     Mensyaratkan user login; tanpa login server membalas 403 (usulan BE-01). --}}
+     Hanya tampil untuk pemilik booking (BookingPolicy::checkOut); server tetap menolak user lain (403). --}}
+@can('checkOut', $booking)
 <form method="POST" action="{{ route('bookings.checkout', $booking) }}" class="space-y-1.5" data-cs-validate>
     @csrf
     <label for="qr_token_out_{{ $booking->id }}" class="cs-form-label text-xs">
@@ -18,3 +19,6 @@
         Simulasi Scan QR Check-Out
     </button>
 </form>
+@else
+<span class="text-xs text-ink-muted">Sedang dipakai</span>
+@endcan

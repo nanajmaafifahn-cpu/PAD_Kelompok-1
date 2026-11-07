@@ -20,9 +20,11 @@
             <h1 class="cs-page-title">Ruang &amp; Laboratorium</h1>
             <p class="cs-page-description">Master data ruang kelas dan laboratorium beserta kapasitas, unit akademik, dan fasilitasnya.</p>
         </div>
-        <a href="{{ route('rooms.create') }}" class="cs-btn cs-btn-primary">
-            <span aria-hidden="true">+</span> Tambah Ruang
-        </a>
+        @can('create', \App\Models\Room::class)
+            <a href="{{ route('rooms.create') }}" class="cs-btn cs-btn-primary">
+                <span aria-hidden="true">+</span> Tambah Ruang
+            </a>
+        @endcan
     </header>
 
     <section aria-labelledby="rooms-heading">

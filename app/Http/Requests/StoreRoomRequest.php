@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Room;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -13,8 +14,7 @@ class StoreRoomRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        // Otorisasi terbuka untuk kebutuhan lingkungan pengembangan lokal.
-        return true;
+        return $this->user()->can('create', Room::class);
     }
 
     /**

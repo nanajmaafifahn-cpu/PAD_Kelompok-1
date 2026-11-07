@@ -12,8 +12,8 @@ class RejectBookingRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        // Pengecekan peran spesifik (Kepala Lab / Admin) didelegasikan ke BookingService.
-        return $this->user() !== null;
+        // BookingPolicy::reject (Kepala Lab / Admin); BookingService tetap mengecek ulang.
+        return $this->user()->can('reject', $this->route('booking'));
     }
 
     /**

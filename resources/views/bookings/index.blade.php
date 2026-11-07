@@ -5,8 +5,8 @@
      bookings/partials/actions/{status}.blade.php — tanpa if/else di view ini.
      Menambah status baru cukup menambah satu file partial.
      Di bawah 768px tabel tampil sebagai kartu (.cs-table-stack, label dari data-label).
-     Catatan: approve/reject/check-in/check-out mensyaratkan user login (FormRequest authorize),
-     sehingga saat ini ditolak 403 sampai fitur login tersedia (usulan BE-01). --}}
+     Halaman wajib login. Tombol aksi hanya tampil bila user berhak (@can + BookingPolicy);
+     server tetap menolak aksi yang tidak berhak (403). --}}
 @extends('layouts.app')
 
 @section('title', 'Booking Ruang')
@@ -17,9 +17,11 @@
             <h1 class="cs-page-title">Booking Ruang</h1>
             <p class="cs-page-description">Pengajuan, verifikasi, dan simulasi scan QR check-in / check-out.</p>
         </div>
-        <a href="{{ route('bookings.create') }}" class="cs-btn cs-btn-primary">
-            <span aria-hidden="true">+</span> Ajukan Booking
-        </a>
+        @can('create', \App\Models\Booking::class)
+            <a href="{{ route('bookings.create') }}" class="cs-btn cs-btn-primary">
+                <span aria-hidden="true">+</span> Ajukan Booking
+            </a>
+        @endcan
     </header>
 
     {{-- Alur kerja lintas stakeholder (informasi statis) --}}
@@ -44,14 +46,6 @@
             </li>
         </ol>
     </section>
-
-    @guest
-        <div class="cs-alert cs-alert-info">
-            <span aria-hidden="true" class="cs-alert-icon">i</span>
-            <p>Verifikasi (Approve / Reject) dan scan QR check-in / check-out hanya dapat diproses oleh petugas yang login.
-                Tanpa login, server akan menolak aksi tersebut.</p>
-        </div>
-    @endguest
 
     <section aria-labelledby="bookings-heading">
         <h2 id="bookings-heading" class="sr-only">Daftar booking</h2>
