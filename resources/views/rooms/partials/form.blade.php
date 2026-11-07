@@ -1,10 +1,11 @@
 {{-- Field form ruang, dipakai bersama oleh rooms/create (tambah) dan rooms/edit (ubah).
      Variabel:
        $academicUnits  collection AcademicUnit
+       $types          array kunci => label tipe ruang (Room::TYPE_LABELS)
        $room           (opsional) Room yang diubah; nilai awal = old() lalu fallback ke data model.
-     Nama field = key StoreRoomRequest: academic_unit_id, code, name, building, floor, capacity, status, description.
+     Nama field = key StoreRoomRequest: academic_unit_id, code, type, name, building, floor, capacity, status,
+     description, photo (file; form pemakai wajib enctype="multipart/form-data"), remove_photo (khusus ubah).
      Atribut required/min/maxlength hanya validasi dasar di browser; validasi utama tetap di server.
-     Field `type` belum didukung backend (usulan BE-04), jadi tidak ditampilkan.
      Halaman pemakai wajib mendaftarkan @section('inline_error_fields', ...) dengan nama field di atas. --}}
 @php
     $room = $room ?? null;
@@ -58,6 +59,22 @@
                    placeholder="Laboratorium C301" class="cs-form-control"
                    @error('name') aria-invalid="true" aria-describedby="name-error" @enderror>
             <x-field-error for="name" />
+        </div>
+
+        <div>
+            <label for="type" class="cs-form-label">
+                Tipe Ruang <span class="cs-form-required" aria-hidden="true">*</span>
+            </label>
+            <select id="type" name="type" required class="cs-form-control"
+                    aria-describedby="type-hint @error('type') type-error @enderror"
+                    @error('type') aria-invalid="true" @enderror>
+                <option value="">— Pilih tipe —</option>
+                @foreach ($types as $value => $label)
+                    <option value="{{ $value }}" @selected(old('type', $room?->type) === $value)>{{ $label }}</option>
+                @endforeach
+            </select>
+            <p id="type-hint" class="cs-form-hint">Menentukan rumus utilisasi: Computer Lab menghitung waktu setup &amp; penalti ghost booking.</p>
+            <x-field-error for="type" />
         </div>
     </div>
 </fieldset>
@@ -120,6 +137,21 @@
                       class="cs-form-control"
                       @error('description') aria-invalid="true" aria-describedby="description-error" @enderror>{{ old('description', $room?->description) }}</textarea>
             <x-field-error for="description" />
+        </div>
+
+        <div class="sm:col-span-2">
+            <label for="photo" class="cs-form-label">Foto Ruang</label>
+            @if ($room?->photoUrl())
+                <img src="{{ $room->photoUrl() }}" alt="Foto {{ $room->name }} saat ini" class="mb-2 h-32 w-auto rounded border border-border object-cover">
+                <label class="mb-2 flex items-center gap-2 text-sm">
+                    <input type="checkbox" name="remove_photo" value="1" @checked(old('remove_photo'))> Hapus foto saat ini
+                </label>
+            @endif
+            <input id="photo" name="photo" type="file" accept="image/jpeg,image/png,image/webp" class="cs-form-control"
+                   aria-describedby="photo-hint @error('photo') photo-error @enderror"
+                   @error('photo') aria-invalid="true" @enderror>
+            <p id="photo-hint" class="cs-form-hint">JPG, PNG, atau WEBP, maksimal 2 MB.</p>
+            <x-field-error for="photo" />
         </div>
     </div>
 </fieldset>

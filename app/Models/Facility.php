@@ -10,6 +10,13 @@ class Facility extends BaseCampusEntity
 {
     private int $minimumQuantity = 0;
 
+    // Kondisi fasilitas: kunci DB => label UI.
+    public const STATUS_LABELS = [
+        'available' => 'Baik',
+        'damaged' => 'Rusak',
+        'maintenance' => 'Perawatan',
+    ];
+
     private array $allowedStatuses = [
         'available',
         'damaged',

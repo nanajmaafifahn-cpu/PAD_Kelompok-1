@@ -7,6 +7,7 @@ use App\Http\Requests\ApproveBookingRequest;
 use App\Http\Requests\QrScanRequest;
 use App\Http\Requests\RejectBookingRequest;
 use App\Http\Requests\StoreBookingRequest;
+use App\Http\Requests\UpdateBookingRequest;
 use App\Models\Booking;
 use App\Services\BookingService;
 use Illuminate\Http\RedirectResponse;
@@ -95,9 +96,10 @@ class BookingController extends Controller
                 $request->validated()
             );
         } catch (BookingException $exception) {
+            // D8: galat domain tampil di bawah field terkait (kapasitas, bentrok, dst.).
             return back()
                 ->withInput()
-                ->with('error', $exception->getMessage());
+                ->withErrors($exception->toErrors());
         }
 
         return redirect()
@@ -106,6 +108,70 @@ class BookingController extends Controller
                 'success',
                 'Peminjaman berhasil diajukan dan menunggu persetujuan.'
             );
+    }
+
+    /**
+     * Form ubah booking (pemilik, selama pending). View menyembunyikan form bila bukan pending.
+     */
+    public function edit(Booking $booking): View
+    {
+        Gate::authorize('update', $booking);
+
+        return view('bookings.edit', [
+            'booking' => $booking,
+            'rooms' => $this->bookingService->roomsForBooking(),
+        ]);
+    }
+
+    public function update(UpdateBookingRequest $request, Booking $booking): RedirectResponse
+    {
+        try {
+            $this->bookingService->updateBooking($booking, $request->user(), $request->validated());
+        } catch (BookingException $exception) {
+            return back()
+                ->withInput()
+                ->withErrors($exception->toErrors());
+        }
+
+        return redirect()
+            ->route('bookings.show', $booking)
+            ->with('success', 'Perubahan booking disimpan dan tetap menunggu persetujuan.');
+    }
+
+    /**
+     * Batalkan booking oleh pemilik (pending/approved yang belum dimulai) -> status cancelled.
+     */
+    public function cancel(Request $request, Booking $booking): RedirectResponse
+    {
+        Gate::authorize('cancel', $booking);
+
+        try {
+            $this->bookingService->cancelBooking($booking, $request->user());
+        } catch (BookingException $exception) {
+            return back()->with('error', $exception->getMessage());
+        }
+
+        return redirect()
+            ->route('bookings.show', $booking)
+            ->with('success', 'Booking dibatalkan.');
+    }
+
+    /**
+     * Hapus booking oleh pengelola/admin (hanya pending, rejected, cancelled).
+     */
+    public function destroy(Booking $booking): RedirectResponse
+    {
+        Gate::authorize('delete', $booking);
+
+        try {
+            $this->bookingService->deleteBooking($booking);
+        } catch (BookingException $exception) {
+            return back()->with('error', $exception->getMessage());
+        }
+
+        return redirect()
+            ->route('bookings.index')
+            ->with('success', 'Booking dihapus.');
     }
 
     /**

@@ -29,9 +29,11 @@ class StoreBookingRequest extends FormRequest
                 'integer',
                 'min:1',
             ],
+            // D3: tidak boleh di masa lalu (dicek ulang di BookingService).
             'start_time' => [
                 'required',
                 'date',
+                'after:now',
             ],
             'end_time' => [
                 'required',

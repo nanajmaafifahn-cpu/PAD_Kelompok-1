@@ -66,11 +66,80 @@ class BookingService
             'status' => Booking::STATUS_PENDING,
         ]);
 
+        $this->checkStartInFuture($booking);
         $this->checkRoomAvailability($room);
         $this->checkCapacity($room, $booking->participant_count);
         $this->checkScheduleConflict($booking);
 
         return $this->saveBooking($booking);
+    }
+
+    /**
+     * Ubah booking (C2): hanya pemilik, hanya selama pending. Validasi diulang penuh.
+     *
+     * @param array{room_id:int,purpose:string,participant_count:int,start_time:mixed,end_time:mixed} $data
+     *
+     * @throws BookingException
+     */
+    public function updateBooking(Booking $booking, User $user, array $data): Booking
+    {
+        $this->assertOwner($booking, $user);
+        $this->assertPending($booking, 'diubah');
+
+        $room = Room::findOrFail($data['room_id']);
+
+        $booking->fill([
+            'room_id' => $room->id,
+            'purpose' => $data['purpose'],
+            'participant_count' => $data['participant_count'],
+            'start_time' => $data['start_time'],
+            'end_time' => $data['end_time'],
+        ]);
+
+        $this->checkStartInFuture($booking);
+        $this->checkRoomAvailability($room);
+        $this->checkCapacity($room, $booking->participant_count);
+        $this->checkScheduleConflict($booking);
+
+        return $this->saveBooking($booking);
+    }
+
+    /**
+     * Batalkan booking (C2): hanya pemilik, status pending/approved, dan belum dimulai.
+     *
+     * @throws BookingException
+     */
+    public function cancelBooking(Booking $booking, User $user, ?CarbonInterface $now = null): Booking
+    {
+        $this->assertOwner($booking, $user);
+
+        if (! in_array($booking->getStatus(), [Booking::STATUS_PENDING, Booking::STATUS_APPROVED], true)) {
+            throw BookingException::invalidState('dibatalkan', $booking->getStatus());
+        }
+
+        if ($booking->start_time->lte($now ?? now())) {
+            throw BookingException::cannotCancelStarted();
+        }
+
+        $booking->setStatus(Booking::STATUS_CANCELLED);
+        $booking->save();
+
+        return $booking;
+    }
+
+    /**
+     * Hapus booking (C2, pengelola/admin). Hanya untuk booking yang tidak dipakai laporan
+     * utilisasi (pending, rejected, cancelled); riwayat approved/checked_in/completed/no_show dijaga.
+     *
+     * @throws BookingException
+     */
+    public function deleteBooking(Booking $booking): void
+    {
+        if (! in_array($booking->getStatus(), Booking::DELETABLE_STATUSES, true)) {
+            throw BookingException::invalidState('dihapus', $booking->getStatus());
+        }
+
+        $booking->delete();
     }
 
     /**
@@ -327,6 +396,23 @@ class BookingService
     {
         if ($booking->getStatus() !== Booking::STATUS_PENDING) {
             throw BookingException::invalidState($action, $booking->getStatus());
+        }
+    }
+
+    private function assertOwner(Booking $booking, User $user): void
+    {
+        if ((int) $booking->user_id !== (int) $user->id) {
+            throw BookingException::notOwner();
+        }
+    }
+
+    // D3: dicek ulang di service walau FormRequest sudah memakai after:now.
+    private function checkStartInFuture(Booking $booking): void
+    {
+        $start = $booking->getAttribute('start_time');
+
+        if ($start === null || $start->lte(now())) {
+            throw BookingException::startInPast();
         }
     }
 

@@ -32,7 +32,12 @@ class StoreRoomRequest extends FormRequest
                 'required',
                 'string',
                 'max:30',
-                Rule::unique('rooms', 'code'),
+                $this->uniqueCodeRule(),
+            ],
+            // Kunci Strategy utilisasi: laboratory | classroom (label UI di Room::TYPE_LABELS).
+            'type' => [
+                'required',
+                Rule::in(array_keys(Room::TYPE_LABELS)),
             ],
             'name' => [
                 'required',
@@ -63,6 +68,19 @@ class StoreRoomRequest extends FormRequest
                 'nullable',
                 'string',
             ],
+            // Foto ruang: jpg/png/webp maks 2 MB, disimpan di disk public (RoomController).
+            'photo' => [
+                'nullable',
+                'image',
+                'mimes:jpg,jpeg,png,webp',
+                'max:2048',
+            ],
         ];
+    }
+
+    // UpdateRoomRequest mengabaikan ruang yang sedang diubah.
+    protected function uniqueCodeRule(): \Illuminate\Validation\Rules\Unique
+    {
+        return Rule::unique('rooms', 'code');
     }
 }

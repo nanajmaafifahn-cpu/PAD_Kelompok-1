@@ -6,7 +6,7 @@
 @extends('layouts.app')
 
 @section('title', 'Tambah Ruang')
-@section('inline_error_fields', 'academic_unit_id,code,name,building,floor,capacity,status,description')
+@section('inline_error_fields', 'academic_unit_id,code,type,name,building,floor,capacity,status,description,photo')
 
 @section('content')
     <section class="cs-container-narrow" aria-labelledby="page-title">
@@ -18,7 +18,7 @@
             </p>
         </header>
 
-        <form method="POST" action="{{ route('rooms.store') }}" class="cs-card cs-card-body space-y-6" data-cs-validate>
+        <form method="POST" action="{{ route('rooms.store') }}" enctype="multipart/form-data" class="cs-card cs-card-body space-y-6" data-cs-validate>
             @csrf
 
             @include('rooms.partials.form')

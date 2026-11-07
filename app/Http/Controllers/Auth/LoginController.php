@@ -25,6 +25,15 @@ class LoginController extends Controller
                 ->onlyInput('email');
         }
 
+        // C5: akun yang dinonaktifkan admin ditolak walau password benar.
+        if (! Auth::user()->isActive()) {
+            Auth::logout();
+
+            return back()
+                ->withErrors(['email' => 'Akun Anda dinonaktifkan. Hubungi admin akademik.'])
+                ->onlyInput('email');
+        }
+
         $request->session()->regenerate();
 
         return redirect()->intended(route('home'));

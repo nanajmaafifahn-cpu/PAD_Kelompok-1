@@ -1,7 +1,10 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin\AcademicUnitController;
+use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\FacilityController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\HomeController;
@@ -36,9 +39,9 @@ Route::middleware('guest')->group(function () {
     ])->name('register.store');
 });
 
-// Semua halaman aplikasi wajib login. Aksi tulis dibatasi role
+// Semua halaman aplikasi wajib login (akun aktif). Aksi tulis dibatasi role
 // (middleware `role`) dan dicek ulang oleh Policy di FormRequest.
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'active'])->group(function () {
     Route::post('/logout', [
         LoginController::class,
         'destroy',
@@ -80,6 +83,48 @@ Route::middleware('auth')->group(function () {
             RoomController::class,
             'regenerateQr',
         ])->name('rooms.qr.regenerate');
+
+        // Ubah & hapus ruang (BE-05). Hapus ditolak bila masih ada booking (RoomService).
+        Route::get('/rooms/{room}/edit', [
+            RoomController::class,
+            'edit',
+        ])->name('rooms.edit');
+
+        Route::put('/rooms/{room}', [
+            RoomController::class,
+            'update',
+        ])->name('rooms.update');
+
+        Route::delete('/rooms/{room}', [
+            RoomController::class,
+            'destroy',
+        ])->name('rooms.destroy');
+
+        // Fasilitas per ruang (C4)
+        Route::get('/rooms/{room}/facilities', [
+            FacilityController::class,
+            'index',
+        ])->name('rooms.facilities.index');
+
+        Route::post('/rooms/{room}/facilities', [
+            FacilityController::class,
+            'store',
+        ])->name('rooms.facilities.store');
+
+        Route::get('/facilities/{facility}/edit', [
+            FacilityController::class,
+            'edit',
+        ])->name('facilities.edit');
+
+        Route::put('/facilities/{facility}', [
+            FacilityController::class,
+            'update',
+        ])->name('facilities.update');
+
+        Route::delete('/facilities/{facility}', [
+            FacilityController::class,
+            'destroy',
+        ])->name('facilities.destroy');
     });
 
     // ==========================================
@@ -91,10 +136,33 @@ Route::middleware('auth')->group(function () {
         'index',
     ])->name('schedules.index');
 
-    Route::post('/schedules', [
-        ScheduleController::class,
-        'store',
-    ])->middleware('role:lab_head,admin')->name('schedules.store');
+    Route::middleware('role:lab_head,admin')->group(function () {
+        Route::post('/schedules', [
+            ScheduleController::class,
+            'store',
+        ])->name('schedules.store');
+
+        // Ubah, batal (status cancelled), hapus jadwal (C3)
+        Route::get('/schedules/{schedule}/edit', [
+            ScheduleController::class,
+            'edit',
+        ])->name('schedules.edit');
+
+        Route::put('/schedules/{schedule}', [
+            ScheduleController::class,
+            'update',
+        ])->name('schedules.update');
+
+        Route::patch('/schedules/{schedule}/cancel', [
+            ScheduleController::class,
+            'cancel',
+        ])->name('schedules.cancel');
+
+        Route::delete('/schedules/{schedule}', [
+            ScheduleController::class,
+            'destroy',
+        ])->name('schedules.destroy');
+    });
 
     // ==========================================
     // 4. PEMESANAN RUANGAN (BOOKINGS)
@@ -128,6 +196,28 @@ Route::middleware('auth')->group(function () {
         BookingController::class,
         'show',
     ])->whereNumber('booking')->name('bookings.show');
+
+    // Ubah (pending) & batal oleh pemilik (BookingPolicy + BookingService), nama route sesuai KONTRAK-VIEW BE-06
+    Route::get('/bookings/{booking}/edit', [
+        BookingController::class,
+        'edit',
+    ])->name('bookings.edit');
+
+    Route::put('/bookings/{booking}', [
+        BookingController::class,
+        'update',
+    ])->middleware('throttle:booking-store')->name('bookings.update');
+
+    Route::patch('/bookings/{booking}/cancel', [
+        BookingController::class,
+        'cancel',
+    ])->name('bookings.cancel');
+
+    // Hapus oleh pengelola / admin (hanya pending, rejected, cancelled)
+    Route::delete('/bookings/{booking}', [
+        BookingController::class,
+        'destroy',
+    ])->middleware('role:lab_head,admin')->name('bookings.destroy');
 
     // Verifikasi: Approve & Reject oleh Kepala Lab / Admin
     Route::middleware('role:lab_head,admin')->group(function () {
@@ -198,4 +288,22 @@ Route::middleware('auth')->group(function () {
         UtilizationDashboardController::class,
         'index',
     ])->name('dashboard');
+
+    // ==========================================
+    // 6. ADMIN: UNIT AKADEMIK & PENGGUNA (C5)
+    // ==========================================
+
+    Route::middleware('role:admin')->prefix('admin')->name('admin.')->group(function () {
+        Route::get('/units', [AcademicUnitController::class, 'index'])->name('units.index');
+        Route::post('/units', [AcademicUnitController::class, 'store'])->name('units.store');
+        Route::get('/units/{unit}/edit', [AcademicUnitController::class, 'edit'])->name('units.edit');
+        Route::put('/units/{unit}', [AcademicUnitController::class, 'update'])->name('units.update');
+        Route::delete('/units/{unit}', [AcademicUnitController::class, 'destroy'])->name('units.destroy');
+
+        Route::get('/users', [UserController::class, 'index'])->name('users.index');
+        Route::get('/users/create', [UserController::class, 'create'])->name('users.create');
+        Route::post('/users', [UserController::class, 'store'])->name('users.store');
+        Route::get('/users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
+        Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
+    });
 });

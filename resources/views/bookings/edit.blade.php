@@ -1,5 +1,5 @@
 {{-- FE-06 · Form Ubah Booking
-     STATUS INTEGRASI: BLOCKED — backend belum menyediakan route & method berikut (usulan BE-06 di KONTRAK-VIEW.md):
+     STATUS INTEGRASI: AKTIF (BE-06, Fase 3):
        GET  bookings.edit    -> BookingController@edit   kirim $booking, $rooms ke view ini
        PUT  bookings.update  -> BookingController@update validasi UpdateBookingRequest + cek ulang kapasitas & bentrok
      Aturan status (usulan BE-06, menunggu konfirmasi BE): hanya booking `pending` yang boleh diubah.

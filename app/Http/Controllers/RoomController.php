@@ -2,9 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\RoomException;
+use App\Http\Requests\RoomIndexRequest;
 use App\Http\Requests\StoreRoomRequest;
+use App\Http\Requests\UpdateRoomRequest;
 use App\Models\AcademicUnit;
+use App\Models\Facility;
 use App\Models\Room;
+use App\Services\RoomService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
@@ -15,18 +20,32 @@ use Illuminate\View\View;
  */
 class RoomController extends Controller
 {
+    public function __construct(
+        private readonly RoomService $roomService
+    ) {
+    }
+
     /**
      * Menampilkan daftar master ruangan dan laboratorium beserta relasi
      * unit akademik dan fasilitas terkait menggunakan paginasi.
+     * Filter query string (q, type, min_capacity, facility) bertahan saat paginasi (E4).
      */
-    public function index(): View
+    public function index(RoomIndexRequest $request): View
     {
+        $filters = $request->filters();
+
         $rooms = Room::with(['academicUnit', 'facilities'])
+            ->withCount('bookings')
+            ->filter($filters)
             ->orderBy('name')
-            ->paginate(10);
+            ->paginate(10)
+            ->withQueryString();
 
         return view('rooms.index', [
             'rooms' => $rooms,
+            'filters' => $filters,
+            'types' => Room::TYPE_LABELS,
+            'facilityNames' => Facility::query()->distinct()->orderBy('name')->pluck('name'),
         ]);
     }
 
@@ -41,7 +60,48 @@ class RoomController extends Controller
 
         return view('rooms.create', [
             'academicUnits' => $academicUnits,
+            'types' => Room::TYPE_LABELS,
         ]);
+    }
+
+    public function edit(Room $room): View
+    {
+        Gate::authorize('update', $room);
+
+        return view('rooms.edit', [
+            'room' => $room,
+            'academicUnits' => AcademicUnit::orderBy('name')->get(),
+            'types' => Room::TYPE_LABELS,
+        ]);
+    }
+
+    public function update(UpdateRoomRequest $request, Room $room): RedirectResponse
+    {
+        $this->roomService->update(
+            $room,
+            $request->validated(),
+            $request->file('photo'),
+            $request->boolean('remove_photo')
+        );
+
+        return redirect()
+            ->route('rooms.index')
+            ->with('success', "Ruang {$room->name} berhasil diperbarui.");
+    }
+
+    public function destroy(Room $room): RedirectResponse
+    {
+        Gate::authorize('delete', $room);
+
+        try {
+            $this->roomService->delete($room);
+        } catch (RoomException $exception) {
+            return back()->with('error', $exception->getMessage());
+        }
+
+        return redirect()
+            ->route('rooms.index')
+            ->with('success', "Ruang {$room->name} berhasil dihapus.");
     }
 
     /**
@@ -78,7 +138,7 @@ class RoomController extends Controller
     public function store(
         StoreRoomRequest $request
     ): RedirectResponse {
-        Room::create($request->validated());
+        $this->roomService->create($request->validated(), $request->file('photo'));
 
         return redirect()
             ->route('rooms.index')

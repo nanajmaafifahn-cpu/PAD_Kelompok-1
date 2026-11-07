@@ -7,6 +7,20 @@ use RuntimeException;
 
 class BookingException extends RuntimeException
 {
+    /**
+     * @param string|null $field nama field form tempat galat ditampilkan (D8), mis. participant_count
+     */
+    public function __construct(string $message = '', public readonly ?string $field = null)
+    {
+        parent::__construct($message);
+    }
+
+    /** Bentuk siap pakai untuk back()->withErrors(...); tanpa field -> kunci 'booking' (alert umum). */
+    public function toErrors(): array
+    {
+        return [$this->field ?? 'booking' => $this->getMessage()];
+    }
+
     public static function notApprover(): self
     {
         return new self(
@@ -23,7 +37,7 @@ class BookingException extends RuntimeException
 
     public static function roomUnderMaintenance(): self
     {
-        return new self('Ruangan sedang dalam perawatan.');
+        return new self('Ruangan sedang dalam perawatan.', 'room_id');
     }
 
     public static function capacityExceeded(
@@ -31,15 +45,32 @@ class BookingException extends RuntimeException
         int $capacity
     ): self {
         return new self(
-            "Jumlah peserta ({$participants}) melebihi kapasitas ruangan ({$capacity})."
+            "Jumlah peserta ({$participants}) melebihi kapasitas ruangan ({$capacity}).",
+            'participant_count'
         );
     }
 
     public static function scheduleConflict(): self
     {
         return new self(
-            'Jadwal bentrok dengan jadwal atau booking lain di ruangan yang sama.'
+            'Jadwal bentrok dengan jadwal atau booking lain di ruangan yang sama.',
+            'start_time'
         );
+    }
+
+    public static function startInPast(): self
+    {
+        return new self('Waktu mulai harus setelah saat ini.', 'start_time');
+    }
+
+    public static function notOwner(): self
+    {
+        return new self('Hanya pemilik booking yang dapat melakukan aksi ini.');
+    }
+
+    public static function cannotCancelStarted(): self
+    {
+        return new self('Booking yang sudah dimulai tidak dapat dibatalkan.');
     }
 
     public static function invalidQrToken(): self

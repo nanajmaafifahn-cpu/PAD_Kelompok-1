@@ -1,9 +1,12 @@
 {{-- FE-02 / FE-04 · Daftar Ruang/Laboratorium & Fasilitas
      Variabel dari RoomController@index:
-       $rooms  paginator Room (dengan relasi academicUnit & facilities)
+       $rooms          paginator Room (relasi academicUnit & facilities, bookings_count), withQueryString()
+       $filters        ['q', 'type', 'min_capacity', 'facility'] nilai filter aktif (E4)
+       $types          Room::TYPE_LABELS (kunci => label)
+       $facilityNames  daftar nama fasilitas unik untuk filter
      Data ditampilkan lewat getter/summary milik Model (getEntitySummary, getCapacity, getStatus).
      FE-06: kolom Aksi (Ubah/Hapus) hanya muncul bila route rooms.edit / rooms.destroy terdaftar
-     (saat ini BLOCKED, usulan BE-05). Bila Controller mengirim bookings_count
+     (aktif sejak Fase 3, BE-05). Controller mengirim bookings_count
      (Room::withCount('bookings')), ruang yang masih punya booking tidak diberi tombol Hapus
      karena FK bookings.room_id restrictOnDelete; tanpa data itu, penolakan tetap ditangani server. --}}
 @extends('layouts.app')
@@ -11,7 +14,9 @@
 @section('title', 'Ruang & Laboratorium')
 
 @php
-    $canManageRooms = Route::has('rooms.edit') || Route::has('rooms.destroy');
+    $canManageRooms = (Route::has('rooms.edit') || Route::has('rooms.destroy'))
+        && auth()->user()->can('create', \App\Models\Room::class);
+    $hasFilters = collect($filters ?? [])->filter(fn ($value) => filled($value))->isNotEmpty();
 @endphp
 
 @section('content')
@@ -29,6 +34,42 @@
             </div>
         @endcan
     </header>
+
+    {{-- Filter (E4): GET query string, bertahan saat paginasi --}}
+    <form method="GET" action="{{ route('rooms.index') }}" class="cs-card cs-card-body mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-5" role="search" aria-label="Filter ruang">
+        <div class="lg:col-span-2">
+            <label for="filter-q" class="cs-form-label">Cari nama / kode</label>
+            <input id="filter-q" name="q" type="search" value="{{ $filters['q'] ?? '' }}" maxlength="100" placeholder="TULT-0805 atau R1" class="cs-form-control">
+        </div>
+        <div>
+            <label for="filter-type" class="cs-form-label">Tipe</label>
+            <select id="filter-type" name="type" class="cs-form-control">
+                <option value="">Semua tipe</option>
+                @foreach ($types ?? [] as $value => $label)
+                    <option value="{{ $value }}" @selected(($filters['type'] ?? null) === $value)>{{ $label }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div>
+            <label for="filter-capacity" class="cs-form-label">Kapasitas minimal</label>
+            <input id="filter-capacity" name="min_capacity" type="number" min="1" step="1" inputmode="numeric" value="{{ $filters['min_capacity'] ?? '' }}" class="cs-form-control">
+        </div>
+        <div>
+            <label for="filter-facility" class="cs-form-label">Fasilitas</label>
+            <select id="filter-facility" name="facility" class="cs-form-control">
+                <option value="">Semua fasilitas</option>
+                @foreach ($facilityNames ?? [] as $name)
+                    <option value="{{ $name }}" @selected(($filters['facility'] ?? null) === $name)>{{ $name }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div class="flex gap-2 sm:col-span-2 lg:col-span-5">
+            <button type="submit" class="cs-btn cs-btn-primary cs-btn-sm">Terapkan filter</button>
+            @if ($hasFilters)
+                <a href="{{ route('rooms.index') }}" class="cs-btn cs-btn-ghost cs-btn-sm">Reset</a>
+            @endif
+        </div>
+    </form>
 
     <section aria-labelledby="rooms-heading">
         <h2 id="rooms-heading" class="sr-only">Daftar ruang</h2>
@@ -57,8 +98,11 @@
                         <tr>
                             <td class="cs-cell-nowrap"><span class="cs-code">{{ $room->code }}</span></td>
                             <th scope="row">
+                                @if ($room->photoUrl())
+                                    <img src="{{ $room->photoUrl() }}" alt="" class="mb-1 h-12 w-20 rounded object-cover">
+                                @endif
                                 <span class="block font-medium text-ink">{{ $room->name }}</span>
-                                <span class="block text-xs capitalize text-ink-soft">{{ $room->type }}</span>
+                                <span class="block text-xs text-ink-soft">{{ $room->typeLabel() }}</span>
                                 <span class="block text-xs text-ink-muted">{{ $room->getEntitySummary() }}</span>
                             </th>
                             <td>{{ $room->academicUnit?->name ?? '—' }}</td>
@@ -95,6 +139,9 @@
                                                 Ubah<span class="sr-only"> ruang {{ $room->code }}</span>
                                             </a>
                                         @endif
+                                        <a href="{{ route('rooms.facilities.index', $room) }}" class="cs-btn cs-btn-ghost cs-btn-sm">
+                                            Fasilitas<span class="sr-only"> ruang {{ $room->code }}</span>
+                                        </a>
                                         @if (isset($room->bookings_count) && $room->bookings_count > 0)
                                             <span class="cs-caption">Tidak dapat dihapus: masih memiliki {{ $room->bookings_count }} booking</span>
                                         @else
@@ -113,9 +160,17 @@
                         <tr>
                             <td colspan="{{ $canManageRooms ? 8 : 7 }}">
                                 <div class="cs-empty-state">
-                                    <p class="cs-empty-state-title">Belum ada ruang terdaftar.</p>
-                                    <p class="mt-1">Data ruang menjadi dasar jadwal, booking, dan perhitungan utilisasi.
-                                        <a href="{{ route('rooms.create') }}" class="cs-link">Tambah ruang pertama</a>.</p>
+                                    @if ($hasFilters)
+                                        <p class="cs-empty-state-title">Tidak ada ruang yang cocok dengan filter.</p>
+                                        <p class="mt-1"><a href="{{ route('rooms.index') }}" class="cs-link">Reset filter</a></p>
+                                    @else
+                                        <p class="cs-empty-state-title">Belum ada ruang terdaftar.</p>
+                                        <p class="mt-1">Data ruang menjadi dasar jadwal, booking, dan perhitungan utilisasi.
+                                            @can('create', \App\Models\Room::class)
+                                                <a href="{{ route('rooms.create') }}" class="cs-link">Tambah ruang pertama</a>.
+                                            @endcan
+                                        </p>
+                                    @endif
                                 </div>
                             </td>
                         </tr>

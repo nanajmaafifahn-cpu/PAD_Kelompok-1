@@ -1,16 +1,22 @@
-{{-- FE-06 · Aksi pengelolaan booking oleh pemohon: Ubah, Batalkan, Hapus.
-     STATUS INTEGRASI: BLOCKED — route belum tersedia (usulan BE-06). Setiap tombol HANYA tampil bila
-     route-nya terdaftar; method diambil dari definisi route (x-route-form). Tanpa route tidak ada yang dirender.
-       bookings.edit     (GET)                : status pending
-       bookings.cancel   (method dari route)  : status pending / approved -> menjadi cancelled
-       bookings.destroy  (method dari route)  : status pending
-     Aturan status di atas mengikuti usulan BE-06; server tetap wajib menegakkannya.
-     Dipanggil dari partial actions/pending dan actions/approved. --}}
+{{-- FE-06 · Aksi pengelolaan booking: Ubah, Batalkan (pemilik), Hapus (pengelola/admin).
+     STATUS INTEGRASI: AKTIF (BE-06, Fase 3). Tombol tampil bila route terdaftar DAN user berhak (@can):
+       bookings.edit     (GET)     : pemilik, status pending
+       bookings.cancel   (PATCH)   : pemilik, status pending / approved yang belum dimulai -> cancelled
+       bookings.destroy  (DELETE)  : pengelola/admin, status pending / rejected / cancelled
+     Server (BookingPolicy + BookingService) tetap menegakkan aturan yang sama.
+     Dipanggil dari partial actions/pending, approved, rejected, dan none. --}}
 @php
     $status = $booking->getStatus();
-    $canEdit = Route::has('bookings.edit') && $status === \App\Models\Booking::STATUS_PENDING;
-    $canCancel = Route::has('bookings.cancel') && in_array($status, [\App\Models\Booking::STATUS_PENDING, \App\Models\Booking::STATUS_APPROVED], true);
-    $canDelete = Route::has('bookings.destroy') && $status === \App\Models\Booking::STATUS_PENDING;
+    $user = auth()->user();
+    $canEdit = Route::has('bookings.edit') && $status === \App\Models\Booking::STATUS_PENDING
+        && $user->can('update', $booking);
+    $canCancel = Route::has('bookings.cancel')
+        && in_array($status, [\App\Models\Booking::STATUS_PENDING, \App\Models\Booking::STATUS_APPROVED], true)
+        && $booking->start_time->isFuture()
+        && $user->can('cancel', $booking);
+    $canDelete = Route::has('bookings.destroy')
+        && in_array($status, \App\Models\Booking::DELETABLE_STATUSES, true)
+        && $user->can('delete', $booking);
 @endphp
 
 @if ($canEdit || $canCancel || $canDelete)

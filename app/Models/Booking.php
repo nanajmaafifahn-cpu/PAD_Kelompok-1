@@ -24,6 +24,13 @@ class Booking extends BaseCampusEntity
         self::STATUS_NO_SHOW,
     ];
 
+    // Booking yang boleh dihapus pengelola: tidak ikut perhitungan utilisasi.
+    public const DELETABLE_STATUSES = [
+        self::STATUS_PENDING,
+        self::STATUS_REJECTED,
+        self::STATUS_CANCELLED,
+    ];
+
     // Jendela check-in = [mulai - 15 menit, mulai + 15 menit].
     // Batas akhirnya sengaja sama dengan toleransi ghost booking: lewat dari itu booking
     // dianggap tidak hadir (no_show), jadi check-in tidak boleh lagi diterima.

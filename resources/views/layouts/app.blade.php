@@ -45,6 +45,10 @@
                         <x-nav-link route="bookings.mine" :active="['bookings.mine', 'bookings.create', 'bookings.show']">Peminjaman Saya</x-nav-link>
                         <x-nav-link route="scan.index" active="scan.*">Scan QR</x-nav-link>
                     @endcan
+                    @can('viewAny', \App\Models\User::class)
+                        <x-nav-link route="admin.units.index" active="admin.units.*">Unit Akademik</x-nav-link>
+                        <x-nav-link route="admin.users.index" active="admin.users.*">Pengguna</x-nav-link>
+                    @endcan
                 </ul>
             </nav>
 

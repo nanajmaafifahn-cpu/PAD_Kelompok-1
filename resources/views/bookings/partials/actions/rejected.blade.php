@@ -3,3 +3,6 @@
     <span class="font-medium text-danger">Alasan:</span>
     {{ $booking->rejection_reason ?? '—' }}
 </p>
+
+{{-- FE-06: Hapus oleh pengelola/admin --}}
+@include('bookings.partials.manage')

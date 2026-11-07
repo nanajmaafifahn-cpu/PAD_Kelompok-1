@@ -40,6 +40,23 @@ class BookingPolicy
         return $user->hasRole(User::ROLE_BORROWER, User::ROLE_LAB_HEAD, User::ROLE_ADMIN);
     }
 
+    // Ubah & batal: pemilik (aturan status pending / belum mulai ditegakkan BookingService).
+    public function update(User $user, Booking $booking): bool
+    {
+        return (int) $booking->user_id === (int) $user->id;
+    }
+
+    public function cancel(User $user, Booking $booking): bool
+    {
+        return $this->update($user, $booking);
+    }
+
+    // Hapus: pengelola & admin.
+    public function delete(User $user, Booking $booking): bool
+    {
+        return $user->canApproveBookings();
+    }
+
     public function approve(User $user, Booking $booking): bool
     {
         return $user->canApproveBookings();

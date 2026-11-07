@@ -1,5 +1,5 @@
 {{-- FE-06 · Form Ubah Ruang/Lab
-     STATUS INTEGRASI: BLOCKED — backend belum menyediakan route & method berikut (usulan BE-05 di KONTRAK-VIEW.md):
+     STATUS INTEGRASI: AKTIF (BE-05, Fase 3):
        GET  rooms.edit    -> RoomController@edit   kirim $room dan $academicUnits ke view ini
        PUT  rooms.update  -> RoomController@update validasi UpdateRoomRequest (code unik kecuali ruang ini)
      Form hanya dirender bila route rooms.update terdaftar (komponen x-route-form, method diambil dari
@@ -10,7 +10,7 @@
 @extends('layouts.app')
 
 @section('title', 'Ubah Ruang ' . $room->code)
-@section('inline_error_fields', 'academic_unit_id,code,name,building,floor,capacity,status,description')
+@section('inline_error_fields', 'academic_unit_id,code,type,name,building,floor,capacity,status,description,photo')
 
 @section('content')
     <section class="cs-container-narrow" aria-labelledby="page-title">
@@ -23,7 +23,7 @@
         </header>
 
         @if (Route::has('rooms.update'))
-            <x-route-form route="rooms.update" :params="$room" class="cs-card cs-card-body space-y-6" data-cs-validate>
+            <x-route-form route="rooms.update" :params="$room" enctype="multipart/form-data" class="cs-card cs-card-body space-y-6" data-cs-validate>
                 @include('rooms.partials.form', ['room' => $room])
 
                 <div class="cs-form-actions">
