@@ -6,6 +6,7 @@ use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\RoomController;
+use App\Http\Controllers\ScanController;
 use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\UtilizationDashboardController;
 
@@ -68,6 +69,17 @@ Route::middleware('auth')->group(function () {
             RoomController::class,
             'store',
         ])->name('rooms.store');
+
+        // Cetak QR Ruangan & Perbarui QR (token baru, QR lama tidak berlaku)
+        Route::get('/rooms/qr-codes', [
+            RoomController::class,
+            'qrIndex',
+        ])->name('rooms.qr.index');
+
+        Route::post('/rooms/{room}/qr-token', [
+            RoomController::class,
+            'regenerateQr',
+        ])->name('rooms.qr.regenerate');
     });
 
     // ==========================================
@@ -106,6 +118,17 @@ Route::middleware('auth')->group(function () {
         ])->middleware('throttle:booking-store')->name('bookings.store');
     });
 
+    // Riwayat milik user login & detail booking (BookingPolicy::view)
+    Route::get('/bookings/mine', [
+        BookingController::class,
+        'mine',
+    ])->name('bookings.mine');
+
+    Route::get('/bookings/{booking}', [
+        BookingController::class,
+        'show',
+    ])->whereNumber('booking')->name('bookings.show');
+
     // Verifikasi: Approve & Reject oleh Kepala Lab / Admin
     Route::middleware('role:lab_head,admin')->group(function () {
         Route::match(['post', 'patch'], '/bookings/{booking}/approve', [
@@ -130,6 +153,34 @@ Route::middleware('auth')->group(function () {
             BookingController::class,
             'checkOut',
         ])->name('bookings.checkout');
+    });
+
+    // ==========================================
+    // 4b. SCAN QR RUANGAN
+    // ==========================================
+    // QR di pintu ruang berisi URL /scan/{qr_token}. GET hanya menampilkan hasil evaluasi,
+    // POST melakukan check-in / check-out untuk booking milik user yang login.
+
+    Route::get('/scan', [
+        ScanController::class,
+        'index',
+    ])->name('scan.index');
+
+    Route::middleware('throttle:qr-scan')->group(function () {
+        Route::post('/scan', [
+            ScanController::class,
+            'manual',
+        ])->name('scan.manual');
+
+        Route::get('/scan/{room:qr_token}', [
+            ScanController::class,
+            'show',
+        ])->name('scan.room');
+
+        Route::post('/scan/{room:qr_token}', [
+            ScanController::class,
+            'confirm',
+        ])->name('scan.confirm');
     });
 
     // ==========================================

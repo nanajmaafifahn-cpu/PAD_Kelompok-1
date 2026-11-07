@@ -6,6 +6,7 @@ use App\Http\Requests\StoreRoomRequest;
 use App\Models\AcademicUnit;
 use App\Models\Room;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 
 /**
@@ -41,6 +42,34 @@ class RoomController extends Controller
         return view('rooms.create', [
             'academicUnits' => $academicUnits,
         ]);
+    }
+
+    /**
+     * Halaman "Cetak QR Ruangan" (pengelola/admin): satu kartu QR per ruang.
+     * Gambar QR dibuat di browser (npm qrcode) dari URL route('scan.room', qr_token).
+     */
+    public function qrIndex(): View
+    {
+        Gate::authorize('create', Room::class);
+
+        return view('rooms.qr', [
+            'rooms' => Room::orderBy('code')->get(),
+            'baseUrl' => rtrim((string) config('app.url'), '/'),
+        ]);
+    }
+
+    /**
+     * Aksi "Perbarui QR": token lama tidak berlaku, QR harus dicetak ulang.
+     */
+    public function regenerateQr(Room $room): RedirectResponse
+    {
+        Gate::authorize('update', $room);
+
+        $room->regenerateQrToken();
+
+        return redirect()
+            ->route('rooms.qr.index')
+            ->with('success', "QR ruang {$room->name} diperbarui. Cetak ulang dan ganti QR lama di pintu ruangan.");
     }
 
     /**

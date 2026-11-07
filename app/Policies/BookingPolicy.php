@@ -16,6 +16,24 @@ class BookingPolicy
         return true;
     }
 
+    // Daftar semua booking (semua peminjam): pengelola, admin, pimpinan.
+    // Peminjam hanya melihat "Peminjaman Saya".
+    public function viewAll(User $user): bool
+    {
+        return $user->hasRole(User::ROLE_LAB_HEAD, User::ROLE_ADMIN, User::ROLE_LEADER);
+    }
+
+    public function view(User $user, Booking $booking): bool
+    {
+        return (int) $booking->user_id === (int) $user->id || $this->viewAll($user);
+    }
+
+    // Halaman pemindai QR: semua yang bisa punya booking.
+    public function scan(User $user): bool
+    {
+        return $this->create($user);
+    }
+
     // Pimpinan (leader) hanya membaca dashboard & laporan, tidak mengajukan booking.
     public function create(User $user): bool
     {

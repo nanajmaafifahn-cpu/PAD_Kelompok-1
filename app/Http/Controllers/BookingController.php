@@ -10,6 +10,8 @@ use App\Http\Requests\StoreBookingRequest;
 use App\Models\Booking;
 use App\Services\BookingService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 
 /**
@@ -25,12 +27,49 @@ class BookingController extends Controller
     }
 
     /**
-     * Menampilkan daftar peminjaman ruangan dengan paginasi.
+     * Menampilkan daftar semua peminjaman (pengelola, admin, pimpinan).
+     * Peminjam diarahkan ke "Peminjaman Saya" agar tidak melihat data orang lain.
      */
-    public function index(): View
+    public function index(Request $request): View|RedirectResponse
     {
+        if ($request->user()->cannot('viewAll', Booking::class)) {
+            return redirect()->route('bookings.mine');
+        }
+
         return view('bookings.index', [
             'bookings' => $this->bookingService->paginateBookings(),
+            'scope' => 'all',
+        ]);
+    }
+
+    /**
+     * Riwayat peminjaman milik user yang login.
+     */
+    public function mine(Request $request): View
+    {
+        return view('bookings.index', [
+            'bookings' => $this->bookingService->paginateBookingsOf($request->user()),
+            'scope' => 'mine',
+        ]);
+    }
+
+    /**
+     * Detail satu peminjaman. Kode cadangan QR hanya ditampilkan untuk pemiliknya.
+     */
+    public function show(Request $request, Booking $booking): View
+    {
+        Gate::authorize('view', $booking);
+
+        $booking->load(['room.academicUnit', 'user']);
+        $isOwner = (int) $booking->user_id === (int) $request->user()->id;
+
+        return view('bookings.show', [
+            'booking' => $booking,
+            'isOwner' => $isOwner,
+            'backupCode' => $isOwner && in_array($booking->getStatus(), [
+                Booking::STATUS_APPROVED,
+                Booking::STATUS_CHECKED_IN,
+            ], true) ? $booking->qr_token : null,
         ]);
     }
 
@@ -51,7 +90,7 @@ class BookingController extends Controller
         StoreBookingRequest $request
     ): RedirectResponse {
         try {
-            $this->bookingService->submitBooking(
+            $booking = $this->bookingService->submitBooking(
                 $request->user(),
                 $request->validated()
             );
@@ -62,7 +101,7 @@ class BookingController extends Controller
         }
 
         return redirect()
-            ->route('bookings.index')
+            ->route('bookings.show', $booking)
             ->with(
                 'success',
                 'Peminjaman berhasil diajukan dan menunggu persetujuan.'

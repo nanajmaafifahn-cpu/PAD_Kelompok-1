@@ -54,13 +54,10 @@ class StoreRoomRequest extends FormRequest
                 'integer',
                 'min:1',
             ],
+            // Hanya available / maintenance; "occupied" dihitung otomatis dari check-in (D4).
             'status' => [
                 'required',
-                Rule::in([
-                    'available',
-                    'occupied',
-                    'maintenance',
-                ]),
+                Rule::in(Room::STATUSES),
             ],
             'description' => [
                 'nullable',

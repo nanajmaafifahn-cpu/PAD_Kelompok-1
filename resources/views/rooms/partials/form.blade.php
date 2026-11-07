@@ -108,10 +108,9 @@
                     aria-describedby="status-hint @error('status') status-error @enderror"
                     @error('status') aria-invalid="true" @enderror>
                 <option value="available" @selected($currentStatus === 'available')>Available</option>
-                <option value="occupied" @selected($currentStatus === 'occupied')>Occupied</option>
                 <option value="maintenance" @selected($currentStatus === 'maintenance')>Maintenance</option>
             </select>
-            <p id="status-hint" class="cs-form-hint">Ruang berstatus Maintenance tidak dapat dibooking.</p>
+            <p id="status-hint" class="cs-form-hint">Ruang berstatus Maintenance tidak dapat dibooking. Status "terpakai" dihitung otomatis dari check-in QR.</p>
             <x-field-error for="status" />
         </div>
 

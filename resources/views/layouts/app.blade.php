@@ -38,7 +38,13 @@
                     <x-nav-link route="dashboard" :active="['dashboard*', 'home']">Dashboard</x-nav-link>
                     <x-nav-link route="rooms.index" active="rooms.*">Ruang &amp; Lab</x-nav-link>
                     <x-nav-link route="schedules.index" active="schedules.*">Jadwal</x-nav-link>
-                    <x-nav-link route="bookings.index" active="bookings.*">Booking</x-nav-link>
+                    @can('viewAll', \App\Models\Booking::class)
+                        <x-nav-link route="bookings.index" active="bookings.index">Booking</x-nav-link>
+                    @endcan
+                    @can('scan', \App\Models\Booking::class)
+                        <x-nav-link route="bookings.mine" :active="['bookings.mine', 'bookings.create', 'bookings.show']">Peminjaman Saya</x-nav-link>
+                        <x-nav-link route="scan.index" active="scan.*">Scan QR</x-nav-link>
+                    @endcan
                 </ul>
             </nav>
 

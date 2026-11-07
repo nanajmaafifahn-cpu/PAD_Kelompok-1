@@ -2,6 +2,7 @@
 
 namespace App\Exceptions;
 
+use Carbon\CarbonInterface;
 use RuntimeException;
 
 class BookingException extends RuntimeException
@@ -56,10 +57,41 @@ class BookingException extends RuntimeException
         return new self('Booking sudah melakukan check-out.');
     }
 
-    public static function outsideCheckInWindow(): self
+    // Jam ditulis dalam zona waktu aplikasi (format "13.45 WIB").
+    private static function clock(CarbonInterface $time): string
+    {
+        return $time->format('H.i T');
+    }
+
+    public static function checkInNotYetOpen(CarbonInterface $opensAt): self
+    {
+        return new self('Belum waktunya check-in, mulai ' . self::clock($opensAt) . '.');
+    }
+
+    public static function checkInClosed(CarbonInterface $closesAt): self
     {
         return new self(
-            'Check-in hanya diperbolehkan mulai 15 menit sebelum jadwal hingga waktu selesai.'
+            'Batas check-in pukul ' . self::clock($closesAt)
+            . ' sudah lewat, sehingga peminjaman dianggap tidak hadir.'
+        );
+    }
+
+    public static function noApprovedBookingToday(string $roomName): self
+    {
+        return new self("Tidak ada peminjaman Anda yang disetujui untuk ruang {$roomName} hari ini.");
+    }
+
+    public static function bookingStillPending(string $roomName): self
+    {
+        return new self(
+            "Peminjaman Anda untuk ruang {$roomName} hari ini masih menunggu persetujuan pengelola."
+        );
+    }
+
+    public static function unknownScanCode(): self
+    {
+        return new self(
+            'Kode tidak dikenali. Tempel URL dari QR ruangan atau ketik kode cadangan dari detail peminjaman Anda.'
         );
     }
 }

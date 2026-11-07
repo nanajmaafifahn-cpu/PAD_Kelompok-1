@@ -6,6 +6,7 @@ use App\Exceptions\BookingException;
 use App\Models\Booking;
 use App\Models\Room;
 use App\Models\User;
+use App\Support\Scan\ScanResult;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -22,6 +23,15 @@ class BookingService
     public function paginateBookings(int $perPage = 10): LengthAwarePaginator
     {
         return Booking::with(['room', 'user'])
+            ->orderByDesc('start_time')
+            ->paginate($perPage);
+    }
+
+    /** Riwayat peminjaman milik satu user (halaman "Peminjaman Saya"). */
+    public function paginateBookingsOf(User $owner, int $perPage = 10): LengthAwarePaginator
+    {
+        return Booking::with(['room', 'user'])
+            ->where('user_id', $owner->id)
             ->orderByDesc('start_time')
             ->paginate($perPage);
     }
@@ -140,6 +150,142 @@ class BookingService
         $booking->performQrCheckOut($qrToken, $at);
 
         return $booking;
+    }
+
+    /**
+     * Evaluasi scan QR ruangan TANPA mengubah data (dipakai halaman hasil pindai).
+     * Hanya booking milik $user di ruangan ini yang dipertimbangkan (B3):
+     *  - status checked_in             -> check-out
+     *  - approved & dalam jendela      -> check-in
+     *  - selain itu                    -> alasan penolakan yang spesifik
+     */
+    public function evaluateScan(User $user, Room $room, ?CarbonInterface $now = null): ScanResult
+    {
+        $now ??= now();
+        $roomName = (string) $room->name;
+
+        $mine = fn () => Booking::query()
+            ->where('user_id', $user->id)
+            ->where('room_id', $room->id);
+
+        $checkedIn = $mine()
+            ->where('status', Booking::STATUS_CHECKED_IN)
+            ->orderBy('start_time')
+            ->first();
+
+        if ($checkedIn) {
+            return ScanResult::checkOut(
+                $checkedIn,
+                "Anda sedang memakai ruang {$roomName}. Konfirmasi check-out bila sudah selesai."
+            );
+        }
+
+        // Booking hari ini (overlap dengan tanggal $now).
+        $today = fn () => $mine()
+            ->where('start_time', '<=', $now->copy()->endOfDay())
+            ->where('end_time', '>=', $now->copy()->startOfDay())
+            ->orderBy('start_time');
+
+        $approved = $today()->where('status', Booking::STATUS_APPROVED)->get();
+
+        $open = $approved->first(
+            fn (Booking $b) => $now->gte($b->checkInOpensAt()) && $now->lte($b->checkInClosesAt())
+        );
+
+        if ($open) {
+            return ScanResult::checkIn(
+                $open,
+                "Peminjaman Anda di ruang {$roomName} pukul {$open->start_time->format('H.i')}"
+                . "–{$open->end_time->format('H.i T')} siap check-in."
+            );
+        }
+
+        if ($upcoming = $approved->first(fn (Booking $b) => $now->lt($b->checkInOpensAt()))) {
+            return ScanResult::denied(
+                BookingException::checkInNotYetOpen($upcoming->checkInOpensAt())->getMessage(),
+                $upcoming
+            );
+        }
+
+        if ($missed = $approved->first()) {
+            return ScanResult::denied(
+                BookingException::checkInClosed($missed->checkInClosesAt())->getMessage(),
+                $missed
+            );
+        }
+
+        if ($pending = $today()->where('status', Booking::STATUS_PENDING)->first()) {
+            return ScanResult::denied(
+                BookingException::bookingStillPending($roomName)->getMessage(),
+                $pending
+            );
+        }
+
+        return ScanResult::denied(BookingException::noApprovedBookingToday($roomName)->getMessage());
+    }
+
+    /**
+     * Jalankan check-in / check-out hasil scan QR ruangan.
+     *
+     * @throws BookingException bila tidak ada aksi yang boleh dilakukan
+     */
+    public function scanRoom(User $user, Room $room, ?CarbonInterface $now = null): ScanResult
+    {
+        $now ??= now();
+
+        return DB::transaction(function () use ($user, $room, $now) {
+            $result = $this->evaluateScan($user, $room, $now);
+
+            if (! $result->isAllowed()) {
+                throw new BookingException($result->message);
+            }
+
+            $booking = Booking::query()->lockForUpdate()->findOrFail($result->booking->id);
+
+            if ($result->action === ScanResult::ACTION_CHECK_OUT) {
+                $booking->performCheckOut($now);
+            } else {
+                $booking->performCheckIn($now);
+            }
+
+            return $result->action === ScanResult::ACTION_CHECK_OUT
+                ? ScanResult::checkOut($booking, "Check-out ruang {$room->name} berhasil. Ruangan kembali tersedia.")
+                : ScanResult::checkIn($booking, "Check-in ruang {$room->name} berhasil. Selamat menggunakan ruangan.");
+        });
+    }
+
+    /**
+     * Input manual di halaman pemindai: URL hasil QR, token QR ruangan,
+     * atau kode cadangan booking milik user. Hasilnya ruangan yang akan dievaluasi.
+     *
+     * @throws BookingException
+     */
+    public function resolveScanCode(User $user, string $code): Room
+    {
+        $code = trim($code);
+
+        // URL dari QR, misalnya http://192.168.1.10:8000/scan/{token}
+        if (preg_match('~/scan/([A-Za-z0-9]+)/?(?:[?#].*)?$~', $code, $match)) {
+            $code = $match[1];
+        }
+
+        $room = Room::query()->where('qr_token', $code)->first();
+
+        if ($room) {
+            return $room;
+        }
+
+        $booking = Booking::query()
+            ->with('room')
+            ->where('user_id', $user->id)
+            ->where('qr_token', $code)
+            ->first();
+
+        if ($booking?->room) {
+            return $booking->room;
+        }
+
+        throw BookingException::unknownScanCode();
     }
 
     /**

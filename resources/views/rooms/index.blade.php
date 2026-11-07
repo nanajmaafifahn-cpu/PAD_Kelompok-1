@@ -21,9 +21,12 @@
             <p class="cs-page-description">Master data ruang kelas dan laboratorium beserta kapasitas, unit akademik, dan fasilitasnya.</p>
         </div>
         @can('create', \App\Models\Room::class)
-            <a href="{{ route('rooms.create') }}" class="cs-btn cs-btn-primary">
-                <span aria-hidden="true">+</span> Tambah Ruang
-            </a>
+            <div class="flex flex-wrap gap-2">
+                <a href="{{ route('rooms.qr.index') }}" class="cs-btn cs-btn-secondary">Cetak QR Ruangan</a>
+                <a href="{{ route('rooms.create') }}" class="cs-btn cs-btn-primary">
+                    <span aria-hidden="true">+</span> Tambah Ruang
+                </a>
+            </div>
         @endcan
     </header>
 
@@ -66,7 +69,8 @@
                             <td class="cs-cell-num">
                                 {{ $room->getCapacity() }} <span class="text-xs text-ink-muted">orang</span>
                             </td>
-                            <td><x-status-badge :status="$room->getStatus()" /></td>
+                            {{-- Status live: occupied/booked dihitung dari booking (Room::getLiveStatus) --}}
+                            <td><x-status-badge :status="$room->getLiveStatus()" /></td>
                             <td>
                                 @if ($room->facilities->isEmpty())
                                     <span class="text-xs text-ink-muted">Belum ada fasilitas</span>

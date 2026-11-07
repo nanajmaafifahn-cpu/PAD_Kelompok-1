@@ -1,6 +1,7 @@
 {{-- FE-03 / FE-05 · Daftar Booking + Panel Verify + Simulator Scan QR
-     Variabel dari BookingController@index:
+     Variabel dari BookingController@index / @mine:
        $bookings  paginator Booking (dengan relasi room & user)
+       $scope     'all' (bookings.index, pengelola/admin/pimpinan) | 'mine' (bookings.mine, milik user login)
      Tombol aksi dipilih berdasarkan nama status lewat partial
      bookings/partials/actions/{status}.blade.php — tanpa if/else di view ini.
      Menambah status baru cukup menambah satu file partial.
@@ -9,13 +10,21 @@
      server tetap menolak aksi yang tidak berhak (403). --}}
 @extends('layouts.app')
 
-@section('title', 'Booking Ruang')
+@php
+    $isMine = ($scope ?? 'all') === 'mine';
+@endphp
+
+@section('title', $isMine ? 'Peminjaman Saya' : 'Booking Ruang')
 
 @section('content')
     <header class="cs-page-header">
         <div>
-            <h1 class="cs-page-title">Booking Ruang</h1>
-            <p class="cs-page-description">Pengajuan, verifikasi, dan simulasi scan QR check-in / check-out.</p>
+            <h1 class="cs-page-title">{{ $isMine ? 'Peminjaman Saya' : 'Booking Ruang' }}</h1>
+            <p class="cs-page-description">
+                {{ $isMine
+                    ? 'Riwayat pengajuan Anda. Buka detail untuk melihat kode cadangan QR, lalu scan QR di pintu ruangan untuk check-in / check-out.'
+                    : 'Pengajuan, verifikasi, dan simulasi scan QR check-in / check-out.' }}
+            </p>
         </div>
         @can('create', \App\Models\Booking::class)
             <a href="{{ route('bookings.create') }}" class="cs-btn cs-btn-primary">
@@ -109,6 +118,7 @@
                                 </span>
                             </td>
                             <td data-label="Aksi">
+                                <a href="{{ route('bookings.show', $booking) }}" class="cs-link mb-2 block text-xs">Detail</a>
                                 @includeFirst(
                                     ['bookings.partials.actions.' . $booking->status, 'bookings.partials.actions.none'],
                                     ['booking' => $booking]

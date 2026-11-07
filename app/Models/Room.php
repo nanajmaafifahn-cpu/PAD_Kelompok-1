@@ -6,15 +6,24 @@ use InvalidArgumentException;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
 class Room extends BaseCampusEntity
 {
     private int $minimumCapacity = 1;
 
-    private array $allowedStatuses = [
+    // Status yang disimpan hanya available / maintenance. "occupied" & "booked"
+    // diturunkan otomatis dari booking lewat getLiveStatus() (D4).
+    public const STATUSES = [
         'available',
-        'occupied',
         'maintenance',
+    ];
+
+    private array $allowedStatuses = self::STATUSES;
+
+    // Token QR tidak pernah diisi dari form dan tidak ikut diserialisasi.
+    protected $hidden = [
+        'qr_token',
     ];
 
     protected $fillable = [
@@ -33,6 +42,26 @@ class Room extends BaseCampusEntity
         return [
             'capacity' => 'integer',
         ];
+    }
+
+    // Setiap ruang baru langsung punya token QR (isi QR = route('scan.room', qr_token)).
+    protected static function booted(): void
+    {
+        static::creating(function (Room $room) {
+            $room->qr_token ??= self::newQrToken();
+        });
+    }
+
+    public static function newQrToken(): string
+    {
+        return Str::random(40);
+    }
+
+    // Aksi "Perbarui QR": QR lama yang sudah tercetak tidak berlaku lagi.
+    public function regenerateQrToken(): void
+    {
+        $this->qr_token = self::newQrToken();
+        $this->save();
     }
 
     // Relasi ke unit akademik
@@ -83,7 +112,9 @@ class Room extends BaseCampusEntity
         $this->setAttribute('status', $status);
     }
 
-    // Status pemakaian ruangan saat ini untuk dashboard live
+    // Status pemakaian ruangan saat ini untuk dashboard live (D4):
+    // occupied = ada peminjam yang sudah check-in (QR) dan jadwalnya belum selesai;
+    // booked   = ada booking approved yang sedang berjalan / mulai dalam 2 jam, tapi belum check-in.
     public function getLiveStatus(): string
     {
         if ($this->getStatus() === 'maintenance') {
@@ -93,11 +124,7 @@ class Room extends BaseCampusEntity
         $now = now();
 
         $occupied = $this->bookings()
-            ->whereIn('status', [
-                Booking::STATUS_APPROVED,
-                Booking::STATUS_CHECKED_IN,
-            ])
-            ->where('start_time', '<=', $now)
+            ->where('status', Booking::STATUS_CHECKED_IN)
             ->where('end_time', '>=', $now)
             ->exists();
 
@@ -107,7 +134,7 @@ class Room extends BaseCampusEntity
 
         $booked = $this->bookings()
             ->where('status', Booking::STATUS_APPROVED)
-            ->where('start_time', '>', $now)
+            ->where('end_time', '>=', $now)
             ->where('start_time', '<=', $now->copy()->addHours(2))
             ->exists();
 

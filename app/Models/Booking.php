@@ -24,7 +24,17 @@ class Booking extends BaseCampusEntity
         self::STATUS_NO_SHOW,
     ];
 
+    // Jendela check-in = [mulai - 15 menit, mulai + 15 menit].
+    // Batas akhirnya sengaja sama dengan toleransi ghost booking: lewat dari itu booking
+    // dianggap tidak hadir (no_show), jadi check-in tidak boleh lagi diterima.
+    public const CHECK_IN_OPENS_BEFORE_MINUTES = 15;
+
     public const GHOST_TOLERANCE_MINUTES = 15;
+
+    // Kode cadangan QR hanya ditampilkan ke pemiliknya (detail booking), tidak diserialisasi.
+    protected $hidden = [
+        'qr_token',
+    ];
 
     protected $fillable = [
         'room_id',
@@ -153,12 +163,29 @@ class Booking extends BaseCampusEntity
         return $bookings->exists();
     }
 
+    public function checkInOpensAt(): CarbonInterface
+    {
+        return $this->start_time->copy()->subMinutes(self::CHECK_IN_OPENS_BEFORE_MINUTES);
+    }
+
+    public function checkInClosesAt(): CarbonInterface
+    {
+        return $this->start_time->copy()->addMinutes(self::GHOST_TOLERANCE_MINUTES);
+    }
+
+    // Check-in lewat kode cadangan booking (input manual).
     public function performQrCheckIn(
         string $qrToken,
         ?CarbonInterface $at = null
     ): void {
         $this->assertQrToken($qrToken);
+        $this->performCheckIn($at);
+    }
 
+    // Check-in tanpa token booking: dipakai alur scan QR ruangan, yang sudah
+    // memastikan pemilik booking & ruangannya di BookingService::scanRoom.
+    public function performCheckIn(?CarbonInterface $at = null): void
+    {
         if ($this->getStatus() !== self::STATUS_APPROVED) {
             throw BookingException::invalidState(
                 'check-in',
@@ -172,11 +199,12 @@ class Booking extends BaseCampusEntity
 
         $at ??= now();
 
-        if (
-            $at->lt($this->start_time->copy()->subMinutes(15))
-            || $at->gt($this->end_time)
-        ) {
-            throw BookingException::outsideCheckInWindow();
+        if ($at->lt($this->checkInOpensAt())) {
+            throw BookingException::checkInNotYetOpen($this->checkInOpensAt());
+        }
+
+        if ($at->gt($this->checkInClosesAt())) {
+            throw BookingException::checkInClosed($this->checkInClosesAt());
         }
 
         $this->setAttribute('checked_in_at', $at);
@@ -189,7 +217,11 @@ class Booking extends BaseCampusEntity
         ?CarbonInterface $at = null
     ): void {
         $this->assertQrToken($qrToken);
+        $this->performCheckOut($at);
+    }
 
+    public function performCheckOut(?CarbonInterface $at = null): void
+    {
         if ($this->getStatus() !== self::STATUS_CHECKED_IN) {
             throw BookingException::invalidState(
                 'check-out',
