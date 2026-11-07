@@ -3,7 +3,7 @@
 ## Identitas Anggota
 - **Nama Lengkap (`user.name`)**: aldikarmdhn
 - **Email Git (`user.email`)**: aldikarmdhn@gmail.com
-- **Pembaruan Terakhir**: 2026-11-07 15:04:04 +00:00
+- **Pembaruan Terakhir**: 2026-11-07 15:17:34 +00:00
 
 ---
 
@@ -973,4 +973,29 @@ warning: in the working copy of 'docs/ai-usage/sessions/riwayat-aldikarmdhn.md',
  docs/ai-usage/sessions/RIWAYAT-SEMUA-SESI.md  | 105 +++++++++++++++++++++++++
  docs/ai-usage/sessions/riwayat-aldikarmdhn.md | 107 +++++++++++++++++++++++++-
  4 files changed, 217 insertions(+), 1 deletion(-)
+```
+
+---
+
+## Sesi AI-20261107-151734 — 2026-11-07 15:17:34 +00:00
+
+- **Identitas Git**: aldikarmdhn (`aldikarmdhn@gmail.com`)
+- **Provider AI**: Claude Code
+- **Tujuan**: Fase 1: login, role, penguncian akses, rate limiting, timezone WIB
+
+### Prompt Asli
+> Keputusan Fase 0 (branch dari feature/fe-04-06-frontend, commit log dulu, merge QA seeder saja, akun @campus.test, F4 opsi 1 dijalankan user) lalu lanjut Fase 1
+
+### Output / Respons AI
+Login/register/logout manual, middleware role, 4 Policy, authorize() FormRequest memanggil policy/gate, rate limiter login/booking/qr, JSON dashboard khusus lab_head/admin/leader, booking wajib login tanpa Walk-in Guest, akun demo local/testing, timezone Asia/Jakarta, checklist produksi
+
+### Ringkasan Perubahan (Before - Work - After)
+- **Before (Kondisi Awal)**: Semua halaman publik, approve/reject/QR selalu 403, tidak ada login, timezone UTC
+- **Pekerjaan AI**: routes/web.php dibungkus auth+role+throttle; User hasRole/roleLabel; EnsureUserHasRole; BookingPolicy/RoomPolicy/SchedulePolicy/FacilityPolicy; Auth controllers & views; DemoAccountSeeder; BookingService::submitBooking(User); test AuthAccessTest
+- **After (Kondisi Akhir)**: Branch feature/be-perbaikan-inti, 5 commit Fase 1, menunggu konfirmasi Fase 2
+- **Pengujian**: php artisan test: 27 passed (133 assertions)
+
+### File Terdampak
+```text
+Tidak ada file yang dimodifikasi (hanya diskusi/analisis).
 ```
