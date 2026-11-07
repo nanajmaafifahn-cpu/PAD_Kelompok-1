@@ -2,28 +2,23 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Booking;
 use Illuminate\Foundation\Http\FormRequest;
 
+/**
+ * Pengajuan booking oleh user login. Nama & peran pemohon tidak diisi bebas,
+ * melainkan diambil dari akun yang login di BookingService::submitBooking.
+ */
 class StoreBookingRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        return $this->user()->can('create', Booking::class);
     }
 
     public function rules(): array
     {
         return [
-            'requester_name' => [
-                'required',
-                'string',
-                'max:150',
-            ],
-            'requester_role' => [
-                'required',
-                'string',
-                'max:100',
-            ],
             'room_id' => [
                 'required',
                 'integer',

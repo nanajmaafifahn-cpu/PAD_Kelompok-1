@@ -1,18 +1,13 @@
 {{-- FE-03 / FE-05 · Form Pengajuan Booking (Submit)
      Variabel dari BookingController@create:
        $rooms  collection Room
-       $roles  (opsional) array label role stakeholder; bila tidak dikirim memakai daftar bawaan di bawah.
      Dikirim ke route bookings.store. Field form ada di bookings/partials/form.blade.php
      (dipakai juga oleh bookings/edit). Galat BookingService dikirim sebagai session('error')
      dan tampil di alert atas (layout). --}}
 @extends('layouts.app')
 
-@php
-    $roles = $roles ?? ['Mahasiswa', 'Dosen', 'Admin Akademik', 'Kepala Laboratorium', 'Pimpinan Fakultas'];
-@endphp
-
 @section('title', 'Ajukan Booking')
-@section('inline_error_fields', 'requester_name,requester_role,room_id,participant_count,start_time,end_time,purpose')
+@section('inline_error_fields', 'room_id,participant_count,start_time,end_time,purpose')
 
 @section('content')
     <section class="cs-container-narrow" aria-labelledby="page-title">

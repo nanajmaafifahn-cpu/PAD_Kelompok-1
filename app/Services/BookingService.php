@@ -33,29 +33,22 @@ class BookingService
     }
 
     /**
-     * Ajukan peminjaman baru (status awal: pending).
+     * Ajukan peminjaman baru (status awal: pending) atas nama user yang login.
+     * Nama & peran pemohon diambil dari akun, bukan dari input form.
      *
      * @param array{room_id:int,purpose:string,participant_count:int,start_time:mixed,end_time:mixed} $data
      *
      * @throws BookingException
      */
-    public function submitBooking(?User $user, array $data): Booking
+    public function submitBooking(User $user, array $data): Booking
     {
         $room = Room::findOrFail($data['room_id']);
-
-        $user ??= User::firstOrCreate(
-            ['email' => 'walkin@campus.local'],
-            [
-                'name' => 'Walk-in Guest',
-                'password' => bcrypt(Str::random(32)),
-            ]
-        );
 
         $booking = new Booking([
             'room_id' => $room->id,
             'user_id' => $user->id,
-            'requester_name' => $data['requester_name'] ?? $user->name,
-            'requester_role' => $data['requester_role'] ?? null,
+            'requester_name' => $user->name,
+            'requester_role' => $user->roleLabel(),
             'purpose' => $data['purpose'],
             'participant_count' => $data['participant_count'],
             'start_time' => $data['start_time'],

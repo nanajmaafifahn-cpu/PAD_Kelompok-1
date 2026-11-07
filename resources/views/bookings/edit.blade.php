@@ -1,6 +1,6 @@
 {{-- FE-06 · Form Ubah Booking
      STATUS INTEGRASI: BLOCKED — backend belum menyediakan route & method berikut (usulan BE-06 di KONTRAK-VIEW.md):
-       GET  bookings.edit    -> BookingController@edit   kirim $booking, $rooms (opsional $roles) ke view ini
+       GET  bookings.edit    -> BookingController@edit   kirim $booking, $rooms ke view ini
        PUT  bookings.update  -> BookingController@update validasi UpdateBookingRequest + cek ulang kapasitas & bentrok
      Aturan status (usulan BE-06, menunggu konfirmasi BE): hanya booking `pending` yang boleh diubah.
      View ini menyembunyikan form untuk status lain hanya sebagai kenyamanan tampilan; server TETAP wajib
@@ -9,12 +9,11 @@
 @extends('layouts.app')
 
 @php
-    $roles = $roles ?? ['Mahasiswa', 'Dosen', 'Admin Akademik', 'Kepala Laboratorium', 'Pimpinan Fakultas'];
     $isEditable = $booking->getStatus() === \App\Models\Booking::STATUS_PENDING;
 @endphp
 
 @section('title', 'Ubah Booking')
-@section('inline_error_fields', 'requester_name,requester_role,room_id,participant_count,start_time,end_time,purpose')
+@section('inline_error_fields', 'room_id,participant_count,start_time,end_time,purpose')
 
 @section('content')
     <section class="cs-container-narrow" aria-labelledby="page-title">

@@ -1,18 +1,15 @@
 {{-- Field form booking, dipakai bersama oleh bookings/create (ajukan) dan bookings/edit (ubah).
      Variabel:
        $rooms     collection Room (data ruang dari backend; option membawa data-capacity untuk cek kapasitas)
-       $roles     array label role stakeholder
        $booking   (opsional) Booking yang diubah; nilai awal = old() lalu fallback ke data model.
+     Data pemohon (nama & peran) tidak diinput: diambil dari akun login oleh BookingService (B2).
      Nama field = key StoreBookingRequest:
-       requester_name, requester_role, room_id, participant_count, start_time, end_time, purpose.
+       room_id, participant_count, start_time, end_time, purpose.
      Validasi HTML5 + campus-space.js hanya umpan balik awal; validasi utama tetap di server
      (FormRequest + BookingService: ruang maintenance, kapasitas, bentrok jadwal).
      Halaman pemakai wajib mendaftarkan @section('inline_error_fields', ...) dengan nama field di atas. --}}
 @php
     $booking = $booking ?? null;
-    $selectedRole = old('requester_role', $booking?->requester_role);
-    $roleOptions = collect($roles)
-        ->when($selectedRole && ! in_array($selectedRole, $roles, true), fn ($options) => $options->push($selectedRole));
     $selectedRoom = old('room_id', $booking?->room_id);
 @endphp
 
@@ -27,33 +24,18 @@
 {{-- Data pemohon --}}
 <fieldset class="cs-fieldset">
     <legend class="cs-legend">Data Pemohon</legend>
-    <div class="grid gap-5 sm:grid-cols-2">
+    <dl class="grid gap-5 sm:grid-cols-2">
         <div>
-            <label for="requester_name" class="cs-form-label">
-                Nama Pemohon <span class="cs-form-required" aria-hidden="true">*</span>
-            </label>
-            <input id="requester_name" name="requester_name" type="text" value="{{ old('requester_name', $booking?->requester_name) }}"
-                   required maxlength="150" pattern=".*\S.*" autocomplete="name"
-                   data-pattern-message="Nama tidak boleh hanya berisi spasi."
-                   class="cs-form-control"
-                   @error('requester_name') aria-invalid="true" aria-describedby="requester_name-error" @enderror>
-            <x-field-error for="requester_name" />
+            <dt class="cs-form-label">Nama Pemohon</dt>
+            <dd class="text-ink">{{ $booking?->requester_name ?? auth()->user()->name }}</dd>
         </div>
 
         <div>
-            <label for="requester_role" class="cs-form-label">
-                Role Stakeholder <span class="cs-form-required" aria-hidden="true">*</span>
-            </label>
-            <select id="requester_role" name="requester_role" required class="cs-form-control"
-                    @error('requester_role') aria-invalid="true" aria-describedby="requester_role-error" @enderror>
-                <option value="">— Pilih role —</option>
-                @foreach ($roleOptions as $role)
-                    <option value="{{ $role }}" @selected($selectedRole === $role)>{{ $role }}</option>
-                @endforeach
-            </select>
-            <x-field-error for="requester_role" />
+            <dt class="cs-form-label">Peran</dt>
+            <dd class="text-ink">{{ $booking?->requester_role ?? auth()->user()->roleLabel() }}</dd>
         </div>
-    </div>
+    </dl>
+    <p class="cs-form-hint mt-2">Diambil otomatis dari akun yang sedang login.</p>
 </fieldset>
 
 {{-- Ruang & peserta --}}
