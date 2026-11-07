@@ -68,7 +68,7 @@ class AuthAccessTest extends TestCase
 
         $this->post(route('login.store'), ['email' => $borrower->email, 'password' => 'password'])
             ->assertRedirect(route('home'));
-        $this->get('/')->assertRedirect(route('bookings.index'));
+        $this->get('/')->assertRedirect(route('bookings.mine'));
 
         $this->post(route('logout'))->assertRedirect(route('login'));
         $this->assertGuest();
@@ -132,7 +132,9 @@ class AuthAccessTest extends TestCase
 
         // Halaman baca tetap terbuka untuk borrower.
         $this->get(route('rooms.index'))->assertOk();
-        $this->get(route('bookings.index'))->assertOk();
+        $this->get(route('bookings.mine'))->assertOk();
+        // Daftar semua booking bukan untuk peminjam: diarahkan ke "Peminjaman Saya".
+        $this->get(route('bookings.index'))->assertRedirect(route('bookings.mine'));
     }
 
     public function test_pengelola_boleh_membuka_halaman_tambah_ruang(): void
@@ -192,7 +194,7 @@ class AuthAccessTest extends TestCase
             'start_time' => $start->format('Y-m-d H:i'),
             'end_time' => $start->copy()->addHours(2)->format('Y-m-d H:i'),
             'purpose' => 'Kerja kelompok',
-        ])->assertSessionHasNoErrors()->assertRedirect(route('bookings.index'));
+        ])->assertSessionHasNoErrors()->assertRedirect(route('bookings.show', Booking::first()));
 
         $this->assertDatabaseHas('bookings', [
             'user_id' => $borrower->id,
