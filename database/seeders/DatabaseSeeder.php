@@ -17,10 +17,15 @@ class DatabaseSeeder extends Seeder
     {
         // User::factory(10)->create();
 
-        User::firstOrCreate(
-            ['email' => 'test@example.com'],
-            ['name' => 'Test User', 'password' => bcrypt('password')]
-        );
+        // Akun berpassword "password" tidak boleh ikut ke server produksi.
+        if (app()->environment('local', 'testing')) {
+            User::firstOrCreate(
+                ['email' => 'test@example.com'],
+                ['name' => 'Test User', 'password' => bcrypt('password')]
+            );
+
+            $this->call(DemoAccountSeeder::class);
+        }
 
         \App\Models\AcademicUnit::firstOrCreate(['code' => 'FRI'], ['name' => 'Fakultas Rekayasa Industri']);
         \App\Models\AcademicUnit::firstOrCreate(['code' => 'FIF'], ['name' => 'Fakultas Informatika']);
