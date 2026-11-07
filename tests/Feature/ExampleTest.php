@@ -10,12 +10,12 @@ class ExampleTest extends TestCase
     use RefreshDatabase;
 
     /**
-     * A basic test example.
+     * Sejak Fase 1 aplikasi wajib login: tamu diarahkan ke halaman login.
      */
     public function test_the_application_returns_a_successful_response(): void
     {
-        $response = $this->get('/');
+        $this->get('/')->assertRedirect(route('login'));
 
-        $response->assertStatus(200);
+        $this->get(route('login'))->assertOk();
     }
 }

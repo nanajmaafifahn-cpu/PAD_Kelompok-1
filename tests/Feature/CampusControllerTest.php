@@ -4,12 +4,21 @@ namespace Tests\Feature;
 
 use App\Models\AcademicUnit;
 use App\Models\Room;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class CampusControllerTest extends TestCase
 {
     use RefreshDatabase;
+
+    // Tambah ruang & jadwal khusus pengelola sejak Fase 1 (auth + role).
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_LAB_HEAD]));
+    }
 
     private function createAcademicUnit(): AcademicUnit
     {
