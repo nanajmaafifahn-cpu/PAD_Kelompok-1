@@ -96,7 +96,7 @@ class UiComponentsTest extends TestCase
 
     public function test_paginasi_menampilkan_info_dan_membawa_filter(): void
     {
-        foreach (range(1, 12) as $i) {
+        foreach (range(1, 14) as $i) {
             $this->room(['code' => "LAB-{$i}", 'name' => "Lab {$i}"]);
         }
 
@@ -105,7 +105,7 @@ class UiComponentsTest extends TestCase
             ->assertOk()
             ->getContent();
 
-        $this->assertStringContainsString('Menampilkan 1–10 dari 12', $html);
+        $this->assertStringContainsString('Menampilkan 1–12 dari 14', $html);
         $this->assertStringContainsString('Berikutnya', $html);
         $this->assertStringContainsString('aria-current="page">1<', $html);
         $this->assertStringContainsString('type=laboratory&amp;page=2', $html);

@@ -136,7 +136,7 @@ class BookingQrFlowTest extends TestCase
 
         $this->actingAs($this->owner)->get(route('scan.room', $this->room))
             ->assertOk()
-            ->assertSee('Konfirmasi Check-In');
+            ->assertSee('Konfirmasi Check-in');
 
         $this->post(route('scan.confirm', $this->room))
             ->assertRedirect(route('bookings.show', $booking))
@@ -157,7 +157,7 @@ class BookingQrFlowTest extends TestCase
         $this->actingAs($intruder)->get(route('scan.room', $this->room))
             ->assertOk()
             ->assertSee('Tidak ada peminjaman Anda yang disetujui untuk ruang R1 hari ini.')
-            ->assertDontSee('Konfirmasi Check-In');
+            ->assertDontSee('Konfirmasi Check-in');
 
         $this->post(route('scan.confirm', $this->room))
             ->assertRedirect(route('scan.room', $this->room))
@@ -210,7 +210,7 @@ class BookingQrFlowTest extends TestCase
         $this->at('15:30');
 
         $this->actingAs($this->owner)->get(route('scan.room', $this->room))
-            ->assertSee('Konfirmasi Check-Out');
+            ->assertSee('Konfirmasi Check-out');
 
         $this->post(route('scan.confirm', $this->room))
             ->assertRedirect(route('bookings.show', $booking));

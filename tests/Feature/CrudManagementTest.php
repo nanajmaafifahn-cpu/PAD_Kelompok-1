@@ -474,8 +474,8 @@ class CrudManagementTest extends TestCase
         }
 
         $this->actingAs($this->borrower);
-        // Cari sel kode di tabel (placeholder input pencarian juga memuat "TULT-0805").
-        $cell = fn (string $code) => '<span class="cs-code">' . $code . '</span>';
+        // Cari kartu ruang (placeholder input pencarian juga memuat "TULT-0805").
+        $cell = fn (string $code) => 'data-room-code="' . $code . '"';
 
         $this->get(route('rooms.index', ['q' => 'TULT-0912']))
             ->assertSee($cell('TULT-0912'), false)->assertDontSee($cell('TULT-0805'), false);
@@ -486,7 +486,7 @@ class CrudManagementTest extends TestCase
         $this->get(route('rooms.index', ['facility' => 'Proyektor']))
             ->assertSee($cell('TULT-0805'), false)->assertDontSee($cell('TULT-0912'), false);
 
-        // 13 lab -> 2 halaman; link halaman 2 tetap membawa filter.
+        // 13 lab -> 2 halaman (12 per halaman); link halaman 2 tetap membawa filter.
         $this->get(route('rooms.index', ['type' => 'laboratory']))
             ->assertOk()
             ->assertSee('type=laboratory&amp;page=2', false);
