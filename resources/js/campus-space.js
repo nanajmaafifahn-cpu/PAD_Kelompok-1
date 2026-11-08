@@ -28,7 +28,8 @@
                                                       [data-drawer-overlay]; Esc menutup, fokus terkunci);
    - tombol tutup pesan flash                          ([data-dismissible] berisi [data-dismiss]);
    - konfirmasi data-confirm lewat <dialog id="cs-confirm-dialog"> (bukan confirm() bawaan),
-     dialog berform sendiri lewat [data-dialog-open="id"] / [data-dialog-close].
+     dialog berform sendiri lewat [data-dialog-open="id"] / [data-dialog-close];
+   - pratinjau foto ruang sebelum diunggah            (input[data-photo-input] -> img[data-photo-preview]).
    Script ini TIDAK mengubah status booking apa pun; semua transaksi tetap lewat server.
    ============================================================================= */
 (function () {
@@ -442,7 +443,27 @@
         });
     }
 
+    // Pratinjau foto sebelum diunggah: input[data-photo-input] -> img[data-photo-preview] di form yang sama.
+    function initPhotoPreview() {
+        document.querySelectorAll('input[data-photo-input]').forEach(function (input) {
+            var preview = input.form && input.form.querySelector('img[data-photo-preview]');
+            if (!preview || !window.URL) {
+                return;
+            }
+            input.addEventListener('change', function () {
+                var file = input.files && input.files[0];
+                if (!file || file.type.indexOf('image/') !== 0) {
+                    return;
+                }
+                preview.src = URL.createObjectURL(file);
+                preview.alt = 'Pratinjau ' + file.name;
+                preview.hidden = false;
+            });
+        });
+    }
+
     function init() {
+        initPhotoPreview();
         initConfirm();
         initPrint();
         initAutoRefresh();

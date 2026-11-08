@@ -8,16 +8,17 @@
 @section('title', 'Tambah Ruang')
 @section('inline_error_fields', 'academic_unit_id,code,type,name,building,floor,capacity,status,description,photo')
 
-@section('content')
-    <section class="cs-container-narrow" aria-labelledby="page-title">
-        <header class="mb-6">
-            <a href="{{ route('rooms.manage') }}" class="cs-back-link"><span aria-hidden="true">←</span> Kembali ke daftar ruang</a>
-            <h1 id="page-title" class="cs-page-title mt-2">Tambah Ruang / Laboratorium</h1>
-            <p class="cs-page-description">
-                Isi data master ruang. Kolom bertanda <span class="cs-form-required" aria-hidden="true">*</span> wajib diisi.
-            </p>
-        </header>
+@section('page_header')
+    <x-page-header eyebrow="Data master" title="Tambah ruang." crumb="Ruangan & Foto"
+                   subtitle="Isi data master ruang. Kolom bertanda * wajib diisi.">
+        <x-slot:actions>
+            <a href="{{ route('rooms.manage') }}" class="cs-btn cs-btn-secondary">Kembali ke daftar</a>
+        </x-slot:actions>
+    </x-page-header>
+@endsection
 
+@section('content')
+    <section class="cs-container-narrow ml-0" aria-label="Form tambah ruang">
         <form method="POST" action="{{ route('rooms.store') }}" enctype="multipart/form-data" class="cs-card cs-card-body space-y-6" data-cs-validate>
             @csrf
 

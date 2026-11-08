@@ -92,7 +92,7 @@
                             <th scope="col">Waktu</th>
                             <th scope="col">Status</th>
                             @if ($canManage)
-                                <th scope="col">Aksi</th>
+                                <th scope="col">Tindakan</th>
                             @endif
                         </tr>
                     </thead>
@@ -119,7 +119,7 @@
                                 </td>
                                 <td data-label="Status"><x-status-badge :status="$schedule->status" /></td>
                                 @if ($canManage)
-                                    <td data-label="Aksi">
+                                    <td data-label="Tindakan">
                                         <div class="cs-actions">
                                             <a href="{{ route('schedules.edit', $schedule) }}" class="cs-btn cs-btn-secondary cs-btn-sm">
                                                 Ubah<span class="sr-only"> {{ $schedule->title }}</span>

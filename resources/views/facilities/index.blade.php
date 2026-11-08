@@ -9,35 +9,37 @@
 @section('title', 'Fasilitas ' . $room->name)
 @section('inline_error_fields', 'name,quantity,status')
 
+@section('page_header')
+    <x-page-header eyebrow="Data master" title="Fasilitas {{ $room->name }}." crumb="Fasilitas"
+                   subtitle="{{ $room->code }} · {{ $room->building }}. Catat jumlah dan kondisi setiap fasilitas ruang.">
+        <x-slot:actions>
+            <a href="{{ route('rooms.manage') }}" class="cs-btn cs-btn-secondary">Kembali ke Ruangan &amp; Foto</a>
+        </x-slot:actions>
+    </x-page-header>
+@endsection
+
 @section('content')
-    <header class="cs-page-header">
-        <div>
-            <a href="{{ route('rooms.index') }}" class="cs-back-link"><span aria-hidden="true">←</span> Kembali ke daftar ruang</a>
-            <h1 class="cs-page-title mt-2">Fasilitas {{ $room->name }}</h1>
-            <p class="cs-page-description"><span class="cs-code">{{ $room->code }}</span> · {{ $room->building }}</p>
-        </div>
-    </header>
 
     <div class="grid gap-6 lg:grid-cols-3">
         <section class="lg:col-span-2" aria-labelledby="facility-list-heading">
             <h2 id="facility-list-heading" class="sr-only">Daftar fasilitas</h2>
-            <div class="cs-table-wrap" role="region" aria-labelledby="facility-list-heading" tabindex="0">
-                <table class="cs-table">
+            <div class="cs-table-wrap cs-table-wrap-stack" role="region" aria-labelledby="facility-list-heading" tabindex="0">
+                <table class="cs-table cs-table-stack">
                     <thead>
                         <tr>
                             <th scope="col">Nama</th>
                             <th scope="col" class="text-right">Jumlah</th>
                             <th scope="col">Kondisi</th>
-                            <th scope="col">Aksi</th>
+                            <th scope="col">Tindakan</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse ($facilities as $facility)
                             <tr>
                                 <th scope="row">{{ $facility->name }}</th>
-                                <td class="cs-cell-num">{{ $facility->getQuantity() }}</td>
-                                <td><x-status-badge :status="$facility->getStatus()" domain="facility" /></td>
-                                <td>
+                                <td data-label="Jumlah" class="cs-cell-num">{{ $facility->getQuantity() }}</td>
+                                <td data-label="Kondisi"><x-status-badge :status="$facility->getStatus()" domain="facility" /></td>
+                                <td data-label="Tindakan">
                                     <div class="cs-actions">
                                         <a href="{{ route('facilities.edit', $facility) }}" class="cs-btn cs-btn-secondary cs-btn-sm">
                                             Ubah<span class="sr-only"> {{ $facility->name }}</span>

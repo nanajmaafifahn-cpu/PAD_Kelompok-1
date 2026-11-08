@@ -95,7 +95,11 @@ function initQrCards() {
 
         canvases.forEach((canvas) => {
             const url = root + canvas.dataset.qrPath;
-            QRCode.toCanvas(canvas, url, { width: Number(canvas.getAttribute('width')) || 180, margin: 1 });
+            QRCode.toCanvas(canvas, url, { width: Number(canvas.getAttribute('width')) || 180, margin: 1 }, () => {
+                // qrcode menulis ukuran inline; hapus agar ukuran tampil/cetak diatur CSS (.cs-qr-canvas).
+                canvas.style.removeProperty('width');
+                canvas.style.removeProperty('height');
+            });
 
             const label = document.querySelector(`[data-qr-url-for="${canvas.dataset.qrPath}"]`);
             if (label) label.textContent = url;

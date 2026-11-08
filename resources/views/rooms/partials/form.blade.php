@@ -124,10 +124,10 @@
             <select id="status" name="status" required class="cs-form-control"
                     aria-describedby="status-hint @error('status') status-error @enderror"
                     @error('status') aria-invalid="true" @enderror>
-                <option value="available" @selected($currentStatus === 'available')>Available</option>
-                <option value="maintenance" @selected($currentStatus === 'maintenance')>Maintenance</option>
+                <option value="available" @selected($currentStatus === 'available')>Tersedia</option>
+                <option value="maintenance" @selected($currentStatus === 'maintenance')>Perawatan</option>
             </select>
-            <p id="status-hint" class="cs-form-hint">Ruang berstatus Maintenance tidak dapat dibooking. Status "terpakai" dihitung otomatis dari check-in QR.</p>
+            <p id="status-hint" class="cs-form-hint">Ruang berstatus Perawatan tidak dapat dipinjam. Status "Sedang digunakan" dihitung otomatis dari check-in QR.</p>
             <x-field-error for="status" />
         </div>
 
@@ -141,13 +141,17 @@
 
         <div class="sm:col-span-2">
             <label for="photo" class="cs-form-label">Foto Ruang</label>
+            {{-- Pratinjau: foto saat ini, diganti otomatis dengan file yang dipilih (campus-space.js, data-photo-preview) --}}
+            <img @if ($room?->photoUrl()) src="{{ $room->photoUrl() }}" @endif alt="Pratinjau foto ruang" data-photo-preview
+                 class="mb-2 mt-1 aspect-video w-full max-w-sm rounded-xl border border-border object-cover"
+                 @unless ($room?->photoUrl()) hidden @endunless>
             @if ($room?->photoUrl())
-                <img src="{{ $room->photoUrl() }}" alt="Foto {{ $room->name }} saat ini" class="mb-2 h-32 w-auto rounded border border-border object-cover">
                 <label class="mb-2 flex items-center gap-2 text-sm">
                     <input type="checkbox" name="remove_photo" value="1" @checked(old('remove_photo'))> Hapus foto saat ini
                 </label>
             @endif
             <input id="photo" name="photo" type="file" accept="image/jpeg,image/png,image/webp" class="cs-form-control"
+                   data-photo-input
                    aria-describedby="photo-hint @error('photo') photo-error @enderror"
                    @error('photo') aria-invalid="true" @enderror>
             <p id="photo-hint" class="cs-form-hint">JPG, PNG, atau WEBP, maksimal 2 MB.</p>

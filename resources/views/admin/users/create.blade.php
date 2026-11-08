@@ -5,12 +5,17 @@
 @section('title', 'Tambah Pengguna')
 @section('inline_error_fields', 'name,email,role,password')
 
+@section('page_header')
+    <x-page-header eyebrow="Administrasi" title="Tambah pengguna." crumb="Pengguna"
+                   subtitle="Buat akun pengelola, admin, pimpinan, atau peminjam. Kolom bertanda * wajib diisi.">
+        <x-slot:actions>
+            <a href="{{ route('admin.users.index') }}" class="cs-btn cs-btn-secondary">Kembali ke pengguna</a>
+        </x-slot:actions>
+    </x-page-header>
+@endsection
+
 @section('content')
-    <section class="cs-container-narrow" aria-labelledby="page-title">
-        <header class="mb-6">
-            <a href="{{ route('admin.users.index') }}" class="cs-back-link"><span aria-hidden="true">←</span> Kembali ke pengguna</a>
-            <h1 id="page-title" class="cs-page-title mt-2">Tambah Pengguna</h1>
-        </header>
+    <section class="cs-container-narrow ml-0" aria-label="Form tambah pengguna">
 
         <form method="POST" action="{{ route('admin.users.store') }}" class="cs-card cs-card-body space-y-4" data-cs-validate>
             @csrf

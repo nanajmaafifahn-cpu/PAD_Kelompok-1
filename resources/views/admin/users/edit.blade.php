@@ -5,12 +5,16 @@
 @section('title', 'Ubah Pengguna')
 @section('inline_error_fields', 'name,email,role,is_active,password')
 
+@section('page_header')
+    <x-page-header eyebrow="Administrasi" title="Ubah pengguna." crumb="Pengguna" subtitle="{{ $user->name }} · {{ $user->email }}">
+        <x-slot:actions>
+            <a href="{{ route('admin.users.index') }}" class="cs-btn cs-btn-secondary">Kembali ke pengguna</a>
+        </x-slot:actions>
+    </x-page-header>
+@endsection
+
 @section('content')
-    <section class="cs-container-narrow" aria-labelledby="page-title">
-        <header class="mb-6">
-            <a href="{{ route('admin.users.index') }}" class="cs-back-link"><span aria-hidden="true">←</span> Kembali ke pengguna</a>
-            <h1 id="page-title" class="cs-page-title mt-2">Ubah {{ $user->name }}</h1>
-        </header>
+    <section class="cs-container-narrow ml-0" aria-label="Form ubah pengguna">
 
         <x-route-form route="admin.users.update" :params="$user" class="cs-card cs-card-body space-y-4" data-cs-validate>
             @include('admin.users.partials.form', ['user' => $user, 'isSelf' => $isSelf])

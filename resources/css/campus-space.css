@@ -1615,6 +1615,151 @@
         background-color: var(--cs-event-soft);
     }
 
+    /* ---------- Grafik bar Terjadwal vs Aktual (Laporan Utilisasi) ----------
+       Dua seri, satu sumbu (persen 0–100). Warna divalidasi skrip dataviz (lolos CVD & normal-vision;
+       aqua 2.74:1 terhadap latar -> label persen selalu tampil + tabel rincian sebagai tampilan teks).
+       Bar tipis, ujung membulat 4px, celah 2px antar bar, track abu-abu tetap tampil walau 0%. */
+    .cs-chart {
+        display: grid;
+        gap: var(--cs-space-4);
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .cs-chart-row {
+        display: grid;
+        grid-template-columns: minmax(5rem, 9rem) minmax(0, 1fr) auto;
+        align-items: center;
+        gap: var(--cs-space-4);
+    }
+
+    .cs-chart-label {
+        overflow: hidden;
+        color: var(--cs-color-text-primary);
+        font-size: var(--cs-text-body);
+        font-weight: var(--cs-font-weight-bold);
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .cs-chart-bars {
+        display: grid;
+        gap: 2px;
+    }
+
+    .cs-chart-bar {
+        position: relative;
+        display: block;
+        height: 0.5rem;
+        overflow: hidden;
+        border-radius: 4px;
+        background-color: var(--cs-color-surface-muted);
+    }
+
+    .cs-chart-bar::after {
+        content: '';
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: var(--value, 0%);
+        border-radius: 4px;
+        background-color: var(--cs-series-color);
+    }
+
+    .cs-chart-bar:hover {
+        outline: 2px solid var(--cs-color-border-strong);
+        outline-offset: 1px;
+    }
+
+    [data-series='scheduled'] {
+        --cs-series-color: #2a78d6;
+    }
+
+    [data-series='actual'] {
+        --cs-series-color: #1baf7a;
+    }
+
+    .cs-chart-value {
+        min-width: 6.5rem;
+        color: var(--cs-color-text-secondary);
+        font-size: var(--cs-text-caption);
+        font-variant-numeric: tabular-nums;
+        text-align: right;
+    }
+
+    .cs-chart-legend {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--cs-space-2);
+    }
+
+    .cs-chart-legend::before {
+        content: '';
+        width: 0.75rem;
+        height: 0.75rem;
+        border-radius: 3px;
+        background-color: var(--cs-series-color);
+    }
+
+    @media (width < 40rem) {
+        .cs-chart-row {
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: var(--cs-space-1) var(--cs-space-3);
+        }
+
+        .cs-chart-bars {
+            grid-column: 1 / -1;
+            grid-row: 2;
+        }
+    }
+
+    /* ---------- Kartu QR ruangan (rooms.qr.index) ---------- */
+    .cs-qr-grid {
+        display: grid;
+        gap: var(--cs-space-6);
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    @media (width >= 48rem) {
+        .cs-qr-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @media (width >= 80rem) {
+        .cs-qr-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+    }
+
+    .cs-qr-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: var(--cs-space-2);
+        border: 1px solid var(--cs-color-border);
+        border-radius: var(--cs-radius-xl);
+        background-color: var(--cs-color-surface);
+        padding: var(--cs-space-8) var(--cs-space-6) var(--cs-space-6);
+        text-align: center;
+    }
+
+    .cs-qr-card-name {
+        color: var(--cs-color-text-primary);
+        font-size: 2.25rem;
+        font-weight: var(--cs-font-weight-extrabold);
+        line-height: 1.1;
+    }
+
+    .cs-qr-canvas {
+        width: 15rem;
+        max-width: 100%;
+        height: auto;
+        margin-block: var(--cs-space-3);
+    }
+
     /* ---------- Timeline status booking (bookings.show) ---------- */
     .cs-timeline {
         display: grid;
@@ -1792,6 +1937,16 @@
         margin: 12mm;
     }
 
+    /* Halaman bernama untuk Cetak QR Ruangan: A4 potret agar muat 2 kartu per halaman */
+    @page qr-cards {
+        size: A4 portrait;
+        margin: 10mm;
+    }
+
+    .cs-qr-grid {
+        page: qr-cards;
+    }
+
     body {
         min-height: 0;
         background-color: #ffffff;
@@ -1810,8 +1965,43 @@
         display: none !important;
     }
 
+    /* Kolom konten jadi blok biasa saat cetak agar pemotongan halaman (break-*) bekerja */
+    .cs-shell,
     .cs-main-col {
+        display: block !important;
+        min-height: 0 !important;
         margin-left: 0 !important;
+    }
+
+    /* Cetak QR Ruangan: 2 kartu per halaman A4 (area cetak ±27,7 cm), QR 6,5 cm (minimal 6 cm).
+       Isi kartu dipadatkan agar tidak melebihi tinggi kartu; isi yang meluber ikut dihitung saat pemotongan halaman. */
+    .cs-qr-grid {
+        display: block;
+    }
+
+    .cs-qr-card {
+        height: 13cm;
+        justify-content: center;
+        gap: 0.2cm;
+        margin-bottom: 0.5cm;
+        border: 1px dashed #94a3b8;
+        padding: 0.6cm;
+        overflow: hidden;
+        break-inside: avoid;
+    }
+
+    .cs-qr-card:nth-child(2n) {
+        break-after: page;
+    }
+
+    .cs-qr-card-name {
+        font-size: 1.75rem;
+    }
+
+    .cs-qr-canvas {
+        width: 6.5cm !important;
+        height: 6.5cm !important;
+        margin-block: 0.1cm;
     }
 
     .cs-content {
@@ -1867,6 +2057,9 @@
     .cs-status-dot,
     .cs-progress,
     .cs-progress-bar,
+    .cs-chart-bar,
+    .cs-chart-bar::after,
+    .cs-chart-legend::before,
     .cs-alert {
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
