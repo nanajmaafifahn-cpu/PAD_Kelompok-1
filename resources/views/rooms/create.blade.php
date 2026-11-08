@@ -11,7 +11,7 @@
 @section('content')
     <section class="cs-container-narrow" aria-labelledby="page-title">
         <header class="mb-6">
-            <a href="{{ route('rooms.index') }}" class="cs-back-link"><span aria-hidden="true">←</span> Kembali ke daftar ruang</a>
+            <a href="{{ route('rooms.manage') }}" class="cs-back-link"><span aria-hidden="true">←</span> Kembali ke daftar ruang</a>
             <h1 id="page-title" class="cs-page-title mt-2">Tambah Ruang / Laboratorium</h1>
             <p class="cs-page-description">
                 Isi data master ruang. Kolom bertanda <span class="cs-form-required" aria-hidden="true">*</span> wajib diisi.
@@ -24,7 +24,7 @@
             @include('rooms.partials.form')
 
             <div class="cs-form-actions">
-                <a href="{{ route('rooms.index') }}" class="cs-btn cs-btn-ghost">Batal</a>
+                <a href="{{ route('rooms.manage') }}" class="cs-btn cs-btn-ghost">Batal</a>
                 <button type="submit" class="cs-btn cs-btn-primary">Simpan Ruang</button>
             </div>
         </form>

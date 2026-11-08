@@ -147,7 +147,7 @@ class CrudManagementTest extends TestCase
 
         $this->put(route('rooms.update', $room), $this->roomPayload(['code' => 'TULT-0805', 'name' => 'R1 Baru']))
             ->assertSessionHasNoErrors()
-            ->assertRedirect(route('rooms.index'));
+            ->assertRedirect(route('rooms.manage'));
         $this->assertSame('R1 Baru', $room->fresh()->name);
 
         $this->put(route('rooms.update', $room), $this->roomPayload(['code' => 'TULT-0819']))
@@ -189,8 +189,8 @@ class CrudManagementTest extends TestCase
         $this->booking($room, Booking::STATUS_APPROVED);
         $this->actingAs($this->labHead);
 
-        $this->from(route('rooms.index'))->delete(route('rooms.destroy', $room))
-            ->assertRedirect(route('rooms.index'))
+        $this->from(route('rooms.manage'))->delete(route('rooms.destroy', $room))
+            ->assertRedirect(route('rooms.manage'))
             ->assertSessionHas('error', fn ($m) => str_contains($m, '1 booking aktif'));
         $this->assertModelExists($room);
 
@@ -200,7 +200,7 @@ class CrudManagementTest extends TestCase
         $this->assertModelExists($room);
 
         $empty = $this->room(['code' => 'TULT-0906', 'name' => 'R5']);
-        $this->delete(route('rooms.destroy', $empty))->assertRedirect(route('rooms.index'));
+        $this->delete(route('rooms.destroy', $empty))->assertRedirect(route('rooms.manage'));
         $this->assertModelMissing($empty);
 
         $this->actingAs($this->borrower)->delete(route('rooms.destroy', $room))->assertForbidden();

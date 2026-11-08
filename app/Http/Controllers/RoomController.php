@@ -67,6 +67,25 @@ class RoomController extends Controller
         ]);
     }
 
+    /**
+     * "Ruangan & Foto" (data master, pengelola/admin): tabel ruang + aksi ubah/hapus/fasilitas.
+     * Halaman Jelajahi (rooms.index) tetap untuk semua user.
+     */
+    public function manage(): View
+    {
+        Gate::authorize('create', Room::class);
+
+        $rooms = Room::with(['academicUnit', 'facilities'])
+            ->withCount('bookings')
+            ->orderBy('code')
+            ->paginate(15);
+
+        return view('rooms.manage', [
+            'rooms' => $rooms,
+            'liveStatuses' => $this->roomStatus->forRooms($rooms->getCollection()),
+        ]);
+    }
+
     public function edit(Room $room): View
     {
         Gate::authorize('update', $room);
@@ -88,7 +107,7 @@ class RoomController extends Controller
         );
 
         return redirect()
-            ->route('rooms.index')
+            ->route('rooms.manage')
             ->with('success', "Ruang {$room->name} berhasil diperbarui.");
     }
 
@@ -103,7 +122,7 @@ class RoomController extends Controller
         }
 
         return redirect()
-            ->route('rooms.index')
+            ->route('rooms.manage')
             ->with('success', "Ruang {$room->name} berhasil dihapus.");
     }
 
@@ -144,7 +163,7 @@ class RoomController extends Controller
         $this->roomService->create($request->validated(), $request->file('photo'));
 
         return redirect()
-            ->route('rooms.index')
+            ->route('rooms.manage')
             ->with(
                 'success',
                 'Ruangan berhasil ditambahkan.'

@@ -63,6 +63,12 @@ Route::middleware(['auth', 'active'])->group(function () {
     ])->name('rooms.index');
 
     Route::middleware('role:lab_head,admin')->group(function () {
+        // "Ruangan & Foto": tabel data master untuk pengelola (rooms.index = Jelajahi Ruangan)
+        Route::get('/rooms/manage', [
+            RoomController::class,
+            'manage',
+        ])->name('rooms.manage');
+
         Route::get('/rooms/create', [
             RoomController::class,
             'create',
