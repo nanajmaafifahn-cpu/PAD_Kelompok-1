@@ -1,236 +1,258 @@
-# Kontrak View ↔ Controller (FE-01 s.d. FE-06)
+# Kontrak View ↔ Controller
 
 Dokumen ini untuk anggota **Back-End** dan **Front-End**. Semua view Blade hanya *menampilkan* data; seluruh query,
-rumus, dan aturan bisnis ada di Controller/Model/Service. Agar view tidak error, Controller wajib
-mengirim variabel dan menyediakan route sesuai tabel di bawah.
+rumus, dan aturan bisnis ada di Controller/Service/Model (termasuk scope). Bila view butuh data baru, tambahkan di
+Controller/Service lalu catat di dokumen ini; **jangan menulis query di Blade**.
 
-> **Diverifikasi terhadap kode:** branch `main` @ `1c3b722` (3 Nov 2026).
-> Bagian 1–7 = kontrak yang **sudah berlaku di kode**. Bagian 8 = **usulan FE yang belum disepakati**;
-> jangan diperlakukan sebagai kontrak sampai BE mengonfirmasi dan mengimplementasikannya.
+> **Diverifikasi terhadap kode:** branch `feature/be-perbaikan-inti` (PROMPT 1 Fase 0–3 + backend tambahan untuk UI, 8 Nov 2026).
+> Bagian 1–7 = kontrak yang **sudah berlaku di kode**. Bagian 8 = status usulan lama BE-01 s.d. BE-13 dan pekerjaan lanjutan.
 
 ## 1. Daftar file view
 
-| File | Tugas | Dipanggil oleh |
-|---|---|---|
-| `layouts/app.blade.php` | FE-01 | semua halaman (`@extends('layouts.app')`) |
-| `layouts/partials/flash.blade.php` | FE-01 | layout (notifikasi sukses/error) |
-| `components/nav-link.blade.php` | FE-01 | layout (menu; hanya muncul jika route-nya ada) |
-| `components/status-badge.blade.php` | FE-01 | badge status (warna via CSS `data-status`) |
-| `components/progress-bar.blade.php` | FE-01 | bar persentase |
-| `components/field-error.blade.php` | FE-05 | pesan galat server satu field (`<x-field-error for="nama_field" />`) |
-| `dashboard/utilization.blade.php` | FE-01 | `UtilizationDashboardController@index` |
-| `rooms/index.blade.php` | FE-02 | `RoomController@index` |
-| `rooms/create.blade.php` | FE-02 | `RoomController@create` |
-| `schedules/index.blade.php` | FE-03 | `ScheduleController@index` |
-| `bookings/index.blade.php` | FE-03 | `BookingController@index` |
-| `bookings/create.blade.php` | FE-03 | `BookingController@create` |
-| `bookings/partials/actions/{status}.blade.php` | FE-03 | dipilih otomatis sesuai `$booking->status` (file yang ada: `pending`, `approved`, `checked_in`, `rejected`, `none`) |
-| `rooms/partials/form.blade.php` | FE-06 | field form ruang, dipakai `rooms/create` dan `rooms/edit` |
-| `rooms/edit.blade.php` | FE-06 | **BLOCKED** — menunggu `RoomController@edit` (BE-05) |
-| `bookings/partials/form.blade.php` | FE-06 | field form booking, dipakai `bookings/create` dan `bookings/edit` |
-| `bookings/edit.blade.php` | FE-06 | **BLOCKED** — menunggu `BookingController@edit` (BE-06) |
-| `bookings/partials/manage.blade.php` | FE-06 | tombol Ubah / Batalkan / Hapus booking, tampil hanya bila route-nya ada |
-| `components/route-form.blade.php` | FE-06 | form yang hanya dirender bila route terdaftar; HTTP method diambil dari definisi route |
-
-Laporan utilisasi memakai halaman dashboard yang sama (ringkasan laporan, rekomendasi, tombol **Cetak Laporan** + gaya `@media print`);
-belum ada route laporan terpisah (BE-11).
-
-**Aturan FE-06 untuk fitur yang menunggu backend:** form/tombol Ubah, Hapus, dan Batalkan hanya dirender bila
-`Route::has('<nama route>')` bernilai benar, dengan nama route sesuai usulan BE-05/BE-06 di bagian 8. Tidak ada form
-dengan action palsu. Bila BE memakai nama route lain, view perlu disesuaikan (atau nama di bagian 8 diperbarui bersama).
+| File | Dipanggil oleh |
+|---|---|
+| `layouts/app.blade.php` | semua halaman aplikasi (wajib login) |
+| `layouts/guest.blade.php` | `auth/login`, `auth/register` |
+| `layouts/partials/flash.blade.php` | layout (pesan sukses/galat) |
+| `components/nav-link.blade.php` | menu; hanya tampil bila route-nya ada (`Route::has`) |
+| `components/status-badge.blade.php` | badge status (warna via CSS `data-status`) |
+| `components/progress-bar.blade.php`, `components/field-error.blade.php`, `components/route-form.blade.php` | komponen umum |
+| `auth/login.blade.php`, `auth/register.blade.php` | `LoginController@create`, `RegisterController@create` |
+| `dashboard/borrower.blade.php` | `DashboardController` (role `borrower`) |
+| `dashboard/manager.blade.php` | `DashboardController` (role `lab_head`, `admin`, `leader`) |
+| `dashboard/utilization.blade.php` | `UtilizationDashboardController@index` (Laporan Utilisasi) |
+| `rooms/index.blade.php` | `RoomController@index` (Jelajahi Ruangan) |
+| `rooms/show.blade.php` | `RoomController@show` (Detail Ruangan) |
+| `rooms/manage.blade.php` | `RoomController@manage` (Ruangan & Foto) |
+| `rooms/create.blade.php`, `rooms/edit.blade.php`, `rooms/partials/form.blade.php` | `RoomController@create/edit` |
+| `rooms/qr.blade.php` | `RoomController@qrIndex` (Cetak QR Ruangan) |
+| `facilities/index.blade.php`, `facilities/edit.blade.php`, `facilities/partials/form.blade.php` | `FacilityController` |
+| `schedules/index.blade.php`, `schedules/edit.blade.php`, `schedules/partials/form.blade.php` | `ScheduleController` |
+| `bookings/index.blade.php` | `BookingController@index` (semua booking) dan `@mine` (Peminjaman Saya) |
+| `bookings/show.blade.php` | `BookingController@show` |
+| `bookings/create.blade.php`, `bookings/edit.blade.php`, `bookings/partials/form.blade.php` | `BookingController@create/edit` |
+| `bookings/partials/actions/{status}.blade.php` | dipilih otomatis sesuai status (`pending`, `approved`, `checked_in`, `rejected`, `none`) |
+| `bookings/partials/manage.blade.php` | tombol Ubah / Batalkan / Hapus (tampil bila route ada **dan** `@can`) |
+| `scan/index.blade.php`, `scan/show.blade.php` | `ScanController@index/show` |
+| `admin/units/*`, `admin/users/*` | `Admin\AcademicUnitController`, `Admin\UserController` |
 
 ## 2. Route yang tersedia (`routes/web.php`)
 
-| Nama route | Method & URI | Controller@method | FormRequest | Akses saat ini |
-|---|---|---|---|---|
-| `home` | `GET /` | `UtilizationDashboardController@index` | `UtilizationDashboardRequest` | publik |
-| `dashboard` | `GET /dashboard` | `UtilizationDashboardController@index` | `UtilizationDashboardRequest` | publik |
-| `dashboard.utilization` | `GET /dashboard/utilization` | `UtilizationDashboardController@index` | `UtilizationDashboardRequest` | publik |
-| `rooms.index` | `GET /rooms` | `RoomController@index` | – | publik |
-| `rooms.create` | `GET /rooms/create` | `RoomController@create` | – | publik |
-| `rooms.store` | `POST /rooms` | `RoomController@store` | `StoreRoomRequest` | publik |
-| `schedules.index` | `GET /schedules` | `ScheduleController@index` | – | publik |
-| `schedules.store` | `POST /schedules` | `ScheduleController@store` | `StoreScheduleRequest` | publik |
-| `bookings.index` | `GET /bookings` | `BookingController@index` | – | publik |
-| `bookings.create` | `GET /bookings/create` | `BookingController@create` | – | publik |
-| `bookings.store` | `POST /bookings` | `BookingController@store` | `StoreBookingRequest` | publik (tanpa login dicatat atas user "Walk-in Guest") |
-| `bookings.approve` | `POST\|PATCH /bookings/{booking}/approve` | `BookingController@approve` | `ApproveBookingRequest` | **wajib login** + role `lab_head`/`admin` |
-| `bookings.reject` | `POST /bookings/{booking}/reject` | `BookingController@reject` | `RejectBookingRequest` | **wajib login** + role `lab_head`/`admin` |
-| `bookings.checkin` | `POST\|PATCH /bookings/{booking}/check-in` | `BookingController@checkIn` | `QrScanRequest` | **wajib login** |
-| `bookings.checkout` | `POST\|PATCH /bookings/{booking}/check-out` | `BookingController@checkOut` | `QrScanRequest` | **wajib login** |
+Semua route selain login/register memakai middleware `auth` + `active` (akun nonaktif dikeluarkan).
+Kolom **Middleware** hanya menulis tambahan di luar itu. Policy tetap dicek ulang di FormRequest/Controller.
 
-- Form aksi cukup `method="POST"` + `@csrf`. Route `bookings.reject` **hanya POST**, jadi jangan tambahkan `@method('PATCH')` di form reject.
-- Parameter `{booking}` memakai route model binding (`route('bookings.approve', $booking)`).
-- **Belum ada route** untuk: edit/update/hapus ruang, edit/update/batal/hapus booking, edit/hapus jadwal, CRUD fasilitas, login.
+| Nama route | Method & URI | Controller | Middleware tambahan |
+|---|---|---|---|
+| `login`, `login.store` | `GET/POST /login` | `Auth\LoginController@create/store` | `guest`; store: `throttle:login` (5/menit per email+IP) |
+| `register`, `register.store` | `GET/POST /register` | `Auth\RegisterController@create/store` | `guest` (selalu role `borrower`) |
+| `logout` | `POST /logout` | `Auth\LoginController@destroy` | – |
+| `home` | `GET /` | `HomeController` (redirect ke `dashboard`) | – |
+| `dashboard` | `GET /dashboard` | `DashboardController` | – (isi sesuai role) |
+| `dashboard.utilization` | `GET /dashboard/utilization` | `UtilizationDashboardController@index` | `role:lab_head,admin,leader` |
+| `rooms.index` | `GET /rooms` | `RoomController@index` | – |
+| `rooms.show` | `GET /rooms/{room}` | `RoomController@show` | – |
+| `rooms.manage` | `GET /rooms/manage` | `RoomController@manage` | `role:lab_head,admin` |
+| `rooms.create`, `rooms.store` | `GET /rooms/create`, `POST /rooms` | `RoomController` | `role:lab_head,admin` |
+| `rooms.edit`, `rooms.update`, `rooms.destroy` | `GET /rooms/{room}/edit`, `PUT/DELETE /rooms/{room}` | `RoomController` | `role:lab_head,admin` |
+| `rooms.qr.index` | `GET /rooms/qr-codes` | `RoomController@qrIndex` | `role:lab_head,admin` |
+| `rooms.qr.regenerate` | `POST /rooms/{room}/qr-token` | `RoomController@regenerateQr` | `role:lab_head,admin` |
+| `rooms.facilities.index`, `rooms.facilities.store` | `GET/POST /rooms/{room}/facilities` | `FacilityController` | `role:lab_head,admin` |
+| `facilities.edit`, `facilities.update`, `facilities.destroy` | `GET /facilities/{facility}/edit`, `PUT/DELETE /facilities/{facility}` | `FacilityController` | `role:lab_head,admin` |
+| `schedules.index` | `GET /schedules` | `ScheduleController@index` | – |
+| `schedules.store`, `schedules.edit`, `schedules.update`, `schedules.cancel`, `schedules.destroy` | `POST /schedules`, `GET /schedules/{schedule}/edit`, `PUT /schedules/{schedule}`, `PATCH /schedules/{schedule}/cancel`, `DELETE /schedules/{schedule}` | `ScheduleController` | `role:lab_head,admin` |
+| `bookings.index` | `GET /bookings` | `BookingController@index` | – (peminjam diarahkan ke `bookings.mine`) |
+| `bookings.mine` | `GET /bookings/mine` | `BookingController@mine` | – |
+| `bookings.create`, `bookings.store` | `GET /bookings/create`, `POST /bookings` | `BookingController` | `role:borrower,lab_head,admin`; store: `throttle:booking-store` (10/menit) |
+| `bookings.show` | `GET /bookings/{booking}` | `BookingController@show` | – (Policy `view`: pemilik atau pengelola/admin/pimpinan) |
+| `bookings.edit`, `bookings.update` | `GET /bookings/{booking}/edit`, `PUT /bookings/{booking}` | `BookingController` | update: `throttle:booking-store` (Policy: pemilik, status pending) |
+| `bookings.cancel` | `PATCH /bookings/{booking}/cancel` | `BookingController@cancel` | – (pemilik; pending/approved yang belum mulai) |
+| `bookings.destroy` | `DELETE /bookings/{booking}` | `BookingController@destroy` | `role:lab_head,admin` (hanya pending/rejected/cancelled) |
+| `bookings.approve` | `POST\|PATCH /bookings/{booking}/approve` | `BookingController@approve` | `role:lab_head,admin` |
+| `bookings.reject` | `POST /bookings/{booking}/reject` | `BookingController@reject` | `role:lab_head,admin` (field `rejection_reason`) |
+| `bookings.checkin`, `bookings.checkout` | `POST\|PATCH /bookings/{booking}/check-in\|check-out` | `BookingController` | `throttle:qr-scan` (kode cadangan, hanya pemilik) |
+| `scan.index` | `GET /scan` | `ScanController@index` | – (role borrower/lab_head/admin) |
+| `scan.manual` | `POST /scan` | `ScanController@manual` | `throttle:qr-scan` (field `code`) |
+| `scan.room`, `scan.confirm` | `GET/POST /scan/{room:qr_token}` | `ScanController@show/confirm` | `throttle:qr-scan` |
+| `admin.units.*` | `GET/POST /admin/units`, `GET /admin/units/{unit}/edit`, `PUT/DELETE /admin/units/{unit}` | `Admin\AcademicUnitController` | `role:admin` |
+| `admin.users.*` | `GET/POST /admin/users`, `GET /admin/users/create`, `GET /admin/users/{user}/edit`, `PUT /admin/users/{user}` | `Admin\UserController` | `role:admin` |
+
+- Form `PUT/PATCH/DELETE` memakai `@method(...)`; komponen `<x-route-form route="..." :params="...">` mengambil method dari definisi route.
+- `bookings.reject` **hanya POST**.
+- **Belum ada route**: aturan operasional/hari libur, export CSV, notifikasi, filter jadwal & booking, halaman panduan.
 
 ## 3. Variabel per view
 
-### `dashboard.utilization`
-Data disusun oleh `UtilizationDashboardService::build()` dan dikirim apa adanya. Kirim header
-`Accept: application/json` untuk mendapat data yang sama dalam bentuk JSON.
+### `dashboard.borrower` (route `dashboard`, role borrower) — `DashboardService::borrower()`
+- `$stats` → `['total', 'pending', 'active' (approved + checked_in), 'completed']`
+- `$recentBookings` → 5 booking milik user terbaru (relasi `room`)
+- `$nextBooking` → booking `approved`/`checked_in` terdekat yang belum selesai, atau `null` (relasi `room`)
+- `$nextBookingScannable` → `bool`, tampilkan tombol **Pindai QR** (sedang check-in atau dalam jendela check-in)
 
-Query string (opsional): `start`, `end` (tanggal, `end >= start`). Tanpa keduanya, periode = minggu berjalan
-dan jam yang belum terjadi tidak dihitung.
+### `dashboard.manager` (route `dashboard`, role lab_head/admin/leader) — `DashboardService::manager()`
+- `$stats` → `['rooms_active' (selain maintenance), 'available_now', 'occupied_now', 'pending']`
+- `$pendingBookings` → 5 booking `pending` dengan waktu mulai terdekat (relasi `room`, `user`)
+- `$rooms` → semua `Room` urut kode; `$liveStatuses` → `[room_id => status live]`
+- Tombol Setujui/Tolak memakai partial `actions/pending` (ber-`@can`); pimpinan hanya membaca.
+
+### `dashboard.utilization` (Laporan Utilisasi)
+Data `UtilizationDashboardService::build()`; header `Accept: application/json` mengembalikan data yang sama (khusus pengelola/admin/pimpinan).
+Query string opsional `start`, `end` (tanggal). Tanpa keduanya: minggu berjalan, jam yang belum terjadi tidak dihitung.
 
 ```php
 [
     'period' => ['start' => 'Y-m-d', 'end' => 'Y-m-d', 'available_hours' => float],
     'summary' => [
         'total_rooms' => int, 'underutilized' => int, 'overutilized' => int,
-        'occupied_now' => int, 'booked_now' => int, 'available_now' => int,
+        'occupied_now' => int, 'booked_now' => int, 'available_now' => int, 'maintenance_now' => int,
+        'total_scheduled_hours' => float, 'total_actual_hours' => float, 'total_ghost_bookings' => int,
+        'average_utilization_rate' => float, 'average_scheduled_rate' => float, // persen, 1 desimal
+        'open_sessions' => int, // booking checked_in di periode yang belum check-out
     ],
-    'rooms' => [ // array, satu baris per ruang, urut kode ruang
-        [
-            'room_id' => int, 'room_code' => string, 'room_name' => string,
-            'room_type' => 'classroom|laboratory',
-            'available_hours' => float, 'scheduled_hours' => float, 'actual_hours' => float,
-            'scheduled_rate' => float,     // persen, sudah dibulatkan 1 desimal
-            'utilization_rate' => float,   // persen, rumus tergantung Strategy tipe ruang
-            'approved_bookings' => int, 'ghost_bookings' => int, 'ghost_rate' => float,
-            'category' => 'underutilized|normal|overutilized', // < 30% | 30–79,9% | >= 80%
-            'metrics' => [...],            // lihat di bawah
-            'live_status' => 'available|booked|occupied|maintenance',
-            'academic_unit' => ?string,
-        ],
-    ],
-    'underutilized' => ['KODE', ...], // daftar kode ruang
-    'overutilized' => ['KODE', ...],
+    'rooms' => [[ 'room_id', 'room_code', 'room_name', 'room_type', 'available_hours', 'scheduled_hours',
+                  'actual_hours', 'scheduled_rate', 'utilization_rate', 'approved_bookings', 'ghost_bookings',
+                  'ghost_rate', 'category' => 'underutilized|normal|overutilized', 'metrics' => [...],
+                  'live_status' => 'available|booked|occupied|maintenance', 'academic_unit' => ?string ]],
+    'underutilized' => ['KODE', ...], 'overutilized' => ['KODE', ...],
 ]
 ```
+- `metrics` classroom: `realization_ratio`, `seat_occupancy_ratio`; laboratory: `setup_hours`, `ghost_penalty_hours`, `raw_actual_rate`.
+- View lama masih menghitung rata-rata di `@php`; ganti dengan `summary.average_*` saat UI dirombak.
 
-- `metrics` untuk `classroom`: `realization_ratio`, `seat_occupancy_ratio` (keduanya bisa `null`).
-  Untuk `laboratory`: `setup_hours`, `ghost_penalty_hours`, `raw_actual_rate`.
-- Nilai status dan kategori **huruf kecil**, bukan `OPTIMAL`/`UNDERUTILIZED` seperti di versi lama dokumen ini.
-- `summary` belum menghitung ruang berstatus live `maintenance`.
-- Rata-rata utilisasi dan total ghost booking saat ini masih dihitung di view (`@php`), belum dikirim Service.
-- Dashboard memuat ulang sendiri tiap 30 detik (`<meta http-equiv="refresh">`).
+### `rooms.index` (Jelajahi Ruangan)
+- `$rooms` → paginator 10 (relasi `academicUnit`, `facilities`; `bookings_count`), `withQueryString()`
+- `$liveStatuses` → `[room_id => available|booked|occupied|maintenance]` (`RoomStatusService`, 2 query total)
+- `$filters` → `['q', 'type', 'min_capacity', 'facility']`; `$types` → `Room::TYPE_LABELS`; `$facilityNames` → nama fasilitas unik
+- Per ruang: `$room->typeLabel()`, `$room->photoUrl()` (atau `null`), `$room->computerCount()` (0 = nonkomputer; memakai `facilities` yang sudah dimuat)
 
-### `rooms.index`
-- `$rooms` → `Room::with(['academicUnit', 'facilities'])->orderBy('name')->paginate(10)`.
-- View memakai getter Model: `getEntitySummary()`, `getCapacity()`, `getStatus()`, dan untuk fasilitas `getQuantity()`, `getStatus()`, `getEntitySummary()`.
+### `rooms.show` (Detail Ruangan)
+- `$room` (relasi `academicUnit`, `facilities`), `$liveStatus`, `$computerCount`
+- `$upcomingEvents` → maks 5 kegiatan terdekat yang belum selesai (`CalendarService::upcomingForRoom`), bentuk kegiatan lihat `schedules.index`
+- Tombol **Ajukan Peminjaman** → `route('bookings.create', ['room_id' => $room->id])`
 
-### `rooms.create`
-- `$academicUnits` → `AcademicUnit::orderBy('name')->get()`.
-- Field (sesuai `StoreRoomRequest`): `academic_unit_id` (wajib, exists), `code` (wajib, maks 30, unik),
-  `name` (wajib, maks 150), `building` (wajib, maks 100), `floor` (opsional, maks 30),
-  `capacity` (wajib, integer ≥ 1), `status` (wajib, `available|occupied|maintenance`), `description` (opsional).
-- Field `type` **tidak diterima** (tidak ada di `StoreRoomRequest` maupun `$fillable`), sehingga ruang baru selalu `classroom`.
+### `rooms.manage` (Ruangan & Foto)
+- `$rooms` → paginator 15 urut kode (relasi `academicUnit`, `facilities`; `bookings_count`); `$liveStatuses`
+
+### `rooms.create` / `rooms.edit`
+- `$academicUnits`, `$types` (`Room::TYPE_LABELS`); edit: `$room`
+- Field: `academic_unit_id`, `code` (unik), `type` (`laboratory|classroom`), `name`, `building`, `floor`, `capacity` (≥ 1),
+  `status` (`available|maintenance`), `description`, `photo` (jpg/png/webp ≤ 2 MB), edit: `remove_photo`.
+  Form wajib `enctype="multipart/form-data"`. Foto tampil lewat `/storage` → jalankan `php artisan storage:link`.
+
+### `rooms.qr`
+- `$rooms` (urut kode), `$baseUrl` (`APP_URL`). Isi QR = alamat dasar + `route('scan.room', $room, false)`; gambar dibuat `resources/js/qr.js`.
+
+### `facilities.index` / `facilities.edit`
+- `$room`, `$facilities`, `$statuses` (`Facility::STATUS_LABELS`: available=Baik, damaged=Rusak, maintenance=Perawatan); edit: `$facility`
+- Field: `name` (unik per ruang), `quantity` (≥ 0), `status`
 
 ### `schedules.index`
-- `$schedules` → `Schedule::with('room')->orderBy('start_time')->paginate(10)`.
-- `$rooms` → **belum dikirim** oleh `ScheduleController@index`, sehingga form "Tambah Jadwal" (dibungkus `@isset($rooms)`) tidak tampil.
-  Route `schedules.store` sendiri sudah berfungsi.
-- Field (sesuai `StoreScheduleRequest`): `room_id`, `title` (maks 150), `start_time`, `end_time` (`after:start_time`). Status otomatis `scheduled`.
+- `$schedules` → paginator 10 urut waktu mulai (relasi `room`) — tabel kelola untuk pengelola
+- `$rooms` → untuk form tambah jadwal
+- `$week` → `CalendarService::week()` minggu berjalan:
+  `['start' => Carbon, 'end' => Carbon, 'total' => int, 'days' => [7 × ['date' => Carbon, 'is_today' => bool, 'events' => Collection]]]`
+- Satu kegiatan: `['type' => 'schedule'|'booking', 'title', 'room_id', 'room_name', 'room_code', 'start' => Carbon, 'end' => Carbon, 'status']`
+  (jadwal `cancelled` dan booking selain approved/checked_in/completed tidak ikut)
+- `$eventTypes` → `CalendarService::TYPE_LABELS` (`schedule` = Jadwal kuliah, `booking` = Peminjaman disetujui) untuk legenda
+- Field jadwal: `room_id`, `title`, `start_time`, `end_time`; bentrok ditolak di field `start_time`.
 
-### `bookings.index`
-- `$bookings` → `Booking::with(['room', 'user'])->orderByDesc('start_time')->paginate(10)` (lewat `BookingService::paginateBookings`).
+### `bookings.index` (`$scope = 'all'`) / `bookings.mine` (`$scope = 'mine'`)
+- `$bookings` → paginator 10 urut waktu mulai terbaru (relasi `room`, `user`)
 
-### `bookings.create`
-- `$rooms` → `Room::orderBy('name')->get()` (termasuk ruang `maintenance`; pengajuan ke ruang tersebut ditolak Service).
-- `$roles` → **tidak dikirim** Controller; view memakai daftar bawaan
-  `['Mahasiswa', 'Dosen', 'Admin Akademik', 'Kepala Laboratorium', 'Pimpinan Fakultas']`.
-- Field (sesuai `StoreBookingRequest`): `requester_name` (maks 150), `requester_role` (maks 100, teks bebas),
-  `room_id` (exists), `participant_count` (integer ≥ 1), `start_time`, `end_time` (`after:start_time`), `purpose` (maks 255).
+### `bookings.show`
+- `$booking` (relasi `room.academicUnit`, `user`), `$isOwner` (bool), `$backupCode` (kode cadangan; hanya pemilik saat approved/checked_in, selain itu `null`)
+
+### `bookings.create` / `bookings.edit`
+- `$rooms`; create: `$selectedRoomId` (dari `?room_id=`, `null` bila tidak valid/maintenance); edit: `$booking`
+- Field: `room_id`, `participant_count`, `start_time` (`after:now`), `end_time`, `purpose`. Nama & peran pemohon diambil dari akun (bukan input).
+
+### `scan.index` / `scan.room`
+- `scan.index`: tanpa variabel. `scan.room`: `$room`, `$result` (`App\Support\Scan\ScanResult`: `action` = `check_in|check_out|null`, `booking`, `message`).
+
+### Admin
+- `admin.units.index`: `$units` (dengan `rooms_count`); `admin.units.edit`: `$unit`
+- `admin.users.index`: `$users` (paginator 15), `$roles`; `create`: `$roles`; `edit`: `$user`, `$roles`, `$isSelf`
 
 ## 4. Relasi data dan nilai status
 
 | Relasi | Aturan hapus (FK) | Dampak ke UI |
 |---|---|---|
-| `academic_units` 1–N `rooms` | `restrictOnDelete` | unit tidak bisa dihapus selama punya ruang |
-| `rooms` 1–N `facilities` | `cascadeOnDelete` | hapus ruang ikut menghapus fasilitas |
-| `rooms` 1–N `schedules` | `cascadeOnDelete` | hapus ruang ikut menghapus jadwal |
-| `rooms` 1–N `bookings` | `restrictOnDelete` | **ruang yang punya booking tidak bisa dihapus** |
-| `users` 1–N `bookings` | `restrictOnDelete` | – |
+| `academic_units` 1–N `rooms` | `restrictOnDelete` | unit yang punya ruang tidak bisa dihapus |
+| `rooms` 1–N `facilities` / `schedules` | `cascadeOnDelete` | ikut terhapus bersama ruang |
+| `rooms` 1–N `bookings` | `restrictOnDelete` | ruang yang punya booking (aktif atau riwayat) tidak bisa dihapus; sarankan status Maintenance |
+| `users` 1–N `bookings` | `restrictOnDelete` | akun tidak dihapus, cukup dinonaktifkan |
 
-Semua kolom booking yang dibutuhkan form sudah ada (`requester_name`, `requester_role`, `participant_count`,
-`qr_token`, `checked_in_at`, `checked_out_at`, `rejection_reason`) dan sudah masuk `$fillable`/`casts()`.
-
-| Kolom | Nilai yang valid |
-|---|---|
-| `rooms.status` | `available`, `occupied`, `maintenance` (nilai lain → exception dari mutator Model) |
-| `rooms.type` | `classroom` (default), `laboratory` |
-| `facilities.status` | `available`, `damaged`, `maintenance` |
-| `schedules.status` | `scheduled` (default); `cancelled` dikecualikan dari perhitungan, belum ada UI-nya |
-| `users.role` | `borrower` (default), `lab_head`, `admin`, `leader` |
-| `bookings.status` | lihat alur di bawah |
+| Kolom | Nilai valid | Label UI (satu sumber) |
+|---|---|---|
+| `rooms.status` | `available`, `maintenance` | — |
+| status live ruang (dihitung) | `available`, `booked`, `occupied`, `maintenance` | `Room::LIVE_STATUS_LABELS` |
+| `rooms.type` | `laboratory`, `classroom` (kunci Strategy) | `Room::TYPE_LABELS` (Computer Lab, Class Lab) |
+| `rooms.qr_token` | unik, diisi otomatis | — |
+| `facilities.status` | `available`, `damaged`, `maintenance` | `Facility::STATUS_LABELS` |
+| `schedules.status` | `scheduled`, `cancelled` | — |
+| `users.role` | `borrower`, `lab_head`, `admin`, `leader` | `User::ROLE_LABELS` |
+| `users.is_active` | `true`/`false` | — |
 
 Alur status booking:
 ```
 pending ──approve──> approved ──check-in──> checked_in ──check-out──> completed
-   └────reject────> rejected     └── tidak check-in > 15 menit setelah mulai ──> no_show (ghost booking)
+   │                    │   └── tidak check-in s.d. 15 menit setelah mulai ──> no_show (ghost)
+   ├──reject──> rejected└── batal (pemilik, sebelum mulai) ──> cancelled
+   └── batal (pemilik) ──> cancelled
 ```
-`cancelled` sudah ada sebagai konstanta di Model, tetapi belum dipakai oleh alur mana pun.
-`no_show` ditandai otomatis setiap kali dashboard dibuka (`BookingService::detectGhostBookings`).
+Jendela check-in: 15 menit sebelum s.d. 15 menit setelah mulai (`Booking::CHECK_IN_OPENS_BEFORE_MINUTES`, `GHOST_TOLERANCE_MINUTES`).
+`no_show` ditandai saat Laporan Utilisasi dibuka (`BookingService::detectGhostBookings`); scheduler belum ada.
 
-## 5. Penanganan pesan sukses dan galat (perilaku aktual)
+## 5. Penanganan pesan sukses dan galat
 
-| Sumber | Bentuk yang diterima view | Tampil di |
+| Sumber | Bentuk | Tampil di |
 |---|---|---|
-| Validasi FormRequest gagal | `$errors` per field + `old()` | pesan di bawah field (`@error` / `<x-field-error>`); kotak merah di layout hanya berisi ringkasan jumlah isian, kecuali field yang tidak punya isian di halaman (pesannya didaftar di kotak merah) |
-| `BookingException` (ruang maintenance, melebihi kapasitas, bentrok jadwal, status tidak sesuai, bukan approver, token QR salah, di luar jendela check-in) | `session('error')` | **hanya** kotak merah di layout (bukan per field). `store` mempertahankan input lama (`withInput`), aksi lain tidak |
-| `authorize()` FormRequest bernilai `false` (belum login) | HTTP **403** | halaman error Laravel, bukan flash |
-| Berhasil | `session('success')` | kotak hijau di layout |
+| Validasi FormRequest | `$errors` per field + `old()` | `<x-field-error for="…">` di bawah field |
+| `BookingException` dengan field (kapasitas → `participant_count`, bentrok/waktu lampau → `start_time`, maintenance → `room_id`) | `$errors` per field | di bawah field terkait |
+| `BookingException` tanpa field (status tidak sesuai, bukan pemilik, dll.) | `$errors['booking']` (form) atau `session('error')` (aksi) | kotak galat layout |
+| Throttle | `$errors['throttle']` | kotak galat layout |
+| Policy/role ditolak | HTTP 403 | halaman error |
+| Berhasil | `session('success')` | kotak hijau layout |
 
-> **Catatan `datetime-local`:** input mengirim format `2026-10-21T14:00`. Kolom `start_time`/`end_time` di
-> Booking dan Schedule sudah di-cast `datetime`, jadi nilai otomatis dikonversi ke Carbon sebelum query bentrok.
-> **Timezone aplikasi masih `UTC`** (`config/app.php`), sehingga jam yang diketik pengguna (WIB) diperlakukan sebagai UTC (lihat bagian 8).
-
-**Pola galat FE-05 (agar satu galat tidak tampil dua kali):**
-- Halaman yang menampilkan galat di bawah field mendaftarkan nama field-nya:
-  `@section('inline_error_fields', 'room_id,title,start_time,end_time')`. Saat ini dipakai di `rooms/create`,
-  `bookings/create`, dan `schedules/index`. Field yang tidak terdaftar (mis. `qr_token`, `rejection_reason` di daftar booking)
-  tetap didaftar pesannya di kotak merah layout.
-- Pesan per field memakai `<x-field-error for="…" />` (id `{field}-error`). Input yang salah diberi
-  `aria-invalid="true"` dan `aria-describedby` yang merujuk id hint/galat.
-- Validasi browser memakai atribut HTML5 yang mengikuti FormRequest (`required`, `maxlength`, `min`, `step`, `type`,
-  `pattern`). Aturan tambahan di `resources/js/campus-space.js` (form diberi atribut `data-cs-validate`):
-  `data-after="id_mulai"` (waktu selesai > mulai), `data-capacity-from="id_select_ruang"` + `data-capacity` pada option
-  (peserta ≤ kapasitas), `data-not-blank` (bukan hanya spasi), `data-trim` (rapikan spasi token QR).
-  Ini hanya umpan balik awal; validasi utama tetap di server.
+- Halaman dengan galat per field mendaftarkan fieldnya: `@section('inline_error_fields', 'room_id,start_time,…')` agar tidak tampil dua kali.
+- Timezone aplikasi `Asia/Jakarta` (`APP_TIMEZONE`); input `datetime-local` dianggap WIB.
+- Validasi klien (`data-cs-validate` di `campus-space.js`): `data-after`, `data-capacity-from`, `data-not-blank`, `data-trim`. Validasi utama tetap di server.
 
 ## 6. Menambah status/aksi baru (≤ 2 file)
 
-Tombol di kolom **Aksi** dipilih dari file `bookings/partials/actions/{status}.blade.php`.
-Contoh menambah tombol *Reject* untuk status `pending`: cukup edit `pending.blade.php` dan tambah route-nya.
-Contoh status baru `no_show`: buat `no_show.blade.php`. Status yang tidak punya file akan menampilkan `none.blade.php`.
-Warna badge untuk status baru ditambahkan satu selector `[data-status='…' i]` di bagian 5 `resources/css/campus-space.css`
-(komponen `components/status-badge.blade.php` tidak perlu diubah).
+Tombol aksi booking dipilih dari `bookings/partials/actions/{status}.blade.php`; status tanpa file memakai `none.blade.php`.
+Warna badge baru cukup satu selector `[data-status='…' i]` di `resources/css/campus-space.css`.
+Setiap tombol aksi wajib dibungkus `@can(...)` sesuai `BookingPolicy` (`approve`, `reject`, `checkIn`, `checkOut`, `update`, `cancel`, `delete`).
 
-Kondisi saat ini:
-- `pending.blade.php`: tombol Approve + form Reject (`<details>`, field `rejection_reason`, wajib, maks 1000 karakter).
-- `approved.blade.php` / `checked_in.blade.php`: input `qr_token` (wajib, maks 64, `pattern="[A-Za-z0-9]+"` karena token
-  dibuat server dengan `Str::random`) + tombol simulasi scan check-in / check-out. Status hanya berubah bila server
-  menerima token; frontend tidak mengubah status. Saat ini server membalas 403 karena belum ada login (BE-01).
-- `rejected.blade.php`: menampilkan `rejection_reason`.
-- `completed`, `no_show`, dan `cancelled` jatuh ke `none.blade.php`.
-- Badge punya warna untuk `completed` (teal) dan `no_show` (merah); `cancelled` memakai warna default abu-abu.
+## 7. Otorisasi
 
-## 7. Otorisasi (perilaku aktual)
+| Role | Label | Akses |
+|---|---|---|
+| `borrower` | Mahasiswa / Dosen | dashboard peminjam, jelajahi & detail ruang, jadwal, ajukan/ubah/batal booking miliknya, Peminjaman Saya, scan QR |
+| `lab_head` | Pengelola Ruang / Kepala Lab | semua di atas + dashboard pengelola, laporan, approve/reject/hapus booking, kelola ruang/foto/fasilitas/jadwal, cetak QR |
+| `admin` | Admin Akademik | semua akses `lab_head` + kelola unit akademik & pengguna (tidak bisa menurunkan role/menonaktifkan diri sendiri) |
+| `leader` | Pimpinan | hanya membaca: dashboard pengelola, laporan, daftar ruang/jadwal/booking; tidak bisa mengajukan atau mengubah |
 
-- Aplikasi **belum punya sistem login**, sehingga `$request->user()` selalu `null`.
-- `ApproveBookingRequest`, `RejectBookingRequest`, dan `QrScanRequest` mensyaratkan user login. Akibatnya approve, reject,
-  check-in, dan check-out **selalu 403** saat ini.
-- Approve/reject juga mensyaratkan `users.role` = `lab_head` atau `admin` (`User::canApproveBookings`); selain itu muncul `session('error')`.
-- `qr_token` (40 karakter acak) dibuat saat booking disetujui. Check-in hanya diterima mulai 15 menit sebelum `start_time` sampai `end_time`.
-- `bookings.requester_role` adalah label teks bebas dari form (Mahasiswa, Dosen, …), **tidak terkait** dengan `users.role`.
+- Middleware alias: `role:...` (`EnsureUserHasRole`), `active` (`EnsureUserIsActive`). Policy: `BookingPolicy`, `RoomPolicy`, `SchedulePolicy`, `FacilityPolicy`, `AcademicUnitPolicy`, `UserPolicy`; Gate `view-utilization-data`.
+- QR: setiap ruang punya `qr_token`. Scan hanya memproses booking milik user login. Kode cadangan (`bookings.qr_token`) hanya ditampilkan ke pemilik.
 
-## 8. Usulan FE → BE (BELUM DISEPAKATI)
+## 8. Status usulan lama & pekerjaan lanjutan
 
-Bagian ini **bukan kontrak**. Nama route dan variabel di bawah hanya usulan agar FE-04 s.d. FE-06 bisa dikerjakan.
-Setelah BE menyetujui dan mengimplementasikan, pindahkan butir yang disepakati ke bagian 2–7, lalu hapus dari sini.
+| ID | Status |
+|---|---|
+| BE-01 login/role | Selesai (Fase 1) |
+| BE-02 sumber `qr_token` | Selesai: QR per ruangan + kode cadangan di detail booking (Fase 2) |
+| BE-03 `$rooms` di jadwal | Selesai (Fase 3) |
+| BE-04 tipe ruang | Selesai (Fase 3) |
+| BE-05 CRUD ruang | Selesai; redirect sukses ke `rooms.manage` |
+| BE-06 edit/batal/hapus booking | Selesai dengan nama route di atas |
+| BE-07 timezone | Selesai (Fase 1) |
+| BE-08 galat per field | Selesai (Fase 3) |
+| BE-09 ringkasan dashboard | Selesai (`summary.*` di atas) |
+| BE-10 data demo | Selesai: seeder QA + `DemoCampusSeeder` (14 ruang TULT + data minggu berjalan) |
+| BE-11 laporan | Selesai: `dashboard.utilization` = Laporan Utilisasi, `dashboard` = dashboard per role |
+| BE-12 metrik konflik jadwal | **Belum** |
+| BE-13 `bookings_count` | Selesai |
 
-| ID | Kebutuhan | Usulan | Memblokir |
-|---|---|---|---|
-| BE-01 | Cara mendapatkan user ber-role | Login sederhana, atau mekanisme simulasi user khusus lingkungan lokal. Akun dengan role sudah tersedia di seeder branch QA | Approve, Reject, QR (FE-05/06) |
-| BE-02 | Sumber `qr_token` untuk simulator | Tentukan bagaimana token sampai ke halaman simulasi, misalnya ditampilkan untuk booking `approved` atau lewat halaman detail booking | QR Interface (FE-05) |
-| BE-03 | Data form jadwal | `ScheduleController@index` mengirim `$rooms` (`Room::orderBy('name')->get()`) | Form Tambah Jadwal (FE-05) |
-| BE-04 | Tipe ruang | Tambah `type` ke `$fillable` Room dan `StoreRoomRequest` (`Rule::in([...])`), serta daftar tipe yang sah | Field tipe di Room Create/Edit (FE-04/06) |
-| BE-05 | CRUD Ruang | `GET /rooms/{room}/edit` (`rooms.edit`, kirim `$room`, `$academicUnits`), `PUT /rooms/{room}` (`rooms.update`, `UpdateRoomRequest` dengan unique `code` mengabaikan ruang itu sendiri; field sama dengan `StoreRoomRequest`), `DELETE /rooms/{room}` (`rooms.destroy`, kembalikan `session('error')` bila ruang masih punya booking). Redirect sukses ke `rooms.index` + `session('success')`. **View `rooms/edit` dan kolom Aksi di `rooms/index` sudah siap** dan aktif otomatis begitu route ini terdaftar | Edit/Delete Room (FE-06) |
-| BE-06 | Edit, batal & hapus booking | Aturan usulan: ubah & hapus hanya `pending`; batal untuk `pending`/`approved` → status `cancelled` (konstanta sudah ada). Route: `GET bookings.edit` (kirim `$booking`, `$rooms`, opsional `$roles`), `PUT bookings.update` (`UpdateBookingRequest`, field sama dengan `StoreBookingRequest`, cek ulang kapasitas & bentrok), `bookings.cancel` (PATCH/POST), `DELETE bookings.destroy`. Server wajib menegakkan aturan status. **View `bookings/edit` dan partial `manage` sudah siap** | Edit/Cancel/Delete Booking (FE-06) |
-| BE-07 | Timezone | Set timezone aplikasi ke `Asia/Jakarta` agar input `datetime-local`, jendela check-in, dan jam operasional 07.00–17.00 konsisten | Booking, QR, dashboard |
-| BE-08 | Galat per field (opsional) | Galat kapasitas ke `participant_count` dan bentrok ke `start_time` lewat `withErrors`, agar tampil di bawah field | Form Validation (FE-05) |
-| BE-09 | Ringkasan dashboard | Pindahkan rata-rata utilisasi dan total ghost ke `summary`, serta tambahkan jumlah ruang `maintenance` | Dashboard dan laporan (FE-04/06) |
-| BE-10 | Data demo | Merge seeder dari branch `feature/PAD-21-qa-seeder-strategy-test` dan putuskan apakah tipe `auditorium` ikut di-merge | Pengujian semua halaman |
-| BE-11 | Laporan utilisasi | Putuskan apakah laporan = data dashboard yang sama + tampilan cetak (tanpa logika baru), atau route terpisah. **Saat ini FE memakai dashboard + cetak** | Utilization Report (FE-06) |
-| BE-12 | Metrik konflik jadwal | Catat jumlah pengajuan yang ditolak karena bentrok (per ruang & periode), lalu kirim di data dashboard, mis. `rooms[].conflict_rejections` dan `summary.conflict_rejections`. Tanpa data ini laporan menampilkan "Tidak tersedia" | Metrik & rekomendasi konflik (FE-06) |
-| BE-13 | Jumlah booking per ruang | `RoomController@index` memakai `Room::withCount('bookings')` agar view bisa menyembunyikan tombol Hapus untuk ruang yang masih punya booking (FK `restrictOnDelete`) | Delete Room (FE-06) |
+Belum dikerjakan (jangan buat tombol/menu palsu): aturan operasional & hari libur, scheduler ghost/auto check-out,
+export CSV, notifikasi, filter jadwal (tanggal/ruang, minggu sebelumnya/berikutnya) dan filter booking, halaman panduan,
+fakultas pada akun user (topbar memakai teks tetap "Fakultas Rekayasa Industri"), waktu persetujuan booking (`approved_at`).
