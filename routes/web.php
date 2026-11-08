@@ -133,6 +133,12 @@ Route::middleware(['auth', 'active'])->group(function () {
         ])->name('facilities.destroy');
     });
 
+    // Detail ruang (semua user login). Didaftarkan setelah /rooms/create, /rooms/manage, /rooms/qr-codes.
+    Route::get('/rooms/{room}', [
+        RoomController::class,
+        'show',
+    ])->whereNumber('room')->name('rooms.show');
+
     // ==========================================
     // 3. JADWAL KULIAH & PRAKTIKUM (SCHEDULES)
     // ==========================================

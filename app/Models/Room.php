@@ -83,6 +83,18 @@ class Room extends BaseCampusEntity
         return Str::random(40);
     }
 
+    /**
+     * Jumlah komputer = jumlah fasilitas yang namanya mengandung "PC" / "Komputer" / "Computer".
+     * Memakai relasi facilities yang sudah di-eager-load (tanpa query tambahan bila sudah dimuat).
+     * 0 berarti ruang nonkomputer.
+     */
+    public function computerCount(): int
+    {
+        return (int) $this->facilities
+            ->filter(fn (Facility $f) => preg_match('/\b(pc|komputer|computer)\b/i', (string) $f->name) === 1)
+            ->sum(fn (Facility $f) => $f->getQuantity());
+    }
+
     public function typeLabel(): string
     {
         return self::TYPE_LABELS[(string) $this->type] ?? (string) $this->type;

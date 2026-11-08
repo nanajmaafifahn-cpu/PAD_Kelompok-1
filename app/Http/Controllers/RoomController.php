@@ -9,6 +9,7 @@ use App\Http\Requests\UpdateRoomRequest;
 use App\Models\AcademicUnit;
 use App\Models\Facility;
 use App\Models\Room;
+use App\Services\CalendarService;
 use App\Services\RoomService;
 use App\Services\RoomStatusService;
 use Illuminate\Http\RedirectResponse;
@@ -64,6 +65,24 @@ class RoomController extends Controller
         return view('rooms.create', [
             'academicUnits' => $academicUnits,
             'types' => Room::TYPE_LABELS,
+        ]);
+    }
+
+    /**
+     * Detail ruang untuk semua user login: foto, atribut, fasilitas, status live,
+     * dan kegiatan terdekat (jadwal kuliah + peminjaman disetujui).
+     */
+    public function show(Room $room, CalendarService $calendar): View
+    {
+        Gate::authorize('viewAny', Room::class);
+
+        $room->load(['academicUnit', 'facilities']);
+
+        return view('rooms.show', [
+            'room' => $room,
+            'liveStatus' => $this->roomStatus->forRooms([$room])[$room->id],
+            'computerCount' => $room->computerCount(),
+            'upcomingEvents' => $calendar->upcomingForRoom($room),
         ]);
     }
 
