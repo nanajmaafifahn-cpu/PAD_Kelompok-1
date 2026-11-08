@@ -63,7 +63,10 @@ class RoleDashboardTest extends TestCase
         $this->assertSame(Booking::where('status', 'pending')->count(), $stats['pending']);
         $this->assertCount(Room::count(), $response->viewData('liveStatuses'));
         $this->assertTrue($response->viewData('pendingBookings')->every(fn ($b) => $b->status === 'pending'));
-        $response->assertSee('Approve / Verify'); // pengelola boleh menyetujui langsung
+        // Pengelola boleh menyetujui / menolak langsung dari dashboard (form approve + dialog tolak).
+        $first = $response->viewData('pendingBookings')->first();
+        $response->assertSee(route('bookings.approve', $first), false)
+            ->assertSee('data-dialog-open="reject-' . $first->id . '"', false);
     }
 
     public function test_pimpinan_melihat_dashboard_pengelola_tanpa_tombol_ubah(): void
@@ -73,7 +76,7 @@ class RoleDashboardTest extends TestCase
         $this->get(route('dashboard'))
             ->assertOk()
             ->assertViewIs('dashboard.manager')
-            ->assertDontSee('Approve / Verify')
-            ->assertDontSee('Tolak Booking');
+            ->assertDontSee('/approve', false)
+            ->assertDontSee('data-dialog-open="reject-', false);
     }
 }
