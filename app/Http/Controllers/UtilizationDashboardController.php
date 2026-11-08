@@ -7,6 +7,11 @@ use App\Services\UtilizationDashboardService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\View\View;
 
+/**
+ * Controller untuk menyajikan Live Utilization Dashboard ruangan kampus.
+ * Menyediakan data komputasi utilisasi, perbandingan jadwal vs realisasi,
+ * dan deteksi ghost booking baik dalam format View Blade maupun JSON.
+ */
 class UtilizationDashboardController extends Controller
 {
     public function __construct(

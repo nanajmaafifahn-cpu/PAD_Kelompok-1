@@ -1,79 +1,89 @@
-{{-- FE-02 · Daftar Ruang/Laboratorium & Fasilitas
+{{-- Jelajahi Ruangan (rooms.index, semua user) — referensi 02-mhs-jelajahi-ruangan / 13-pengelola-jelajahi-ruangan.
      Variabel dari RoomController@index:
-       $rooms  paginator Room (dengan relasi academicUnit & facilities)
-     Data ditampilkan lewat getter/summary milik Model (getEntitySummary, getCapacity, getStatus). --}}
+       $rooms          paginator Room 12/halaman (relasi academicUnit & facilities, bookings_count), withQueryString()
+       $liveStatuses   [room_id => available|booked|occupied|maintenance] (RoomStatusService)
+       $filters        ['q', 'type', 'min_capacity', 'facility'] nilai filter aktif (E4)
+       $types          Room::TYPE_LABELS (kunci => label)
+       $facilityNames  daftar nama fasilitas unik untuk filter
+     Kelola ruang (ubah/hapus/fasilitas) ada di Ruangan & Foto (rooms.manage). --}}
 @extends('layouts.app')
 
-@section('title', 'Ruang & Laboratorium')
+@section('title', 'Jelajahi Ruangan')
+
+@php
+    $hasFilters = collect($filters ?? [])->filter(fn ($value) => filled($value))->isNotEmpty();
+@endphp
+
+@section('page_header')
+    <x-page-header eyebrow="Ruang untuk kegiatan Anda" title="Jelajahi laboratorium." crumb="Jelajahi Ruangan"
+                   subtitle="Temukan fasilitas dan kapasitas yang sesuai, lalu periksa jadwalnya.">
+        <x-slot:actions>
+            <a href="{{ route('schedules.index') }}" class="cs-btn cs-btn-secondary">Lihat Jadwal</a>
+        </x-slot:actions>
+    </x-page-header>
+@endsection
 
 @section('content')
-    <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-            <h1 class="text-2xl font-semibold text-slate-900">Ruang &amp; Laboratorium</h1>
-            <p class="mt-1 text-sm text-slate-500">Master data ruang kelas dan laboratorium beserta kapasitas, unit akademik, dan fasilitasnya.</p>
+    {{-- Filter (E4): GET query string, bertahan saat paginasi --}}
+    <x-filter-bar :action="route('rooms.index')" :reset="route('rooms.index')" :active="$hasFilters" :cols="5" label="Filter ruang">
+        <div class="md:col-span-2">
+            <label for="filter-q" class="cs-form-label">Cari ruangan</label>
+            <input id="filter-q" name="q" type="search" value="{{ $filters['q'] ?? '' }}" maxlength="100"
+                   placeholder="Nama ruangan atau kode lokasi…" class="cs-form-control">
         </div>
-        <a href="{{ route('rooms.create') }}"
-           class="inline-flex items-center justify-center rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white hover:bg-teal-800 focus:outline-none focus:ring-2 focus:ring-teal-600 focus:ring-offset-2">
-            + Tambah Ruang
-        </a>
-    </div>
+        <div>
+            <label for="filter-type" class="cs-form-label">Jenis</label>
+            <select id="filter-type" name="type" class="cs-form-control">
+                <option value="">Semua jenis</option>
+                @foreach ($types ?? [] as $value => $label)
+                    <option value="{{ $value }}" @selected(($filters['type'] ?? null) === $value)>{{ $label }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div>
+            <label for="filter-capacity" class="cs-form-label">Peserta</label>
+            <input id="filter-capacity" name="min_capacity" type="number" min="1" step="1" inputmode="numeric"
+                   value="{{ $filters['min_capacity'] ?? '' }}" placeholder="Jumlah" class="cs-form-control">
+        </div>
+        <div>
+            <label for="filter-facility" class="cs-form-label">Fasilitas</label>
+            <select id="filter-facility" name="facility" class="cs-form-control">
+                <option value="">Semua fasilitas</option>
+                @foreach ($facilityNames ?? [] as $name)
+                    <option value="{{ $name }}" @selected(($filters['facility'] ?? null) === $name)>{{ $name }}</option>
+                @endforeach
+            </select>
+        </div>
+    </x-filter-bar>
 
-    <div class="overflow-x-auto rounded-xl border border-slate-200 bg-white">
-        <table class="min-w-full divide-y divide-slate-200 text-sm">
-            <thead class="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                <tr>
-                    <th scope="col" class="px-4 py-3">Kode</th>
-                    <th scope="col" class="px-4 py-3">Ruang</th>
-                    <th scope="col" class="px-4 py-3">Unit Akademik</th>
-                    <th scope="col" class="px-4 py-3">Lokasi</th>
-                    <th scope="col" class="px-4 py-3 text-right">Kapasitas</th>
-                    <th scope="col" class="px-4 py-3">Status</th>
-                    <th scope="col" class="px-4 py-3">Fasilitas</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-100 align-top">
-                @forelse ($rooms as $room)
-                    <tr class="hover:bg-slate-50">
-                        <td class="whitespace-nowrap px-4 py-3 font-mono text-xs text-slate-600">{{ $room->code }}</td>
-                        <td class="px-4 py-3">
-                            <p class="font-medium text-slate-900">{{ $room->name }}</p>
-                            <p class="text-xs text-slate-500">{{ $room->getEntitySummary() }}</p>
-                        </td>
-                        <td class="px-4 py-3 text-slate-700">{{ $room->academicUnit?->name }}</td>
-                        <td class="px-4 py-3 text-slate-700">
-                            {{ $room->building }}
-                            <span class="block text-xs text-slate-500">Lantai {{ $room->floor ?? '-' }}</span>
-                        </td>
-                        <td class="px-4 py-3 text-right tabular-nums">{{ $room->getCapacity() }} <span class="text-xs text-slate-500">orang</span></td>
-                        <td class="px-4 py-3"><x-status-badge :status="$room->getStatus()" /></td>
-                        <td class="px-4 py-3">
-                            <ul class="flex max-w-xs flex-wrap gap-1.5">
-                                @forelse ($room->facilities as $facility)
-                                    <li class="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs text-slate-700"
-                                        title="{{ $facility->getEntitySummary() }}">
-                                        {{ $facility->name }}
-                                        <span class="tabular-nums text-slate-500">×{{ $facility->getQuantity() }}</span>
-                                        <x-status-badge :status="$facility->getStatus()" class="ml-0.5 px-1.5 text-[10px]" />
-                                    </li>
-                                @empty
-                                    <li class="text-xs text-slate-400">Belum ada fasilitas</li>
-                                @endforelse
-                            </ul>
-                        </td>
-                    </tr>
-                @empty
-                    <tr>
-                        <td colspan="7" class="px-4 py-10 text-center text-slate-500">
-                            Belum ada ruang terdaftar.
-                            <a href="{{ route('rooms.create') }}" class="font-medium text-teal-700 hover:underline">Tambah ruang pertama</a>.
-                        </td>
-                    </tr>
-                @endforelse
-            </tbody>
-        </table>
-    </div>
+    <section aria-labelledby="rooms-heading">
+        <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
+            <h2 id="rooms-heading" class="text-ink-soft" aria-live="polite">{{ $rooms->total() }} ruangan ditemukan</h2>
+            <span class="cs-badge" data-status="completed">FRI · Telkom University</span>
+        </div>
 
-    <div class="mt-4">
-        {{ $rooms->links() }}
-    </div>
+        @if ($rooms->isEmpty())
+            <div class="cs-card">
+                @if ($hasFilters)
+                    <x-empty-state title="Tidak ada ruangan yang cocok" text="Ubah kata kunci atau kurangi filter untuk melihat lebih banyak ruangan.">
+                        <a href="{{ route('rooms.index') }}" class="cs-btn cs-btn-secondary">Reset filter</a>
+                    </x-empty-state>
+                @else
+                    <x-empty-state title="Belum ada ruangan" text="Data ruang menjadi dasar jadwal, peminjaman, dan perhitungan utilisasi.">
+                        @can('create', \App\Models\Room::class)
+                            <a href="{{ route('rooms.create') }}" class="cs-btn cs-btn-primary">Tambah Ruang</a>
+                        @endcan
+                    </x-empty-state>
+                @endif
+            </div>
+        @else
+            <div class="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+                @foreach ($rooms as $room)
+                    <x-room-card :room="$room" :live-status="$liveStatuses[$room->id] ?? 'available'" />
+                @endforeach
+            </div>
+        @endif
+
+        <div class="mt-6">{{ $rooms->links() }}</div>
+    </section>
 @endsection

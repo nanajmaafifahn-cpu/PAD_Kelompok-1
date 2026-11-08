@@ -1,48 +1,147 @@
-{{-- FE-03 · Jadwal Ruang (dasar perhitungan Scheduled Utilization)
+{{-- Jadwal Ruangan (schedules.index) — referensi 04-mhs-jadwal / 12-pengelola-jadwal.
      Variabel dari ScheduleController@index:
-       $schedules  paginator Schedule (dengan relasi room)
-       $rooms      (opsional) collection Room untuk form tambah jadwal.
-                   Jika Controller belum mengirim $rooms, form tidak ditampilkan. --}}
+       $week        CalendarService::week(): start, end, total, days[7] (date, is_today, events)
+       $eventTypes  CalendarService::TYPE_LABELS (legenda: Jadwal kuliah / Peminjaman disetujui)
+       $schedules   paginator Schedule (relasi room) — tabel "Kelola jadwal" khusus pengelola/admin
+       $rooms       collection Room untuk form tambah jadwal (pengelola/admin)
+     Kalender hanya minggu berjalan: filter tanggal/ruang & Sebelumnya/Berikutnya belum didukung controller.
+     Form tambah & kolom Aksi (Ubah / Batalkan / Hapus) hanya untuk pengelola/admin (@can SchedulePolicy).
+     Nama field form = key StoreScheduleRequest: room_id, title, start_time, end_time (status otomatis "scheduled"). --}}
 @extends('layouts.app')
 
-@section('title', 'Jadwal Ruang')
+@use('App\Services\CalendarService')
+@use('App\Support\DateFormat')
+
+@section('title', 'Jadwal Ruangan')
+@section('inline_error_fields', 'room_id,title,start_time,end_time')
+
+@php
+    $canManage = auth()->user()->can('create', \App\Models\Schedule::class);
+@endphp
+
+@section('page_header')
+    <x-page-header eyebrow="Kalender laboratorium" title="Jadwal ruangan." crumb="Jadwal Ruangan"
+                   subtitle="Jadwal akademik dan peminjaman yang telah disetujui.">
+        @can('create', \App\Models\Booking::class)
+            <x-slot:actions>
+                <a href="{{ route('bookings.create') }}" class="cs-btn cs-btn-primary">Ajukan Peminjaman</a>
+            </x-slot:actions>
+        @endcan
+    </x-page-header>
+@endsection
 
 @section('content')
-    <div class="mb-6">
-        <h1 class="text-2xl font-semibold text-slate-900">Jadwal Ruang</h1>
-        <p class="mt-1 text-sm text-slate-500">Jadwal resmi perkuliahan/praktikum yang menjadi acuan <em>scheduled utilization</em>.</p>
-    </div>
+    <section aria-labelledby="week-heading" class="mb-10">
+        <div class="mb-4 flex flex-wrap items-end justify-between gap-3">
+            <h2 id="week-heading" class="text-2xl font-extrabold text-ink">{{ DateFormat::weekRange($week['start'], $week['end']) }}</h2>
+            <p class="text-sm text-ink-soft">WIB · {{ $week['total'] }} kegiatan</p>
+        </div>
 
+        <ul class="mb-4 flex flex-wrap gap-4 text-sm" aria-label="Keterangan warna">
+            @foreach ($eventTypes as $type => $label)
+                <li class="cs-calendar-legend" data-type="{{ $type }}">{{ $label }}</li>
+            @endforeach
+        </ul>
+
+        <ol class="cs-calendar">
+            @foreach ($week['days'] as $day)
+                <li class="cs-calendar-day" @if ($day['is_today']) data-today="true" aria-current="date" @endif>
+                    <p class="cs-calendar-dayname">{{ DateFormat::dayName($day['date']) }}</p>
+                    <p class="cs-calendar-date">
+                        <time datetime="{{ $day['date']->toDateString() }}">{{ $day['date']->format('d') }}</time>
+                        <span class="text-sm font-semibold text-ink-muted lg:hidden">{{ DateFormat::monthYear($day['date']) }}</span>
+                    </p>
+
+                    @forelse ($day['events'] as $event)
+                        <div class="cs-calendar-event" data-type="{{ $event['type'] }}">
+                            <p class="text-xs font-bold tabular-nums">{{ DateFormat::time($event['start']) }}–{{ DateFormat::time($event['end']) }}</p>
+                            <p class="text-xs">{{ $event['room_name'] }}</p>
+                            <p class="mt-0.5 text-sm font-semibold leading-snug">{{ $event['title'] }}</p>
+                            <span class="sr-only">({{ $eventTypes[$event['type']] }})</span>
+                        </div>
+                    @empty
+                        <p class="cs-calendar-empty">Belum ada jadwal</p>
+                    @endforelse
+                </li>
+            @endforeach
+        </ol>
+
+        <p class="cs-alert cs-alert-info mt-6 mb-0">
+            Slot kosong pada kalender menunjukkan belum ada jadwal kuliah atau peminjaman yang disetujui.
+            Pengajuan baru tetap melalui pemeriksaan pengelola.
+        </p>
+    </section>
+
+    @if ($canManage)
+    <h2 class="mb-4 text-2xl font-extrabold text-ink">Kelola jadwal</h2>
     <div class="flex flex-col gap-6 lg:flex-row lg:items-start">
         {{-- Daftar jadwal --}}
-        <div class="min-w-0 flex-1">
-            <div class="overflow-x-auto rounded-xl border border-slate-200 bg-white">
-                <table class="min-w-full divide-y divide-slate-200 text-sm">
-                    <thead class="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+        <section aria-labelledby="schedules-heading" class="min-w-0 flex-1">
+            <h2 id="schedules-heading" class="sr-only">Daftar jadwal</h2>
+
+            <div class="cs-table-wrap cs-table-wrap-stack" role="region" aria-labelledby="schedules-heading" tabindex="0">
+                <table class="cs-table cs-table-stack">
+                    <caption class="sr-only">
+                        Daftar jadwal ruang urut waktu mulai, halaman {{ $schedules->currentPage() }} dari {{ $schedules->lastPage() }}
+                    </caption>
+                    <thead>
                         <tr>
-                            <th scope="col" class="px-4 py-3">Kegiatan</th>
-                            <th scope="col" class="px-4 py-3">Ruang</th>
-                            <th scope="col" class="px-4 py-3">Waktu</th>
-                            <th scope="col" class="px-4 py-3">Status</th>
+                            <th scope="col">Kegiatan</th>
+                            <th scope="col">Ruang</th>
+                            <th scope="col">Hari &amp; Tanggal</th>
+                            <th scope="col">Waktu</th>
+                            <th scope="col">Status</th>
+                            @if ($canManage)
+                                <th scope="col">Tindakan</th>
+                            @endif
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-slate-100">
+                    <tbody>
                         @forelse ($schedules as $schedule)
-                            <tr class="hover:bg-slate-50">
-                                <td class="px-4 py-3 font-medium text-slate-900">{{ $schedule->title }}</td>
-                                <td class="px-4 py-3">
-                                    <p class="text-slate-900">{{ $schedule->room?->name }}</p>
-                                    <p class="font-mono text-xs text-slate-500">{{ $schedule->room?->code }}</p>
+                            <tr>
+                                <th scope="row"><span class="font-medium text-ink">{{ $schedule->title }}</span></th>
+                                <td data-label="Ruang">
+                                    <span class="block text-ink">{{ $schedule->room?->name }}</span>
+                                    <span class="cs-code">{{ $schedule->room?->code }}</span>
                                 </td>
-                                <td class="whitespace-nowrap px-4 py-3">
-                                    <p class="text-slate-900">{{ $schedule->start_time->format('d M Y') }}</p>
-                                    <p class="text-xs tabular-nums text-slate-500">{{ $schedule->start_time->format('H:i') }} – {{ $schedule->end_time->format('H:i') }}</p>
+                                <td data-label="Hari & Tanggal" class="cs-cell-nowrap">
+                                    <time datetime="{{ $schedule->start_time->toDateString() }}">{{ DateFormat::longDate($schedule->start_time) }}</time>
                                 </td>
-                                <td class="px-4 py-3"><x-status-badge :status="$schedule->status" /></td>
+                                <td data-label="Waktu" class="cs-cell-nowrap tabular-nums">
+                                    <time datetime="{{ $schedule->start_time->toIso8601String() }}">{{ DateFormat::time($schedule->start_time) }}</time>
+                                    –
+                                    <time datetime="{{ $schedule->end_time->toIso8601String() }}">{{ DateFormat::time($schedule->end_time) }}</time> WIB
+                                    @unless ($schedule->start_time->isSameDay($schedule->end_time))
+                                        <span class="block text-xs text-ink-muted">s/d {{ DateFormat::date($schedule->end_time) }}</span>
+                                    @endunless
+                                </td>
+                                <td data-label="Status"><x-status-badge :status="$schedule->status" /></td>
+                                @if ($canManage)
+                                    <td data-label="Tindakan">
+                                        <div class="cs-actions">
+                                            <a href="{{ route('schedules.edit', $schedule) }}" class="cs-btn cs-btn-secondary cs-btn-sm">
+                                                Ubah<span class="sr-only"> {{ $schedule->title }}</span>
+                                            </a>
+                                            @if ($schedule->status !== \App\Services\ScheduleService::STATUS_CANCELLED)
+                                                <x-route-form route="schedules.cancel" :params="$schedule" confirm="Batalkan jadwal {{ $schedule->title }}? Jam terjadwal ruang akan berkurang.">
+                                                    <button type="submit" class="cs-btn cs-btn-ghost cs-btn-sm">Batalkan</button>
+                                                </x-route-form>
+                                            @endif
+                                            <x-route-form route="schedules.destroy" :params="$schedule" confirm="Hapus jadwal {{ $schedule->title }}? Tindakan ini tidak dapat dibatalkan.">
+                                                <button type="submit" class="cs-btn cs-btn-danger cs-btn-sm">Hapus</button>
+                                            </x-route-form>
+                                        </div>
+                                    </td>
+                                @endif
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="4" class="px-4 py-10 text-center text-slate-500">Belum ada jadwal.</td>
+                                <td colspan="{{ $canManage ? 6 : 5 }}">
+                                    <div class="cs-empty-state">
+                                        <p class="cs-empty-state-title">Belum ada jadwal.</p>
+                                        <p class="mt-1">Jadwal resmi perkuliahan dan praktikum akan muncul di sini dan dihitung sebagai jam terjadwal ruang.</p>
+                                    </div>
+                                </td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -52,60 +151,21 @@
             <div class="mt-4">
                 {{ $schedules->links() }}
             </div>
-        </div>
+        </section>
 
-        {{-- Form tambah jadwal --}}
-        @isset($rooms)
-            <form method="POST" action="{{ route('schedules.store') }}" class="w-full shrink-0 space-y-4 rounded-xl lg:w-80 border border-slate-200 bg-white p-5">
-                @csrf
-                <h2 class="text-sm font-semibold text-slate-900">Tambah Jadwal</h2>
+        {{-- Sidebar: form tambah jadwal (pengelola/admin) --}}
+        @if ($canManage)
+            <aside aria-labelledby="schedule-form-heading" class="w-full shrink-0 lg:w-80">
+                <form method="POST" action="{{ route('schedules.store') }}" class="cs-card cs-card-body space-y-4" data-cs-validate>
+                    @csrf
+                    <h2 id="schedule-form-heading" class="cs-section-title">Tambah Jadwal</h2>
 
-                <div>
-                    <label for="room_id" class="block text-sm font-medium text-slate-700">Ruang <span class="text-rose-600">*</span></label>
-                    <select id="room_id" name="room_id" required
-                            class="mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600">
-                        <option value="">— Pilih ruang —</option>
-                        @foreach ($rooms as $room)
-                            <option value="{{ $room->id }}" @selected(old('room_id') == $room->id)>{{ $room->code }} — {{ $room->name }}</option>
-                        @endforeach
-                    </select>
-                    @error('room_id')
-                        <p class="mt-1 text-xs text-rose-600">{{ $message }}</p>
-                    @enderror
-                </div>
+                    @include('schedules.partials.form', ['schedule' => null])
 
-                <div>
-                    <label for="title" class="block text-sm font-medium text-slate-700">Nama Kegiatan <span class="text-rose-600">*</span></label>
-                    <input id="title" name="title" type="text" value="{{ old('title') }}" required maxlength="150" placeholder="Praktikum ALPRO"
-                           class="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600">
-                    @error('title')
-                        <p class="mt-1 text-xs text-rose-600">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <div>
-                    <label for="start_time" class="block text-sm font-medium text-slate-700">Mulai <span class="text-rose-600">*</span></label>
-                    <input id="start_time" name="start_time" type="datetime-local" value="{{ old('start_time') }}" required
-                           class="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600">
-                    @error('start_time')
-                        <p class="mt-1 text-xs text-rose-600">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <div>
-                    <label for="end_time" class="block text-sm font-medium text-slate-700">Selesai <span class="text-rose-600">*</span></label>
-                    <input id="end_time" name="end_time" type="datetime-local" value="{{ old('end_time') }}" required
-                           class="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600">
-                    @error('end_time')
-                        <p class="mt-1 text-xs text-rose-600">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <button type="submit"
-                        class="w-full rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white hover:bg-teal-800 focus:outline-none focus:ring-2 focus:ring-teal-600 focus:ring-offset-2">
-                    Simpan Jadwal
-                </button>
-            </form>
-        @endisset
+                    <button type="submit" class="cs-btn cs-btn-primary w-full">Simpan Jadwal</button>
+                </form>
+            </aside>
+        @endif
     </div>
+    @endif
 @endsection

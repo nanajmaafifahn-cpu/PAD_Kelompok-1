@@ -14,7 +14,9 @@ class UtilizationDashboardRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        // Halaman HTML untuk semua user login; data JSON hanya pengelola, admin, pimpinan.
+        return ! $this->expectsJson()
+            || $this->user()->can('view-utilization-data');
     }
 
     public function rules(): array

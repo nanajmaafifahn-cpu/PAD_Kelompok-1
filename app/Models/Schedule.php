@@ -6,6 +6,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Schedule extends BaseCampusEntity
 {
+    public const STATUS_LABELS = [
+        'scheduled' => 'Terjadwal',
+        'cancelled' => 'Dibatalkan',
+    ];
+
     protected $fillable = [
         'room_id',
         'title',

@@ -6,6 +6,7 @@ use App\Exceptions\BookingException;
 use App\Models\Booking;
 use App\Models\Room;
 use App\Models\User;
+use App\Support\Scan\ScanResult;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -26,6 +27,34 @@ class BookingService
             ->paginate($perPage);
     }
 
+    /** Riwayat peminjaman milik satu user (halaman "Peminjaman Saya"). */
+    public function paginateBookingsOf(User $owner, int $perPage = 10): LengthAwarePaginator
+    {
+        return Booking::with(['room', 'user'])
+            ->where('user_id', $owner->id)
+            ->orderByDesc('start_time')
+            ->paginate($perPage);
+    }
+
+    /** Jumlah pengajuan yang menunggu persetujuan pengelola. */
+    public function pendingCount(): int
+    {
+        return Booking::query()->where('status', Booking::STATUS_PENDING)->count();
+    }
+
+    /**
+     * Antrean persetujuan: pengajuan pending dengan waktu mulai paling dekat lebih dulu
+     * (yang sudah lewat waktu mulainya tetap ikut agar bisa ditolak / dihapus).
+     */
+    public function pendingQueue(int $limit = 5): EloquentCollection
+    {
+        return Booking::with(['room', 'user'])
+            ->where('status', Booking::STATUS_PENDING)
+            ->orderBy('start_time')
+            ->limit($limit)
+            ->get();
+    }
+
     /** Ruangan untuk pilihan di form peminjaman. */
     public function roomsForBooking(): EloquentCollection
     {
@@ -33,7 +62,8 @@ class BookingService
     }
 
     /**
-     * Ajukan peminjaman baru (status awal: pending).
+     * Ajukan peminjaman baru (status awal: pending) atas nama user yang login.
+     * Nama & peran pemohon diambil dari akun, bukan dari input form.
      *
      * @param array{room_id:int,purpose:string,participant_count:int,start_time:mixed,end_time:mixed} $data
      *
@@ -46,6 +76,8 @@ class BookingService
         $booking = new Booking([
             'room_id' => $room->id,
             'user_id' => $user->id,
+            'requester_name' => $user->name,
+            'requester_role' => $user->roleLabel(),
             'purpose' => $data['purpose'],
             'participant_count' => $data['participant_count'],
             'start_time' => $data['start_time'],
@@ -53,11 +85,80 @@ class BookingService
             'status' => Booking::STATUS_PENDING,
         ]);
 
+        $this->checkStartInFuture($booking);
         $this->checkRoomAvailability($room);
         $this->checkCapacity($room, $booking->participant_count);
         $this->checkScheduleConflict($booking);
 
         return $this->saveBooking($booking);
+    }
+
+    /**
+     * Ubah booking (C2): hanya pemilik, hanya selama pending. Validasi diulang penuh.
+     *
+     * @param array{room_id:int,purpose:string,participant_count:int,start_time:mixed,end_time:mixed} $data
+     *
+     * @throws BookingException
+     */
+    public function updateBooking(Booking $booking, User $user, array $data): Booking
+    {
+        $this->assertOwner($booking, $user);
+        $this->assertPending($booking, 'diubah');
+
+        $room = Room::findOrFail($data['room_id']);
+
+        $booking->fill([
+            'room_id' => $room->id,
+            'purpose' => $data['purpose'],
+            'participant_count' => $data['participant_count'],
+            'start_time' => $data['start_time'],
+            'end_time' => $data['end_time'],
+        ]);
+
+        $this->checkStartInFuture($booking);
+        $this->checkRoomAvailability($room);
+        $this->checkCapacity($room, $booking->participant_count);
+        $this->checkScheduleConflict($booking);
+
+        return $this->saveBooking($booking);
+    }
+
+    /**
+     * Batalkan booking (C2): hanya pemilik, status pending/approved, dan belum dimulai.
+     *
+     * @throws BookingException
+     */
+    public function cancelBooking(Booking $booking, User $user, ?CarbonInterface $now = null): Booking
+    {
+        $this->assertOwner($booking, $user);
+
+        if (! in_array($booking->getStatus(), [Booking::STATUS_PENDING, Booking::STATUS_APPROVED], true)) {
+            throw BookingException::invalidState('dibatalkan', $booking->getStatus());
+        }
+
+        if ($booking->start_time->lte($now ?? now())) {
+            throw BookingException::cannotCancelStarted();
+        }
+
+        $booking->setStatus(Booking::STATUS_CANCELLED);
+        $booking->save();
+
+        return $booking;
+    }
+
+    /**
+     * Hapus booking (C2, pengelola/admin). Hanya untuk booking yang tidak dipakai laporan
+     * utilisasi (pending, rejected, cancelled); riwayat approved/checked_in/completed/no_show dijaga.
+     *
+     * @throws BookingException
+     */
+    public function deleteBooking(Booking $booking): void
+    {
+        if (! in_array($booking->getStatus(), Booking::DELETABLE_STATUSES, true)) {
+            throw BookingException::invalidState('dihapus', $booking->getStatus());
+        }
+
+        $booking->delete();
     }
 
     /**
@@ -140,6 +241,142 @@ class BookingService
     }
 
     /**
+     * Evaluasi scan QR ruangan TANPA mengubah data (dipakai halaman hasil pindai).
+     * Hanya booking milik $user di ruangan ini yang dipertimbangkan (B3):
+     *  - status checked_in             -> check-out
+     *  - approved & dalam jendela      -> check-in
+     *  - selain itu                    -> alasan penolakan yang spesifik
+     */
+    public function evaluateScan(User $user, Room $room, ?CarbonInterface $now = null): ScanResult
+    {
+        $now ??= now();
+        $roomName = (string) $room->name;
+
+        $mine = fn () => Booking::query()
+            ->where('user_id', $user->id)
+            ->where('room_id', $room->id);
+
+        $checkedIn = $mine()
+            ->where('status', Booking::STATUS_CHECKED_IN)
+            ->orderBy('start_time')
+            ->first();
+
+        if ($checkedIn) {
+            return ScanResult::checkOut(
+                $checkedIn,
+                "Anda sedang memakai ruang {$roomName}. Konfirmasi check-out bila sudah selesai."
+            );
+        }
+
+        // Booking hari ini (overlap dengan tanggal $now).
+        $today = fn () => $mine()
+            ->where('start_time', '<=', $now->copy()->endOfDay())
+            ->where('end_time', '>=', $now->copy()->startOfDay())
+            ->orderBy('start_time');
+
+        $approved = $today()->where('status', Booking::STATUS_APPROVED)->get();
+
+        $open = $approved->first(
+            fn (Booking $b) => $now->gte($b->checkInOpensAt()) && $now->lte($b->checkInClosesAt())
+        );
+
+        if ($open) {
+            return ScanResult::checkIn(
+                $open,
+                "Peminjaman Anda di ruang {$roomName} pukul {$open->start_time->format('H.i')}"
+                . "–{$open->end_time->format('H.i T')} siap check-in."
+            );
+        }
+
+        if ($upcoming = $approved->first(fn (Booking $b) => $now->lt($b->checkInOpensAt()))) {
+            return ScanResult::denied(
+                BookingException::checkInNotYetOpen($upcoming->checkInOpensAt())->getMessage(),
+                $upcoming
+            );
+        }
+
+        if ($missed = $approved->first()) {
+            return ScanResult::denied(
+                BookingException::checkInClosed($missed->checkInClosesAt())->getMessage(),
+                $missed
+            );
+        }
+
+        if ($pending = $today()->where('status', Booking::STATUS_PENDING)->first()) {
+            return ScanResult::denied(
+                BookingException::bookingStillPending($roomName)->getMessage(),
+                $pending
+            );
+        }
+
+        return ScanResult::denied(BookingException::noApprovedBookingToday($roomName)->getMessage());
+    }
+
+    /**
+     * Jalankan check-in / check-out hasil scan QR ruangan.
+     *
+     * @throws BookingException bila tidak ada aksi yang boleh dilakukan
+     */
+    public function scanRoom(User $user, Room $room, ?CarbonInterface $now = null): ScanResult
+    {
+        $now ??= now();
+
+        return DB::transaction(function () use ($user, $room, $now) {
+            $result = $this->evaluateScan($user, $room, $now);
+
+            if (! $result->isAllowed()) {
+                throw new BookingException($result->message);
+            }
+
+            $booking = Booking::query()->lockForUpdate()->findOrFail($result->booking->id);
+
+            if ($result->action === ScanResult::ACTION_CHECK_OUT) {
+                $booking->performCheckOut($now);
+            } else {
+                $booking->performCheckIn($now);
+            }
+
+            return $result->action === ScanResult::ACTION_CHECK_OUT
+                ? ScanResult::checkOut($booking, "Check-out ruang {$room->name} berhasil. Ruangan kembali tersedia.")
+                : ScanResult::checkIn($booking, "Check-in ruang {$room->name} berhasil. Selamat menggunakan ruangan.");
+        });
+    }
+
+    /**
+     * Input manual di halaman pemindai: URL hasil QR, token QR ruangan,
+     * atau kode cadangan booking milik user. Hasilnya ruangan yang akan dievaluasi.
+     *
+     * @throws BookingException
+     */
+    public function resolveScanCode(User $user, string $code): Room
+    {
+        $code = trim($code);
+
+        // URL dari QR, misalnya http://192.168.1.10:8000/scan/{token}
+        if (preg_match('~/scan/([A-Za-z0-9]+)/?(?:[?#].*)?$~', $code, $match)) {
+            $code = $match[1];
+        }
+
+        $room = Room::query()->where('qr_token', $code)->first();
+
+        if ($room) {
+            return $room;
+        }
+
+        $booking = Booking::query()
+            ->with('room')
+            ->where('user_id', $user->id)
+            ->where('qr_token', $code)
+            ->first();
+
+        if ($booking?->room) {
+            return $booking->room;
+        }
+
+        throw BookingException::unknownScanCode();
+    }
+
+    /**
      * Tandai semua booking approved yang melewati toleransi sebagai no_show.
      * Aman dipanggil berulang (idempotent).
      *
@@ -178,6 +415,23 @@ class BookingService
     {
         if ($booking->getStatus() !== Booking::STATUS_PENDING) {
             throw BookingException::invalidState($action, $booking->getStatus());
+        }
+    }
+
+    private function assertOwner(Booking $booking, User $user): void
+    {
+        if ((int) $booking->user_id !== (int) $user->id) {
+            throw BookingException::notOwner();
+        }
+    }
+
+    // D3: dicek ulang di service walau FormRequest sudah memakai after:now.
+    private function checkStartInFuture(Booking $booking): void
+    {
+        $start = $booking->getAttribute('start_time');
+
+        if ($start === null || $start->lte(now())) {
+            throw BookingException::startInPast();
         }
     }
 

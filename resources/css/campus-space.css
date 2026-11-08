@@ -1,0 +1,2141 @@
+/* =============================================================================
+   campus-space.css — Design tokens & komponen UI Campus Space (FE-04)
+
+   Cara dimuat:
+   - Mode Vite  : di-import oleh resources/css/app.css (setelah Tailwind).
+   - Mode CDN   : bila belum ada build, layouts/app.blade.php menyisipkan file ini
+                  ke <style type="text/tailwindcss"> agar tampilan tetap sama.
+   Karena itu komponen ditulis sebagai CSS biasa berbasis variabel (bukan @apply),
+   sehingga berjalan identik di kedua mode.
+   PENTING: jangan menulis kata "at-import" (simbol @ + import) di mana pun dalam file ini,
+   termasuk di komentar. Script Tailwind CDN hanya menambahkan Tailwind otomatis bila
+   kata tersebut TIDAK ditemukan; jika ada, seluruh utility Tailwind tidak dimuat.
+
+   Isi:
+   1. Design tokens (CSS variables, prefiks --cs-)
+   2. Pemetaan token ke tema Tailwind (utility: bg-primary, text-ink, dst.)
+   3. Base (fokus keyboard, reduced motion)
+   4. Komponen (prefiks .cs- agar tidak bentrok dengan utility Tailwind,
+      misalnya `table` dan `container` yang sudah dipakai Tailwind)
+   5. Variasi status (data-status) untuk badge & indikator
+
+   Komponen berada di @layer components, jadi utility Tailwind tetap bisa
+   menimpanya bila perlu, contoh: class="cs-btn cs-btn-primary w-full".
+   ============================================================================= */
+
+/* -----------------------------------------------------------------------------
+   1. DESIGN TOKENS
+   ----------------------------------------------------------------------------- */
+:root {
+    /* Warna merek & permukaan (PROMPT 2 · referensi prototipe sidebar navy + teal).
+       Teal referensi ±#0E9F97 hanya 3.27:1 terhadap teks putih, jadi dipakai #0A7E78
+       (4.92:1 dengan putih, 4.54:1 di atas latar #F3F6FA) agar tetap ≥ 4.5:1. */
+    --cs-color-primary: #0a7e78;
+    --cs-color-primary-hover: #086661;
+    --cs-color-primary-soft: #e6f6f5;
+    --cs-color-primary-bright: #2dd4bf;   /* aksen di atas navy (8.27:1) */
+    --cs-color-secondary: #13315c;        /* navy judul */
+    --cs-color-secondary-hover: #0b2545;
+    --cs-color-secondary-soft: #e8eef6;
+    --cs-color-background: #f3f6fa;       /* latar konten abu kebiruan */
+    --cs-color-surface: #ffffff;
+    --cs-color-surface-muted: #eef2f7;
+    --cs-color-border: #e3e8ef;
+    --cs-color-border-strong: #cbd5e1;
+    --cs-color-focus: #0a7e78;
+
+    /* Sidebar */
+    --cs-sidebar-width: 18rem;            /* ±290px */
+    --cs-sidebar-bg: #0b2545;
+    --cs-sidebar-text: rgb(255 255 255 / 0.85);
+    --cs-sidebar-text-muted: #9fb3c8;     /* label grup (7.15:1) */
+    --cs-sidebar-active-bg: rgb(255 255 255 / 0.08);
+    --cs-sidebar-card-bg: rgb(255 255 255 / 0.06);
+
+    /* Teks (kontras ≥ 4.5:1 terhadap surface & background) */
+    --cs-color-text-primary: #13315c;     /* navy: judul & teks utama (11.95:1) */
+    --cs-color-text-body: #1e293b;
+    --cs-color-text-secondary: #475569;
+    --cs-color-text-muted: #556377;       /* ≥ 5:1 di atas #F3F6FA */
+
+    /* Warna semantik: <nama> = teks/garis, -soft = latar, -solid = titik/bar */
+    --cs-color-success: #047857;          /* emerald-700 */
+    --cs-color-success-soft: #ecfdf5;
+    --cs-color-success-solid: #10b981;
+    --cs-color-warning: #b45309;          /* amber-700 */
+    --cs-color-warning-soft: #fffbeb;
+    --cs-color-warning-solid: #f59e0b;
+    --cs-color-danger: #be123c;           /* rose-700 */
+    --cs-color-danger-hover: #9f1239;
+    --cs-color-danger-soft: #fff1f2;
+    --cs-color-danger-solid: #f43f5e;
+    --cs-color-info: #0369a1;             /* sky-700 */
+    --cs-color-info-soft: #f0f9ff;
+    --cs-color-info-solid: #0ea5e9;
+    --cs-color-ghost: #6d28d9;            /* violet-700: ghost booking (no_show) */
+    --cs-color-ghost-soft: #f5f3ff;
+    --cs-color-ghost-solid: #8b5cf6;
+    --cs-color-neutral: #334155;          /* slate-700 */
+    --cs-color-neutral-soft: #f1f5f9;
+    --cs-color-neutral-solid: #94a3b8;
+
+    /* Status live ruang (nilai backend: available | booked | occupied) */
+    --cs-color-available: var(--cs-color-success);
+    --cs-color-available-soft: var(--cs-color-success-soft);
+    --cs-color-available-solid: var(--cs-color-success-solid);
+    --cs-color-booked: var(--cs-color-warning);
+    --cs-color-booked-soft: var(--cs-color-warning-soft);
+    --cs-color-booked-solid: var(--cs-color-warning-solid);
+    --cs-color-occupied: var(--cs-color-info);
+    --cs-color-occupied-soft: var(--cs-color-info-soft);
+    --cs-color-occupied-solid: var(--cs-color-info-solid);
+
+    /* Tipografi */
+    --cs-font-family: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+        'Segoe UI Symbol', 'Noto Color Emoji';
+    --cs-font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+    --cs-text-heading: 2rem;              /* h1 halaman (ponsel) */
+    --cs-text-heading-line: 2.375rem;
+    --cs-text-heading-lg: 3rem;           /* h1 halaman (desktop) */
+    --cs-text-eyebrow: 0.75rem;
+    --cs-letter-spacing-eyebrow: 0.2em;
+    --cs-letter-spacing-tight: -0.03em;
+    --cs-font-weight-bold: 700;
+    --cs-font-weight-extrabold: 800;
+    --cs-text-subheading: 1rem;           /* h2 section */
+    --cs-text-body: 0.875rem;
+    --cs-text-label: 0.875rem;
+    --cs-text-caption: 0.75rem;
+    --cs-text-table: 0.875rem;
+    --cs-text-table-head: 0.75rem;
+    --cs-text-stat: 1.875rem;             /* angka KPI */
+    --cs-font-weight-medium: 500;
+    --cs-font-weight-semibold: 600;
+    --cs-letter-spacing-caps: 0.05em;
+
+    /* Spasi */
+    --cs-space-1: 0.25rem;
+    --cs-space-2: 0.5rem;
+    --cs-space-3: 0.75rem;
+    --cs-space-4: 1rem;
+    --cs-space-5: 1.25rem;
+    --cs-space-6: 1.5rem;
+    --cs-space-8: 2rem;
+    --cs-space-10: 2.5rem;
+
+    /* Radius & bayangan */
+    --cs-radius-sm: 0.375rem;
+    --cs-radius-md: 0.5rem;
+    --cs-radius-lg: 0.75rem;
+    --cs-radius-xl: 1rem;                 /* kartu (±16px) */
+    --cs-radius-full: 9999px;
+    --cs-shadow-xs: 0 1px 2px 0 rgb(15 23 42 / 0.05);
+    --cs-shadow-sm: 0 1px 3px 0 rgb(15 23 42 / 0.1), 0 1px 2px -1px rgb(15 23 42 / 0.1);
+    --cs-focus-ring: 0 0 0 3px rgb(13 148 136 / 0.25);
+
+    /* Container */
+    --cs-container-max: 80rem;            /* = max-w-7xl */
+    --cs-container-narrow: 48rem;         /* = max-w-3xl, untuk halaman form */
+    --cs-container-padding: 1rem;
+    --cs-container-padding-wide: 1.5rem;  /* mulai breakpoint sm */
+}
+
+/* -----------------------------------------------------------------------------
+   2. PEMETAAN KE TEMA TAILWIND
+   Token di atas bisa dipakai sebagai utility, mis. bg-primary, text-ink-muted,
+   border-border, bg-available-soft. Breakpoint ditulis eksplisit (nilai sama
+   dengan default Tailwind) sebagai token responsif proyek.
+   ----------------------------------------------------------------------------- */
+@theme {
+    --font-sans: var(--cs-font-family);
+    --font-mono: var(--cs-font-mono);
+
+    --color-primary: var(--cs-color-primary);
+    --color-primary-soft: var(--cs-color-primary-soft);
+    --color-secondary: var(--cs-color-secondary);
+    --color-secondary-soft: var(--cs-color-secondary-soft);
+    --color-background: var(--cs-color-background);
+    --color-surface: var(--cs-color-surface);
+    --color-border: var(--cs-color-border);
+    --color-ink: var(--cs-color-text-primary);
+    --color-ink-body: var(--cs-color-text-body);
+    --color-ink-soft: var(--cs-color-text-secondary);
+    --color-ink-muted: var(--cs-color-text-muted);
+    --color-success: var(--cs-color-success);
+    --color-warning: var(--cs-color-warning);
+    --color-danger: var(--cs-color-danger);
+    --color-info: var(--cs-color-info);
+    --color-available: var(--cs-color-available-solid);
+    --color-booked: var(--cs-color-booked-solid);
+    --color-occupied: var(--cs-color-occupied-solid);
+
+    --breakpoint-sm: 40rem;   /* 640px  */
+    --breakpoint-md: 48rem;   /* 768px  */
+    --breakpoint-lg: 64rem;   /* 1024px */
+    --breakpoint-xl: 80rem;   /* 1280px */
+    --breakpoint-2xl: 96rem;  /* 1536px */
+}
+
+/* -----------------------------------------------------------------------------
+   3. BASE
+   ----------------------------------------------------------------------------- */
+@layer base {
+    body {
+        min-height: 100vh;
+        background-color: var(--cs-color-background);
+        color: var(--cs-color-text-body);
+        font-family: var(--cs-font-family);
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* Fokus keyboard selalu terlihat */
+    :focus-visible {
+        outline: 2px solid var(--cs-color-focus);
+        outline-offset: 2px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        *,
+        ::before,
+        ::after {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+            scroll-behavior: auto !important;
+        }
+    }
+}
+
+/* -----------------------------------------------------------------------------
+   4. KOMPONEN
+   ----------------------------------------------------------------------------- */
+@layer components {
+    /* ---------- Layout ---------- */
+    .cs-container {
+        width: 100%;
+        max-width: var(--cs-container-max);
+        margin-inline: auto;
+        padding-inline: var(--cs-container-padding);
+    }
+
+    .cs-container-narrow {
+        width: 100%;
+        max-width: var(--cs-container-narrow);
+        margin-inline: auto;
+    }
+
+    @media (width >= 40rem) {
+        .cs-container {
+            padding-inline: var(--cs-container-padding-wide);
+        }
+    }
+
+    .cs-skip-link {
+        position: absolute;
+        top: calc(-1 * var(--cs-space-10) - var(--cs-space-4));
+        left: var(--cs-space-4);
+        z-index: 50;
+        border-radius: var(--cs-radius-md);
+        background-color: var(--cs-color-primary);
+        padding: var(--cs-space-2) var(--cs-space-4);
+        color: #ffffff;
+        font-size: var(--cs-text-body);
+        font-weight: var(--cs-font-weight-semibold);
+        text-decoration: none;
+    }
+
+    .cs-skip-link:focus {
+        top: var(--cs-space-4);
+    }
+
+    .cs-site-header {
+        border-bottom: 1px solid var(--cs-color-border);
+        background-color: var(--cs-color-surface);
+    }
+
+    .cs-site-footer {
+        padding-bottom: var(--cs-space-8);
+        color: var(--cs-color-text-muted);
+        font-size: var(--cs-text-caption);
+    }
+
+    /* ---------- Brand & navigasi ---------- */
+    .cs-brand {
+        display: flex;
+        align-items: center;
+        gap: var(--cs-space-2);
+        border-radius: var(--cs-radius-md);
+        text-decoration: none;
+    }
+
+    .cs-brand-mark {
+        display: grid;
+        place-items: center;
+        width: 2rem;
+        height: 2rem;
+        border-radius: var(--cs-radius-md);
+        background-color: var(--cs-color-primary);
+        color: #ffffff;
+        font-size: var(--cs-text-body);
+        font-weight: 700;
+    }
+
+    .cs-brand-name {
+        display: block;
+        color: var(--cs-color-text-primary);
+        font-size: var(--cs-text-body);
+        font-weight: var(--cs-font-weight-semibold);
+        line-height: 1.25;
+    }
+
+    .cs-brand-tagline {
+        display: block;
+        color: var(--cs-color-text-muted);
+        font-size: var(--cs-text-caption);
+        line-height: 1.25;
+    }
+
+    /* Mobile: menu satu baris, kolom sama lebar (tanpa scroll horizontal).
+       Mulai breakpoint sm: kembali ke deret flex di kanan header. */
+    .cs-nav-list {
+        display: grid;
+        grid-auto-columns: minmax(0, 1fr);
+        grid-auto-flow: column;
+        gap: var(--cs-space-1);
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        font-size: 0.8125rem;
+    }
+
+    .cs-nav-link {
+        display: block;
+        border-radius: var(--cs-radius-md);
+        padding: var(--cs-space-2) var(--cs-space-1);
+        color: var(--cs-color-text-secondary);
+        font-weight: var(--cs-font-weight-medium);
+        line-height: 1.25;
+        text-align: center;
+        text-decoration: none;
+        transition: background-color 150ms, color 150ms;
+    }
+
+    /* Layar sangat sempit (< 400px, mis. 360px): kecilkan teks menu agar setiap label satu baris. */
+    @media (width < 25rem) {
+        .cs-nav-list {
+            font-size: var(--cs-text-caption);
+        }
+    }
+
+    @media (width >= 40rem) {
+        .cs-nav-list {
+            display: flex;
+            flex-wrap: wrap;
+            font-size: var(--cs-text-body);
+        }
+
+        .cs-nav-link {
+            padding: 0.375rem var(--cs-space-3);
+        }
+    }
+
+    .cs-nav-link:hover {
+        background-color: var(--cs-color-surface-muted);
+        color: var(--cs-color-text-primary);
+    }
+
+    .cs-nav-link[aria-current='page'] {
+        background-color: var(--cs-color-primary-soft);
+        color: var(--cs-color-primary-hover);
+    }
+
+    /* ---------- Page header ---------- */
+    .cs-page-header {
+        display: flex;
+        flex-direction: column;
+        gap: var(--cs-space-3);
+        margin-bottom: var(--cs-space-6);
+    }
+
+    @media (width >= 40rem) {
+        .cs-page-header {
+            flex-direction: row;
+            align-items: flex-end;
+            justify-content: space-between;
+        }
+    }
+
+    .cs-page-title {
+        color: var(--cs-color-text-primary);
+        font-size: var(--cs-text-heading);
+        font-weight: var(--cs-font-weight-extrabold);
+        letter-spacing: var(--cs-letter-spacing-tight);
+        line-height: var(--cs-text-heading-line);
+    }
+
+    @media (width >= 64rem) {
+        .cs-page-title {
+            font-size: var(--cs-text-heading-lg);
+            line-height: 1.15;
+        }
+    }
+
+    .cs-page-description {
+        margin-top: var(--cs-space-2);
+        color: var(--cs-color-text-secondary);
+        font-size: 1rem;
+    }
+
+    /* Header halaman (komponen x-page-header): breadcrumb, eyebrow, judul, subjudul, aksi */
+    .cs-breadcrumb {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--cs-space-2);
+        margin: 0 0 var(--cs-space-6);
+        padding: 0;
+        list-style: none;
+        color: var(--cs-color-text-muted);
+        font-size: var(--cs-text-body);
+    }
+
+    .cs-breadcrumb li + li::before {
+        content: '/';
+        margin-right: var(--cs-space-2);
+        color: var(--cs-color-border-strong);
+    }
+
+    .cs-breadcrumb a {
+        color: inherit;
+        text-decoration: none;
+    }
+
+    .cs-breadcrumb a:hover {
+        color: var(--cs-color-text-primary);
+        text-decoration: underline;
+    }
+
+    .cs-eyebrow {
+        margin-bottom: var(--cs-space-3);
+        color: var(--cs-color-primary);
+        font-size: var(--cs-text-eyebrow);
+        font-weight: var(--cs-font-weight-bold);
+        letter-spacing: var(--cs-letter-spacing-eyebrow);
+        text-transform: uppercase;
+    }
+
+    .cs-page-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--cs-space-2);
+    }
+
+    /* ---------- Shell aplikasi: sidebar + kolom konten ---------- */
+    .cs-shell {
+        min-height: 100vh;
+    }
+
+    .cs-sidebar {
+        position: fixed;
+        inset: 0 auto 0 0;
+        z-index: 40;
+        display: flex;
+        flex-direction: column;
+        width: min(var(--cs-sidebar-width), 85vw);
+        overflow-y: auto;
+        background-color: var(--cs-sidebar-bg);
+        padding: var(--cs-space-6) var(--cs-space-5);
+        color: var(--cs-sidebar-text);
+        transform: translateX(-100%);
+        transition: transform 200ms ease;
+    }
+
+    .cs-sidebar[data-open='true'] {
+        transform: translateX(0);
+    }
+
+    .cs-drawer-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 30;
+        background-color: rgb(11 37 69 / 0.5);
+    }
+
+    .cs-main-col {
+        display: flex;
+        min-width: 0;
+        min-height: 100vh;
+        flex-direction: column;
+    }
+
+    @media (width >= 64rem) {
+        .cs-sidebar {
+            transform: none;
+            width: var(--cs-sidebar-width);
+        }
+
+        .cs-drawer-overlay,
+        .cs-drawer-toggle {
+            display: none !important;
+        }
+
+        .cs-main-col {
+            margin-left: var(--cs-sidebar-width);
+        }
+    }
+
+    .cs-sidebar-brand {
+        display: flex;
+        align-items: center;
+        gap: var(--cs-space-3);
+        margin-bottom: var(--cs-space-8);
+        border-radius: var(--cs-radius-md);
+        color: #ffffff;
+        text-decoration: none;
+    }
+
+    .cs-logo {
+        position: relative;
+        display: grid;
+        flex-shrink: 0;
+        place-items: center;
+        width: 2.75rem;
+        height: 2.75rem;
+        border-radius: var(--cs-radius-lg);
+        background-color: #ffffff;
+        color: var(--cs-sidebar-bg);
+        font-size: 1.5rem;
+        font-weight: var(--cs-font-weight-extrabold);
+        line-height: 1;
+    }
+
+    .cs-logo::after {
+        content: '';
+        position: absolute;
+        right: 0.45rem;
+        bottom: 0.45rem;
+        width: 0.5rem;
+        height: 0.5rem;
+        border-radius: var(--cs-radius-full);
+        background-color: var(--cs-color-primary-bright);
+    }
+
+    .cs-sidebar-brand-name {
+        display: block;
+        font-size: 1.25rem;
+        font-weight: var(--cs-font-weight-extrabold);
+        letter-spacing: -0.01em;
+        line-height: 1.2;
+    }
+
+    .cs-sidebar-brand-tagline {
+        display: block;
+        color: var(--cs-sidebar-text-muted);
+        font-size: 0.6875rem;
+        font-weight: var(--cs-font-weight-bold);
+        letter-spacing: var(--cs-letter-spacing-eyebrow);
+        text-transform: uppercase;
+    }
+
+    .cs-sidebar-group + .cs-sidebar-group {
+        margin-top: var(--cs-space-8);
+    }
+
+    .cs-sidebar-heading {
+        margin-bottom: var(--cs-space-3);
+        padding-inline: var(--cs-space-3);
+        color: var(--cs-sidebar-text-muted);
+        font-size: 0.6875rem;
+        font-weight: var(--cs-font-weight-bold);
+        letter-spacing: var(--cs-letter-spacing-eyebrow);
+        text-transform: uppercase;
+    }
+
+    .cs-sidebar-list {
+        display: grid;
+        gap: var(--cs-space-1);
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .cs-sidebar-link {
+        display: flex;
+        align-items: center;
+        gap: var(--cs-space-3);
+        border-radius: var(--cs-radius-lg);
+        padding: var(--cs-space-3);
+        color: var(--cs-sidebar-text);
+        font-size: 0.9375rem;
+        font-weight: var(--cs-font-weight-semibold);
+        text-decoration: none;
+        transition: background-color 150ms, color 150ms;
+    }
+
+    .cs-sidebar-link svg {
+        flex-shrink: 0;
+        width: 1.25rem;
+        height: 1.25rem;
+        color: var(--cs-sidebar-text-muted);
+    }
+
+    .cs-sidebar-link:hover,
+    .cs-sidebar-link[aria-current='page'] {
+        background-color: var(--cs-sidebar-active-bg);
+        color: #ffffff;
+    }
+
+    .cs-sidebar-link[aria-current='page'] svg {
+        color: var(--cs-color-primary-bright);
+    }
+
+    .cs-sidebar-link:focus-visible {
+        outline-color: var(--cs-color-primary-bright);
+    }
+
+    .cs-sidebar-card {
+        margin-top: auto;
+        border-radius: var(--cs-radius-lg);
+        background-color: var(--cs-sidebar-card-bg);
+        padding: var(--cs-space-4);
+        font-size: var(--cs-text-body);
+    }
+
+    .cs-sidebar-card-title {
+        color: #ffffff;
+        font-weight: var(--cs-font-weight-bold);
+    }
+
+    .cs-sidebar-footer {
+        margin-top: var(--cs-space-4);
+        padding-inline: var(--cs-space-2);
+        color: var(--cs-sidebar-text-muted);
+        font-size: var(--cs-text-caption);
+        line-height: 1.6;
+    }
+
+    /* Ruang di bawah sidebar agar kartu bantuan tidak menempel saat menu panjang */
+    .cs-sidebar nav {
+        margin-bottom: var(--cs-space-6);
+    }
+
+    /* ---------- Topbar ---------- */
+    .cs-topbar {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        display: flex;
+        align-items: center;
+        gap: var(--cs-space-3);
+        border-bottom: 1px solid var(--cs-color-border);
+        background-color: var(--cs-color-surface);
+        padding: var(--cs-space-3) var(--cs-container-padding);
+    }
+
+    @media (width >= 40rem) {
+        .cs-topbar {
+            padding-inline: var(--cs-space-8);
+        }
+    }
+
+    .cs-topbar-faculty {
+        min-width: 0;
+        overflow: hidden;
+        color: var(--cs-color-text-secondary);
+        font-size: var(--cs-text-body);
+        letter-spacing: 0.02em;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .cs-topbar-user {
+        display: flex;
+        align-items: center;
+        gap: var(--cs-space-3);
+        margin-left: auto;
+    }
+
+    .cs-icon-btn {
+        display: inline-grid;
+        place-items: center;
+        width: 2.5rem;
+        height: 2.5rem;
+        flex-shrink: 0;
+        border: 1px solid var(--cs-color-border);
+        border-radius: var(--cs-radius-lg);
+        background-color: var(--cs-color-surface);
+        color: var(--cs-color-text-primary);
+        cursor: pointer;
+    }
+
+    .cs-icon-btn:hover {
+        background-color: var(--cs-color-surface-muted);
+    }
+
+    .cs-icon-btn svg {
+        width: 1.25rem;
+        height: 1.25rem;
+    }
+
+    .cs-avatar {
+        display: grid;
+        flex-shrink: 0;
+        place-items: center;
+        width: 2.5rem;
+        height: 2.5rem;
+        border-radius: var(--cs-radius-full);
+        background-color: var(--cs-color-primary-soft);
+        color: var(--cs-color-primary);
+        font-size: var(--cs-text-body);
+        font-weight: var(--cs-font-weight-bold);
+    }
+
+    .cs-user-name {
+        display: block;
+        color: var(--cs-color-text-primary);
+        font-size: var(--cs-text-body);
+        font-weight: var(--cs-font-weight-bold);
+        line-height: 1.2;
+    }
+
+    .cs-user-role {
+        display: block;
+        color: var(--cs-color-text-muted);
+        font-size: var(--cs-text-caption);
+    }
+
+    /* ---------- Area konten ---------- */
+    .cs-content {
+        width: 100%;
+        max-width: 90rem;
+        flex: 1;
+        padding: var(--cs-space-6) var(--cs-container-padding) var(--cs-space-10);
+    }
+
+    @media (width >= 40rem) {
+        .cs-content {
+            padding: var(--cs-space-10) var(--cs-space-8);
+        }
+    }
+
+    @media (width >= 80rem) {
+        .cs-content {
+            padding-inline: 4rem;
+        }
+    }
+
+    .cs-app-footer {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: var(--cs-space-2);
+        padding: 0 var(--cs-container-padding) var(--cs-space-8);
+        color: var(--cs-color-text-muted);
+        font-size: var(--cs-text-caption);
+    }
+
+    @media (width >= 40rem) {
+        .cs-app-footer {
+            padding-inline: var(--cs-space-8);
+        }
+    }
+
+    @media (width >= 80rem) {
+        .cs-app-footer {
+            padding-inline: 4rem;
+        }
+    }
+
+    /* ---------- Layout tamu (login/register): panel brand navy + form ---------- */
+    .cs-auth {
+        display: grid;
+        min-height: 100vh;
+    }
+
+    @media (width >= 64rem) {
+        .cs-auth {
+            grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+        }
+    }
+
+    .cs-auth-brand {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        gap: var(--cs-space-8);
+        background-color: var(--cs-sidebar-bg);
+        padding: var(--cs-space-8) var(--cs-space-6);
+        color: var(--cs-sidebar-text);
+    }
+
+    @media (width >= 64rem) {
+        .cs-auth-brand {
+            padding: 4rem;
+        }
+    }
+
+    .cs-auth-headline {
+        color: #ffffff;
+        font-size: 2rem;
+        font-weight: var(--cs-font-weight-extrabold);
+        letter-spacing: var(--cs-letter-spacing-tight);
+        line-height: 1.15;
+    }
+
+    @media (width >= 64rem) {
+        .cs-auth-headline {
+            font-size: 2.75rem;
+        }
+    }
+
+    .cs-auth-main {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: var(--cs-space-8) var(--cs-container-padding);
+    }
+
+    .cs-auth-form {
+        width: 100%;
+        max-width: 28rem;
+    }
+
+    .cs-section-title {
+        color: var(--cs-color-text-primary);
+        font-size: var(--cs-text-subheading);
+        font-weight: var(--cs-font-weight-semibold);
+    }
+
+    .cs-section-description {
+        margin-top: var(--cs-space-1);
+        color: var(--cs-color-text-secondary);
+        font-size: var(--cs-text-body);
+    }
+
+    .cs-back-link {
+        display: inline-block;
+        border-radius: var(--cs-radius-sm);
+        color: var(--cs-color-text-secondary);
+        font-size: var(--cs-text-body);
+        text-decoration: none;
+    }
+
+    .cs-back-link:hover {
+        color: var(--cs-color-text-primary);
+        text-decoration: underline;
+    }
+
+    .cs-link {
+        border-radius: var(--cs-radius-sm);
+        color: var(--cs-color-primary);
+        font-weight: var(--cs-font-weight-medium);
+        text-decoration: underline;
+        text-decoration-color: transparent;
+        text-underline-offset: 2px;
+    }
+
+    .cs-link:hover {
+        text-decoration-color: currentColor;
+    }
+
+    /* ---------- Button ---------- */
+    .cs-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: var(--cs-space-2);
+        border: 1px solid transparent;
+        border-radius: var(--cs-radius-lg);
+        padding: 0.625rem var(--cs-space-5);
+        font-size: var(--cs-text-body);
+        font-weight: var(--cs-font-weight-bold);
+        line-height: 1.25rem;
+        text-decoration: none;
+        white-space: nowrap;
+        cursor: pointer;
+        transition: background-color 150ms, border-color 150ms, color 150ms;
+    }
+
+    .cs-btn:disabled,
+    .cs-btn[aria-disabled='true'] {
+        cursor: not-allowed;
+        opacity: 0.6;
+    }
+
+    .cs-btn-primary {
+        background-color: var(--cs-color-primary);
+        color: #ffffff;
+    }
+
+    .cs-btn-primary:hover {
+        background-color: var(--cs-color-primary-hover);
+    }
+
+    .cs-btn-secondary {
+        border-color: var(--cs-color-border-strong);
+        background-color: var(--cs-color-surface);
+        color: var(--cs-color-text-body);
+    }
+
+    .cs-btn-secondary:hover {
+        background-color: var(--cs-color-surface-muted);
+    }
+
+    .cs-btn-ghost {
+        background-color: transparent;
+        color: var(--cs-color-text-secondary);
+    }
+
+    .cs-btn-ghost:hover {
+        background-color: var(--cs-color-surface-muted);
+        color: var(--cs-color-text-primary);
+    }
+
+    .cs-btn-danger {
+        background-color: var(--cs-color-danger);
+        color: #ffffff;
+    }
+
+    .cs-btn-danger:hover {
+        background-color: var(--cs-color-danger-hover);
+    }
+
+    .cs-btn-sm {
+        padding: 0.375rem var(--cs-space-3);
+        font-size: var(--cs-text-caption);
+    }
+
+    /* ---------- Card & statistik ---------- */
+    .cs-card {
+        border: 1px solid var(--cs-color-border);
+        border-radius: var(--cs-radius-xl);
+        background-color: var(--cs-color-surface);
+    }
+
+    .cs-card-body {
+        padding: var(--cs-space-6);
+    }
+
+    .cs-card-title {
+        color: var(--cs-color-text-secondary);
+        font-size: var(--cs-text-caption);
+        font-weight: var(--cs-font-weight-semibold);
+        letter-spacing: var(--cs-letter-spacing-caps);
+        text-transform: uppercase;
+    }
+
+    .cs-stat-value {
+        color: var(--cs-color-text-primary);
+        font-size: var(--cs-text-stat);
+        font-weight: var(--cs-font-weight-semibold);
+        font-variant-numeric: tabular-nums;
+        line-height: 2.25rem;
+    }
+
+    .cs-stat-unit {
+        color: var(--cs-color-text-muted);
+        font-size: var(--cs-text-body);
+    }
+
+    .cs-caption {
+        color: var(--cs-color-text-muted);
+        font-size: var(--cs-text-caption);
+    }
+
+    /* ---------- Form ---------- */
+    .cs-fieldset {
+        min-width: 0;
+        margin: 0;
+        border: 0;
+        padding: 0;
+    }
+
+    .cs-legend {
+        margin-bottom: var(--cs-space-3);
+        color: var(--cs-color-text-secondary);
+        font-size: var(--cs-text-caption);
+        font-weight: var(--cs-font-weight-semibold);
+        letter-spacing: var(--cs-letter-spacing-caps);
+        text-transform: uppercase;
+    }
+
+    .cs-form-label {
+        display: block;
+        color: var(--cs-color-text-body);
+        font-size: var(--cs-text-label);
+        font-weight: var(--cs-font-weight-medium);
+    }
+
+    .cs-form-required {
+        color: var(--cs-color-danger);
+    }
+
+    .cs-form-control {
+        display: block;
+        width: 100%;
+        margin-top: var(--cs-space-1);
+        border: 1px solid var(--cs-color-border-strong);
+        border-radius: var(--cs-radius-md);
+        background-color: var(--cs-color-surface);
+        padding: var(--cs-space-2) var(--cs-space-3);
+        color: var(--cs-color-text-primary);
+        font-size: var(--cs-text-body);
+        line-height: 1.25rem;
+    }
+
+    .cs-form-control::placeholder {
+        color: var(--cs-color-text-muted);
+    }
+
+    .cs-form-control:focus,
+    .cs-form-control:focus-visible {
+        border-color: var(--cs-color-focus);
+        outline: none;
+        box-shadow: var(--cs-focus-ring);
+    }
+
+    .cs-form-control[aria-invalid='true'] {
+        border-color: var(--cs-color-danger);
+    }
+
+    .cs-form-control[aria-invalid='true']:focus {
+        box-shadow: 0 0 0 3px rgb(190 18 60 / 0.2);
+    }
+
+    .cs-form-hint {
+        margin-top: var(--cs-space-1);
+        color: var(--cs-color-text-muted);
+        font-size: var(--cs-text-caption);
+    }
+
+    .cs-form-error {
+        margin-top: var(--cs-space-1);
+        color: var(--cs-color-danger);
+        font-size: var(--cs-text-caption);
+    }
+
+    .cs-form-actions {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: var(--cs-space-3);
+        border-top: 1px solid var(--cs-color-surface-muted);
+        padding-top: var(--cs-space-5);
+    }
+
+    /* ---------- Alert ---------- */
+    .cs-alert {
+        display: flex;
+        align-items: flex-start;
+        gap: var(--cs-space-3);
+        margin-bottom: var(--cs-space-5);
+        border: 1px solid var(--cs-color-border);
+        border-radius: var(--cs-radius-lg);
+        background-color: var(--cs-color-neutral-soft);
+        padding: var(--cs-space-4);
+        color: var(--cs-color-neutral);
+        font-size: var(--cs-text-body);
+    }
+
+    /* Tombol tutup pesan flash (data-dismiss, ditangani campus-space.js) */
+    .cs-alert-dismiss {
+        margin-left: auto;
+        flex-shrink: 0;
+        border: 0;
+        border-radius: var(--cs-radius-sm);
+        background: transparent;
+        padding: 0 var(--cs-space-1);
+        color: inherit;
+        font-size: 1.25rem;
+        line-height: 1;
+        cursor: pointer;
+        opacity: 0.7;
+    }
+
+    .cs-alert-dismiss:hover {
+        opacity: 1;
+    }
+
+    .cs-alert-icon {
+        font-weight: 700;
+    }
+
+    .cs-alert-title {
+        font-weight: var(--cs-font-weight-semibold);
+    }
+
+    .cs-alert-success {
+        border-color: #a7f3d0;
+        background-color: var(--cs-color-success-soft);
+        color: #065f46;
+    }
+
+    .cs-alert-warning {
+        border-color: #fde68a;
+        background-color: var(--cs-color-warning-soft);
+        color: #92400e;
+    }
+
+    .cs-alert-danger {
+        border-color: #fecdd3;
+        background-color: var(--cs-color-danger-soft);
+        color: #9f1239;
+    }
+
+    .cs-alert-info {
+        border-color: #bae6fd;
+        background-color: var(--cs-color-info-soft);
+        color: #075985;
+    }
+
+    /* ---------- Table ---------- */
+    .cs-table-wrap {
+        /* position: relative agar elemen absolut di dalam tabel (mis. teks .sr-only)
+           ikut terpotong oleh area scroll dan tidak melebarkan halaman. */
+        position: relative;
+        overflow-x: auto;
+        border: 1px solid var(--cs-color-border);
+        border-radius: var(--cs-radius-lg);
+        background-color: var(--cs-color-surface);
+        box-shadow: var(--cs-shadow-xs);
+    }
+
+    .cs-table {
+        min-width: 100%;
+        border-collapse: collapse;
+        font-size: var(--cs-text-table);
+    }
+
+    .cs-table thead {
+        background-color: var(--cs-color-background);
+    }
+
+    .cs-table thead th {
+        padding: var(--cs-space-3) var(--cs-space-4);
+        color: var(--cs-color-text-secondary);
+        font-size: var(--cs-text-table-head);
+        font-weight: var(--cs-font-weight-semibold);
+        letter-spacing: var(--cs-letter-spacing-caps);
+        text-align: left;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+    .cs-table tbody td,
+    .cs-table tbody th {
+        border-top: 1px solid var(--cs-color-border);
+        padding: var(--cs-space-3) var(--cs-space-4);
+        color: var(--cs-color-text-body);
+        font-weight: inherit;
+        text-align: left;
+        vertical-align: top;
+    }
+
+    .cs-table tbody tr:hover {
+        background-color: var(--cs-color-background);
+    }
+
+    .cs-table .cs-cell-num {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+    }
+
+    .cs-table .cs-cell-nowrap {
+        white-space: nowrap;
+    }
+
+    /* Tabel "stacked": di bawah breakpoint md (48rem) setiap baris tampil sebagai kartu
+       dan label kolom diambil dari atribut data-label pada sel. Dipakai pada tabel yang
+       memuat form aksi (booking) agar tidak perlu scroll horizontal di ponsel.
+       Pemakaian: <div class="cs-table-wrap cs-table-wrap-stack"> + <table class="cs-table cs-table-stack">
+       dan <td data-label="Nama kolom">. */
+    @media (max-width: 768px) {
+        .cs-table-wrap-stack {
+            overflow: visible;
+            border: 0;
+            background-color: transparent;
+            box-shadow: none;
+        }
+
+        .cs-table-stack,
+        .cs-table-stack tbody,
+        .cs-table-stack tr,
+        .cs-table-stack tbody td,
+        .cs-table-stack tbody th {
+            display: block;
+            width: 100%;
+        }
+
+        .cs-table-stack thead {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+            clip-path: inset(50%);
+            white-space: nowrap;
+        }
+
+        .cs-table-stack tbody tr {
+            margin-bottom: var(--cs-space-3);
+            border: 1px solid var(--cs-color-border);
+            border-radius: var(--cs-radius-lg);
+            background-color: var(--cs-color-surface);
+            padding-block: var(--cs-space-2);
+            box-shadow: var(--cs-shadow-xs);
+        }
+
+        .cs-table-stack tbody tr:hover {
+            background-color: var(--cs-color-surface);
+        }
+
+        .cs-table-stack tbody td,
+        .cs-table-stack tbody th {
+            border-top: 0;
+            padding: var(--cs-space-2) var(--cs-space-4);
+        }
+
+        .cs-table-stack tbody tr > :first-child {
+            border-bottom: 1px solid var(--cs-color-border);
+            padding-bottom: var(--cs-space-3);
+        }
+
+        .cs-table-stack tbody [data-label]::before {
+            content: attr(data-label);
+            display: block;
+            margin-bottom: 0.125rem;
+            color: var(--cs-color-text-muted);
+            font-size: var(--cs-text-caption);
+            font-weight: var(--cs-font-weight-semibold);
+            letter-spacing: var(--cs-letter-spacing-caps);
+            text-transform: uppercase;
+        }
+
+        .cs-table-stack .cs-cell-num {
+            text-align: left;
+        }
+    }
+
+    .cs-code {
+        color: var(--cs-color-text-secondary);
+        font-family: var(--cs-font-mono);
+        font-size: var(--cs-text-caption);
+    }
+
+    /* ---------- Empty state ---------- */
+    .cs-empty-state {
+        padding: var(--cs-space-10) var(--cs-space-4);
+        color: var(--cs-color-text-secondary);
+        font-size: var(--cs-text-body);
+        text-align: center;
+    }
+
+    .cs-empty-state-title {
+        color: var(--cs-color-text-primary);
+        font-weight: var(--cs-font-weight-semibold);
+    }
+
+    /* ---------- Progress bar ---------- */
+    .cs-progress {
+        width: 100%;
+        height: 0.375rem;
+        overflow: hidden;
+        border-radius: var(--cs-radius-full);
+        background-color: var(--cs-color-surface-muted);
+    }
+
+    .cs-progress-bar {
+        height: 100%;
+        max-width: 100%;
+        border-radius: var(--cs-radius-full);
+        background-color: var(--cs-color-primary);
+    }
+
+    /* ---------- Badge & status indicator ----------
+       Warna diambil dari variabel --cs-tone* yang di-set oleh [data-status]
+       (bagian 5). Tanpa data-status yang dikenal, tampil netral. */
+    .cs-badge {
+        display: inline-flex;
+        align-items: center;
+        border-radius: var(--cs-radius-full);
+        background-color: var(--cs-tone-soft, var(--cs-color-neutral-soft));
+        padding: 0.1875rem 0.625rem;
+        color: var(--cs-tone, var(--cs-color-neutral));
+        font-size: var(--cs-text-caption);
+        font-weight: var(--cs-font-weight-bold);
+        white-space: nowrap;
+    }
+
+    /* ---------- Stat card ---------- */
+    .cs-stat-card {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        gap: var(--cs-space-2);
+        border: 1px solid var(--cs-color-border);
+        border-radius: var(--cs-radius-xl);
+        background-color: var(--cs-color-surface);
+        padding: var(--cs-space-6);
+    }
+
+    .cs-stat-card-label {
+        padding-right: 3rem;
+        color: var(--cs-color-text-secondary);
+        font-size: var(--cs-text-body);
+        font-weight: var(--cs-font-weight-semibold);
+    }
+
+    .cs-stat-card-value {
+        color: var(--cs-color-text-primary);
+        font-size: 2.5rem;
+        font-weight: var(--cs-font-weight-extrabold);
+        font-variant-numeric: tabular-nums;
+        letter-spacing: var(--cs-letter-spacing-tight);
+        line-height: 1.1;
+    }
+
+    .cs-stat-card-caption {
+        color: var(--cs-color-text-muted);
+        font-size: var(--cs-text-body);
+    }
+
+    /* Chip ikon berwarna lembut; warna mengikuti data-status / data-tone (default teal) */
+    .cs-icon-chip {
+        display: grid;
+        place-items: center;
+        width: 2.5rem;
+        height: 2.5rem;
+        border-radius: var(--cs-radius-lg);
+        background-color: var(--cs-tone-soft, var(--cs-color-primary-soft));
+        color: var(--cs-tone, var(--cs-color-primary));
+    }
+
+    .cs-stat-card .cs-icon-chip {
+        position: absolute;
+        top: var(--cs-space-5);
+        right: var(--cs-space-5);
+    }
+
+    .cs-icon-chip svg {
+        width: 1.25rem;
+        height: 1.25rem;
+    }
+
+    /* ---------- Empty state (komponen x-empty-state) ---------- */
+    .cs-empty {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: var(--cs-space-2);
+        padding: var(--cs-space-10) var(--cs-space-4);
+        text-align: center;
+    }
+
+    .cs-empty-title {
+        color: var(--cs-color-text-primary);
+        font-size: 1.125rem;
+        font-weight: var(--cs-font-weight-bold);
+    }
+
+    .cs-empty-text {
+        max-width: 32rem;
+        color: var(--cs-color-text-secondary);
+        font-size: var(--cs-text-body);
+    }
+
+    /* ---------- Kartu ruang (komponen x-room-card) ---------- */
+    .cs-room-card {
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        border: 1px solid var(--cs-color-border);
+        border-radius: var(--cs-radius-xl);
+        background-color: var(--cs-color-surface);
+    }
+
+    .cs-room-card-media {
+        position: relative;
+        display: grid;
+        place-items: center;
+        aspect-ratio: 16 / 9;
+        background: linear-gradient(135deg, #e6edf5, #d9e3ee);
+        color: #4d6a87;
+        text-align: center;
+    }
+
+    .cs-room-card-media img {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .cs-room-card-code {
+        display: block;
+        margin-top: var(--cs-space-2);
+        font-size: 1.75rem;
+        font-weight: var(--cs-font-weight-extrabold);
+        letter-spacing: 0.08em;
+    }
+
+    .cs-room-card-chip {
+        position: absolute;
+        top: var(--cs-space-3);
+        left: var(--cs-space-3);
+        z-index: 1;
+        border-radius: var(--cs-radius-md);
+        background-color: var(--cs-color-surface);
+        padding: 0.25rem 0.625rem;
+        color: var(--cs-color-text-primary);
+        font-size: var(--cs-text-caption);
+        font-weight: var(--cs-font-weight-bold);
+    }
+
+    .cs-room-card-body {
+        display: flex;
+        flex: 1;
+        flex-direction: column;
+        gap: var(--cs-space-1);
+        padding: var(--cs-space-5) var(--cs-space-6) var(--cs-space-6);
+    }
+
+    .cs-room-card-name {
+        color: var(--cs-color-text-primary);
+        font-size: 1.375rem;
+        font-weight: var(--cs-font-weight-extrabold);
+    }
+
+    .cs-room-card-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--cs-space-2) var(--cs-space-4);
+        margin-top: var(--cs-space-3);
+        border-top: 1px solid var(--cs-color-border);
+        padding-top: var(--cs-space-3);
+        color: var(--cs-color-text-secondary);
+        font-size: var(--cs-text-body);
+    }
+
+    .cs-room-card-meta span {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--cs-space-1);
+    }
+
+    .cs-room-card-meta svg {
+        width: 1rem;
+        height: 1rem;
+    }
+
+    /* Titik status live: "Tersedia sekarang", "Sedang digunakan", ... (warna dari data-status) */
+    .cs-live-dot {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--cs-space-2);
+        color: var(--cs-tone, var(--cs-color-neutral));
+        font-size: var(--cs-text-caption);
+        font-weight: var(--cs-font-weight-bold);
+        white-space: nowrap;
+    }
+
+    .cs-live-dot::before {
+        content: '';
+        width: 0.5rem;
+        height: 0.5rem;
+        border-radius: var(--cs-radius-full);
+        background-color: var(--cs-tone-solid, var(--cs-color-neutral-solid));
+    }
+
+    /* ---------- Filter bar (komponen x-filter-bar) ---------- */
+    .cs-filter-bar {
+        display: grid;
+        gap: var(--cs-space-4);
+        margin-bottom: var(--cs-space-6);
+        border: 1px solid var(--cs-color-border);
+        border-radius: var(--cs-radius-xl);
+        background-color: var(--cs-color-surface);
+        padding: var(--cs-space-5);
+    }
+
+    @media (width >= 48rem) {
+        .cs-filter-bar {
+            grid-template-columns: repeat(var(--cs-filter-cols, 4), minmax(0, 1fr)) auto;
+            align-items: end;
+        }
+    }
+
+    .cs-filter-bar-actions {
+        display: flex;
+        gap: var(--cs-space-2);
+    }
+
+    /* ---------- Dialog konfirmasi (komponen x-confirm-dialog, <dialog> HTML) ---------- */
+    .cs-dialog {
+        position: fixed;
+        inset: 0;
+        width: min(28rem, calc(100vw - 2rem));
+        height: fit-content;
+        max-height: calc(100vh - 2rem);
+        /* !important: dialog sering berada di dalam wadah ber-utility space-y-* yang menimpa margin anak */
+        margin: auto !important;
+        border: 0;
+        border-radius: var(--cs-radius-xl);
+        background-color: var(--cs-color-surface);
+        padding: 0;
+        color: var(--cs-color-text-body);
+        box-shadow: 0 20px 50px -12px rgb(11 37 69 / 0.35);
+    }
+
+    .cs-dialog::backdrop {
+        background-color: rgb(11 37 69 / 0.5);
+    }
+
+    .cs-dialog-body {
+        display: grid;
+        gap: var(--cs-space-4);
+        padding: var(--cs-space-6);
+    }
+
+    .cs-dialog-title {
+        color: var(--cs-color-text-primary);
+        font-size: 1.25rem;
+        font-weight: var(--cs-font-weight-extrabold);
+    }
+
+    .cs-dialog-actions {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: var(--cs-space-2);
+    }
+
+    /* ---------- Kalender mingguan (schedules.index) ----------
+       Desktop (>= 1024px): 7 kolom hari. Lebih kecil: daftar per hari (satu kartu per hari). */
+    .cs-calendar {
+        display: grid;
+        gap: var(--cs-space-3);
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    @media (width >= 64rem) {
+        .cs-calendar {
+            grid-template-columns: repeat(7, minmax(0, 1fr));
+        }
+    }
+
+    .cs-calendar-day {
+        display: flex;
+        min-width: 0;
+        min-height: 6rem;
+        flex-direction: column;
+        gap: var(--cs-space-2);
+        border: 1px solid var(--cs-color-border);
+        border-radius: var(--cs-radius-xl);
+        background-color: var(--cs-color-surface);
+        padding: var(--cs-space-4);
+    }
+
+    @media (width >= 64rem) {
+        .cs-calendar-day {
+            min-height: 18rem;
+        }
+    }
+
+    .cs-calendar-day[data-today='true'] {
+        border-color: var(--cs-color-primary);
+        box-shadow: inset 0 0 0 1px var(--cs-color-primary);
+    }
+
+    .cs-calendar-dayname {
+        color: var(--cs-color-text-muted);
+        font-size: var(--cs-text-caption);
+    }
+
+    .cs-calendar-date {
+        display: flex;
+        align-items: baseline;
+        gap: var(--cs-space-2);
+        margin-bottom: var(--cs-space-2);
+        border-bottom: 1px solid var(--cs-color-border);
+        padding-bottom: var(--cs-space-2);
+        color: var(--cs-color-text-primary);
+        font-size: 1.75rem;
+        font-weight: var(--cs-font-weight-extrabold);
+    }
+
+    .cs-calendar-day[data-today='true'] .cs-calendar-date time {
+        color: var(--cs-color-primary);
+    }
+
+    .cs-calendar-empty {
+        margin: auto 0;
+        color: var(--cs-color-text-muted);
+        font-size: var(--cs-text-caption);
+        text-align: center;
+    }
+
+    /* Jenis kegiatan: jadwal kuliah (navy) vs peminjaman disetujui (teal) */
+    .cs-calendar-event {
+        border-left: 3px solid var(--cs-event-color);
+        border-radius: var(--cs-radius-md);
+        background-color: var(--cs-event-soft);
+        padding: var(--cs-space-2) var(--cs-space-3);
+        color: var(--cs-color-text-primary);
+        /* Kolom hari sempit di desktop: kata panjang dipotong dengan tanda hubung (lang="id") */
+        overflow-wrap: anywhere;
+        hyphens: auto;
+    }
+
+    [data-type='schedule'] {
+        --cs-event-color: var(--cs-color-secondary);
+        --cs-event-soft: var(--cs-color-secondary-soft);
+    }
+
+    [data-type='booking'] {
+        --cs-event-color: var(--cs-color-primary);
+        --cs-event-soft: var(--cs-color-primary-soft);
+    }
+
+    .cs-calendar-legend {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--cs-space-2);
+        color: var(--cs-color-text-secondary);
+    }
+
+    .cs-calendar-legend::before {
+        content: '';
+        width: 0.75rem;
+        height: 0.75rem;
+        border-left: 3px solid var(--cs-event-color);
+        border-radius: 0.2rem;
+        background-color: var(--cs-event-soft);
+    }
+
+    /* ---------- Grafik bar Terjadwal vs Aktual (Laporan Utilisasi) ----------
+       Dua seri, satu sumbu (persen 0–100). Warna divalidasi skrip dataviz (lolos CVD & normal-vision;
+       aqua 2.74:1 terhadap latar -> label persen selalu tampil + tabel rincian sebagai tampilan teks).
+       Bar tipis, ujung membulat 4px, celah 2px antar bar, track abu-abu tetap tampil walau 0%. */
+    .cs-chart {
+        display: grid;
+        gap: var(--cs-space-4);
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .cs-chart-row {
+        display: grid;
+        grid-template-columns: minmax(5rem, 9rem) minmax(0, 1fr) auto;
+        align-items: center;
+        gap: var(--cs-space-4);
+    }
+
+    .cs-chart-label {
+        overflow: hidden;
+        color: var(--cs-color-text-primary);
+        font-size: var(--cs-text-body);
+        font-weight: var(--cs-font-weight-bold);
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .cs-chart-bars {
+        display: grid;
+        gap: 2px;
+    }
+
+    .cs-chart-bar {
+        position: relative;
+        display: block;
+        height: 0.5rem;
+        overflow: hidden;
+        border-radius: 4px;
+        background-color: var(--cs-color-surface-muted);
+    }
+
+    .cs-chart-bar::after {
+        content: '';
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: var(--value, 0%);
+        border-radius: 4px;
+        background-color: var(--cs-series-color);
+    }
+
+    .cs-chart-bar:hover {
+        outline: 2px solid var(--cs-color-border-strong);
+        outline-offset: 1px;
+    }
+
+    [data-series='scheduled'] {
+        --cs-series-color: #2a78d6;
+    }
+
+    [data-series='actual'] {
+        --cs-series-color: #1baf7a;
+    }
+
+    .cs-chart-value {
+        min-width: 6.5rem;
+        color: var(--cs-color-text-secondary);
+        font-size: var(--cs-text-caption);
+        font-variant-numeric: tabular-nums;
+        text-align: right;
+    }
+
+    .cs-chart-legend {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--cs-space-2);
+    }
+
+    .cs-chart-legend::before {
+        content: '';
+        width: 0.75rem;
+        height: 0.75rem;
+        border-radius: 3px;
+        background-color: var(--cs-series-color);
+    }
+
+    @media (width < 40rem) {
+        .cs-chart-row {
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: var(--cs-space-1) var(--cs-space-3);
+        }
+
+        .cs-chart-bars {
+            grid-column: 1 / -1;
+            grid-row: 2;
+        }
+    }
+
+    /* ---------- Kartu QR ruangan (rooms.qr.index) ---------- */
+    .cs-qr-grid {
+        display: grid;
+        gap: var(--cs-space-6);
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    @media (width >= 48rem) {
+        .cs-qr-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @media (width >= 80rem) {
+        .cs-qr-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+    }
+
+    .cs-qr-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: var(--cs-space-2);
+        border: 1px solid var(--cs-color-border);
+        border-radius: var(--cs-radius-xl);
+        background-color: var(--cs-color-surface);
+        padding: var(--cs-space-8) var(--cs-space-6) var(--cs-space-6);
+        text-align: center;
+    }
+
+    .cs-qr-card-name {
+        color: var(--cs-color-text-primary);
+        font-size: 2.25rem;
+        font-weight: var(--cs-font-weight-extrabold);
+        line-height: 1.1;
+    }
+
+    /* <figure> pembungkus gambar QR + keterangan di kartu Cetak QR. */
+    .cs-qr-figure {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: var(--cs-space-2);
+    }
+
+    .cs-qr-canvas {
+        width: 15rem;
+        max-width: 100%;
+        height: auto;
+        margin-block: var(--cs-space-3);
+    }
+
+    /* ---------- Timeline status booking (bookings.show) ---------- */
+    .cs-timeline {
+        display: grid;
+        gap: var(--cs-space-4);
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    @media (width >= 40rem) {
+        .cs-timeline {
+            grid-auto-columns: minmax(0, 1fr);
+            grid-auto-flow: column;
+        }
+    }
+
+    .cs-timeline-step {
+        display: flex;
+        gap: var(--cs-space-3);
+    }
+
+    .cs-timeline-marker {
+        display: grid;
+        flex-shrink: 0;
+        place-items: center;
+        width: 2rem;
+        height: 2rem;
+        border: 2px solid var(--cs-color-border-strong);
+        border-radius: var(--cs-radius-full);
+        background-color: var(--cs-color-surface);
+        color: var(--cs-color-text-muted);
+        font-size: var(--cs-text-caption);
+        font-weight: var(--cs-font-weight-bold);
+    }
+
+    .cs-timeline-marker svg {
+        width: 1rem;
+        height: 1rem;
+    }
+
+    .cs-timeline-step[data-state='done'] .cs-timeline-marker {
+        border-color: var(--cs-color-primary);
+        background-color: var(--cs-color-primary);
+        color: #ffffff;
+    }
+
+    .cs-timeline-step[data-state='current'] .cs-timeline-marker {
+        border-color: var(--cs-color-primary);
+        color: var(--cs-color-primary);
+    }
+
+    .cs-timeline-step[data-state='failed'] .cs-timeline-marker {
+        border-color: var(--cs-color-danger);
+        background-color: var(--cs-color-danger);
+        color: #ffffff;
+    }
+
+    .cs-timeline-label {
+        color: var(--cs-color-text-primary);
+        font-weight: var(--cs-font-weight-bold);
+    }
+
+    .cs-timeline-step[data-state='upcoming'] .cs-timeline-label {
+        color: var(--cs-color-text-muted);
+    }
+
+    /* ---------- Paginasi (resources/views/vendor/pagination/tailwind.blade.php) ---------- */
+    .cs-pagination {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--cs-space-3);
+        font-size: var(--cs-text-body);
+    }
+
+    .cs-pagination-info {
+        color: var(--cs-color-text-secondary);
+    }
+
+    .cs-pagination-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--cs-space-1);
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .cs-page-link {
+        display: inline-grid;
+        place-items: center;
+        min-width: 2.5rem;
+        height: 2.5rem;
+        border: 1px solid var(--cs-color-border);
+        border-radius: var(--cs-radius-lg);
+        background-color: var(--cs-color-surface);
+        padding-inline: var(--cs-space-3);
+        color: var(--cs-color-text-primary);
+        font-weight: var(--cs-font-weight-semibold);
+        text-decoration: none;
+    }
+
+    a.cs-page-link:hover {
+        background-color: var(--cs-color-surface-muted);
+    }
+
+    .cs-page-link[aria-current='page'] {
+        border-color: var(--cs-color-primary);
+        background-color: var(--cs-color-primary);
+        color: #ffffff;
+    }
+
+    .cs-page-link[aria-disabled='true'] {
+        color: var(--cs-color-text-muted);
+        opacity: 0.6;
+    }
+
+    .cs-status-indicator {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+        border-radius: var(--cs-radius-sm);
+        background-color: var(--cs-tone-soft, var(--cs-color-neutral-soft));
+        padding: 0.125rem var(--cs-space-2);
+        color: var(--cs-tone, var(--cs-color-neutral));
+        font-size: var(--cs-text-caption);
+        font-weight: var(--cs-font-weight-medium);
+    }
+
+    .cs-status-dot {
+        display: inline-block;
+        flex-shrink: 0;
+        width: 0.5rem;
+        height: 0.5rem;
+        border-radius: var(--cs-radius-full);
+        background-color: var(--cs-tone-solid, var(--cs-color-neutral-solid));
+    }
+
+    /* ---------- Grup aksi (edit / hapus / batal) ---------- */
+    .cs-actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--cs-space-2);
+    }
+
+    /* ---------- Tabel definisi metrik laporan ---------- */
+    .cs-metric-name {
+        color: var(--cs-color-text-primary);
+        font-weight: var(--cs-font-weight-medium);
+    }
+
+    .cs-metric-value {
+        color: var(--cs-color-text-primary);
+        font-variant-numeric: tabular-nums;
+        font-weight: var(--cs-font-weight-semibold);
+        white-space: nowrap;
+    }
+
+    /* ---------- Tampil hanya saat cetak ---------- */
+    .cs-print-only {
+        display: none;
+    }
+}
+
+/* -----------------------------------------------------------------------------
+   6. CETAK (laporan utilisasi, FE-06)
+   Navigasi, filter, dan tombol aksi disembunyikan; judul, ringkasan, rekomendasi,
+   dan tabel tetap tampil. Warna badge/bar dipertahankan (print-color-adjust).
+   ----------------------------------------------------------------------------- */
+@media print {
+    @page {
+        size: A4 landscape;
+        margin: 12mm;
+    }
+
+    /* Halaman bernama untuk Cetak QR Ruangan: A4 potret agar muat 2 kartu per halaman */
+    @page qr-cards {
+        size: A4 portrait;
+        margin: 10mm;
+    }
+
+    .cs-qr-grid {
+        page: qr-cards;
+    }
+
+    body {
+        min-height: 0;
+        background-color: #ffffff;
+        font-size: 10.5pt;
+    }
+
+    .cs-site-header,
+    .cs-site-footer,
+    .cs-sidebar,
+    .cs-topbar,
+    .cs-drawer-overlay,
+    .cs-app-footer,
+    .cs-breadcrumb,
+    .cs-skip-link,
+    .cs-no-print {
+        display: none !important;
+    }
+
+    /* Kolom konten jadi blok biasa saat cetak agar pemotongan halaman (break-*) bekerja */
+    .cs-shell,
+    .cs-main-col {
+        display: block !important;
+        min-height: 0 !important;
+        margin-left: 0 !important;
+    }
+
+    /* Cetak QR Ruangan: 2 kartu per halaman A4 (area cetak ±27,7 cm), QR 6,5 cm (minimal 6 cm).
+       Isi kartu dipadatkan agar tidak melebihi tinggi kartu; isi yang meluber ikut dihitung saat pemotongan halaman. */
+    .cs-qr-grid {
+        display: block;
+    }
+
+    .cs-qr-card {
+        height: 13cm;
+        justify-content: center;
+        gap: 0.2cm;
+        margin-bottom: 0.5cm;
+        border: 1px dashed #94a3b8;
+        padding: 0.6cm;
+        overflow: hidden;
+        break-inside: avoid;
+    }
+
+    .cs-qr-card:nth-child(2n) {
+        break-after: page;
+    }
+
+    .cs-qr-card-name {
+        font-size: 1.75rem;
+    }
+
+    .cs-qr-canvas {
+        width: 6.5cm !important;
+        height: 6.5cm !important;
+        margin-block: 0.1cm;
+    }
+
+    .cs-content {
+        max-width: none;
+        padding: 0;
+    }
+
+    .cs-print-only {
+        display: block !important;
+    }
+
+    .cs-container {
+        max-width: none;
+        padding-inline: 0;
+    }
+
+    main.cs-container {
+        padding-block: 0;
+    }
+
+    .cs-card,
+    .cs-table-wrap,
+    .cs-alert {
+        box-shadow: none;
+    }
+
+    .cs-card,
+    .cs-alert,
+    .cs-table tbody tr {
+        break-inside: avoid;
+    }
+
+    .cs-table-wrap {
+        overflow: visible;
+    }
+
+    .cs-table thead {
+        display: table-header-group; /* header tabel diulang di setiap halaman */
+    }
+
+    h1,
+    h2,
+    h3 {
+        break-after: avoid;
+    }
+
+    .cs-print-break-before {
+        break-before: page;
+    }
+
+    .cs-badge,
+    .cs-status-indicator,
+    .cs-status-dot,
+    .cs-progress,
+    .cs-progress-bar,
+    .cs-chart-bar,
+    .cs-chart-bar::after,
+    .cs-chart-legend::before,
+    .cs-alert {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+}
+
+/* -----------------------------------------------------------------------------
+   5. VARIASI STATUS (nilai backend; huruf besar/kecil diabaikan)
+   Ruang     : available | booked | occupied | maintenance
+   Fasilitas : available | damaged | maintenance
+   Jadwal    : scheduled | cancelled
+   Booking   : pending | approved | rejected | cancelled | checked_in | completed | no_show
+   Kategori  : underutilized | normal | overutilized
+   ----------------------------------------------------------------------------- */
+@layer components {
+    :is([data-status='available' i], [data-status='normal' i]) {
+        --cs-tone: var(--cs-color-available);
+        --cs-tone-soft: var(--cs-color-available-soft);
+        --cs-tone-solid: var(--cs-color-available-solid);
+    }
+
+    :is([data-status='booked' i], [data-status='pending' i], [data-status='underutilized' i]) {
+        --cs-tone: var(--cs-color-booked);
+        --cs-tone-soft: var(--cs-color-booked-soft);
+        --cs-tone-solid: var(--cs-color-booked-solid);
+    }
+
+    :is([data-status='occupied' i], [data-status='checked_in' i]) {
+        --cs-tone: var(--cs-color-occupied);
+        --cs-tone-soft: var(--cs-color-occupied-soft);
+        --cs-tone-solid: var(--cs-color-occupied-solid);
+    }
+
+    :is([data-status='approved' i], [data-status='scheduled' i]) {
+        --cs-tone: var(--cs-color-secondary);
+        --cs-tone-soft: var(--cs-color-secondary-soft);
+        --cs-tone-solid: var(--cs-color-secondary);
+    }
+
+    [data-status='completed' i] {
+        --cs-tone: var(--cs-color-primary);
+        --cs-tone-soft: var(--cs-color-primary-soft);
+        --cs-tone-solid: var(--cs-color-primary);
+    }
+
+    :is(
+        [data-status='maintenance' i],
+        [data-status='damaged' i],
+        [data-status='rejected' i],
+        [data-status='overutilized' i]
+    ) {
+        --cs-tone: var(--cs-color-danger);
+        --cs-tone-soft: var(--cs-color-danger-soft);
+        --cs-tone-solid: var(--cs-color-danger-solid);
+    }
+
+    /* Ghost booking punya warna sendiri agar tidak tertukar dengan "Ditolak" */
+    [data-status='no_show' i] {
+        --cs-tone: var(--cs-color-ghost);
+        --cs-tone-soft: var(--cs-color-ghost-soft);
+        --cs-tone-solid: var(--cs-color-ghost-solid);
+    }
+
+    [data-status='active' i] {
+        --cs-tone: var(--cs-color-success);
+        --cs-tone-soft: var(--cs-color-success-soft);
+        --cs-tone-solid: var(--cs-color-success-solid);
+    }
+
+    /* cancelled, inactive & status lain memakai warna netral bawaan komponen */
+}

@@ -16,6 +16,12 @@ final readonly class UtilizationResult
     public const CATEGORY_NORMAL = 'normal';
     public const CATEGORY_OVERUTILIZED = 'overutilized';
 
+    public const CATEGORY_LABELS = [
+        self::CATEGORY_UNDERUTILIZED => 'Kurang dimanfaatkan',
+        self::CATEGORY_NORMAL => 'Normal',
+        self::CATEGORY_OVERUTILIZED => 'Sangat padat',
+    ];
+
     /**
      * @param array<string, float|int|null> $metrics metrik khusus per Strategy
      */

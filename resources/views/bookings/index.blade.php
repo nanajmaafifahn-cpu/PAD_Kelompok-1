@@ -1,101 +1,117 @@
-{{-- FE-03 · Daftar Booking + Panel Verify + Simulator Scan QR
-     Variabel dari BookingController@index:
-       $bookings  paginator Booking (dengan relasi room)
-     Tombol aksi dipilih berdasarkan nama status lewat partial
-     bookings/partials/actions/{status}.blade.php — tanpa if/else di view ini.
-     Menambah status baru cukup menambah satu file partial. --}}
+{{-- Daftar peminjaman — dua mode:
+       $scope = 'mine' (bookings.mine)  : Peminjaman Saya (ref 05) — ruang, waktu, keperluan, status, Detail/Ubah/Batalkan
+       $scope = 'all'  (bookings.index) : Kelola Peminjaman pengelola/admin/pimpinan (ref 08) — Peminjam, Ruang, Waktu,
+                                          Peserta, Status, Tindakan (Setujui/Tolak/Hapus lewat x-confirm-dialog)
+     Variabel dari BookingController@index / @mine:
+       $bookings  paginator Booking 10/halaman (relasi room & user), urut waktu mulai terbaru
+       $scope     'all' | 'mine'
+     Tombol aksi status dipilih dari bookings/partials/actions/{status}.blade.php (ber-@can).
+     Filter status belum didukung controller, jadi tidak ditampilkan. Di bawah 768px tabel tampil sebagai kartu. --}}
 @extends('layouts.app')
 
-@section('title', 'Booking Ruang')
+@use('App\Support\DateFormat')
+
+@php
+    $isMine = ($scope ?? 'all') === 'mine';
+@endphp
+
+@section('title', $isMine ? 'Peminjaman Saya' : 'Kelola Peminjaman')
+
+@section('page_header')
+    <x-page-header eyebrow="Pengajuan & aktivitas" :title="$isMine ? 'Peminjaman saya.' : 'Kelola peminjaman.'"
+                   :crumb="$isMine ? 'Peminjaman Saya' : 'Peminjaman'"
+                   subtitle="Pantau keputusan, akses ruangan, dan riwayat penggunaan.">
+        @can('create', \App\Models\Booking::class)
+            <x-slot:actions>
+                <a href="{{ route('bookings.create') }}" class="cs-btn cs-btn-primary">Ajukan Peminjaman</a>
+            </x-slot:actions>
+        @endcan
+    </x-page-header>
+@endsection
 
 @section('content')
-    <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-            <h1 class="text-2xl font-semibold text-slate-900">Booking Ruang</h1>
-            <p class="mt-1 text-sm text-slate-500">Pengajuan, verifikasi, dan simulasi scan QR check-in / check-out.</p>
-        </div>
-        <a href="{{ route('bookings.create') }}"
-           class="inline-flex items-center justify-center rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white hover:bg-teal-800 focus:outline-none focus:ring-2 focus:ring-teal-600 focus:ring-offset-2">
-            + Ajukan Booking
-        </a>
-    </div>
+    <section aria-labelledby="bookings-heading">
+        <h2 id="bookings-heading" class="mb-4 text-ink-soft">{{ $bookings->total() }} pengajuan</h2>
 
-    {{-- Alur kerja lintas stakeholder (informasi statis) --}}
-    <ol class="mb-6 grid gap-2 text-xs sm:grid-cols-4">
-        <li class="rounded-lg border border-slate-200 bg-white px-3 py-2">
-            <span class="font-semibold text-slate-900">1. Submit</span>
-            <span class="block text-slate-500">Mahasiswa / Dosen</span>
-        </li>
-        <li class="rounded-lg border border-slate-200 bg-white px-3 py-2">
-            <span class="font-semibold text-slate-900">2. Verify</span>
-            <span class="block text-slate-500">Kepala Lab / Admin Akademik</span>
-        </li>
-        <li class="rounded-lg border border-slate-200 bg-white px-3 py-2">
-            <span class="font-semibold text-slate-900">3. QR Check-In</span>
-            <span class="block text-slate-500">Pengguna di depan ruang</span>
-        </li>
-        <li class="rounded-lg border border-slate-200 bg-white px-3 py-2">
-            <span class="font-semibold text-slate-900">4. QR Check-Out</span>
-            <span class="block text-slate-500">Pengguna selesai memakai</span>
-        </li>
-    </ol>
+        @if ($bookings->isEmpty())
+            <div class="cs-card">
+                <x-empty-state title="Belum ada peminjaman"
+                               :text="$isMine ? 'Ajukan peminjaman ruang; statusnya akan dipantau di sini.' : 'Pengajuan dari mahasiswa dan dosen akan muncul di sini.'">
+                    @can('create', \App\Models\Booking::class)
+                        <a href="{{ route('bookings.create') }}" class="cs-btn cs-btn-primary">Ajukan Peminjaman</a>
+                    @endcan
+                </x-empty-state>
+            </div>
+        @else
+            <div class="cs-table-wrap cs-table-wrap-stack" role="region" aria-labelledby="bookings-heading" tabindex="0">
+                <table class="cs-table cs-table-stack">
+                    <caption class="sr-only">
+                        Daftar peminjaman, halaman {{ $bookings->currentPage() }} dari {{ $bookings->lastPage() }}
+                    </caption>
+                    <thead>
+                        <tr>
+                            @unless ($isMine)
+                                <th scope="col">Peminjam</th>
+                            @endunless
+                            <th scope="col">Ruang</th>
+                            <th scope="col">Waktu</th>
+                            @if ($isMine)
+                                <th scope="col">Keperluan</th>
+                            @else
+                                <th scope="col" class="text-right">Peserta</th>
+                            @endif
+                            <th scope="col">Status</th>
+                            <th scope="col">Tindakan</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($bookings as $booking)
+                            <tr>
+                                @unless ($isMine)
+                                    <th scope="row">
+                                        <span class="block font-semibold text-ink">{{ $booking->requester_name ?? $booking->user?->name }}</span>
+                                        @if ($booking->requester_role)
+                                            <span class="block text-xs text-ink-muted">{{ $booking->requester_role }}</span>
+                                        @endif
+                                    </th>
+                                @endunless
+                                {{-- Mode "mine": kolom Ruang menjadi header baris (<th scope="row">). --}}
+                                <{{ $isMine ? 'th scope=row' : 'td' }} data-label="Ruang">
+                                    <span class="block font-semibold text-ink">{{ $booking->room?->name }}</span>
+                                    <span class="cs-code">{{ $booking->room?->code }}</span>
+                                </{{ $isMine ? 'th' : 'td' }}>
+                                <td data-label="Waktu">
+                                    <time datetime="{{ $booking->start_time->toIso8601String() }}">{{ DateFormat::range($booking->start_time, $booking->end_time) }}</time>
+                                    @unless ($isMine)
+                                        <span class="block text-xs text-ink-muted">{{ $booking->purpose }}</span>
+                                    @endunless
+                                </td>
+                                @if ($isMine)
+                                    <td data-label="Keperluan" class="md:max-w-xs">{{ $booking->purpose }}</td>
+                                @else
+                                    <td data-label="Peserta" class="cs-cell-num">{{ $booking->participant_count }} <span class="text-xs text-ink-muted">orang</span></td>
+                                @endif
+                                <td data-label="Status"><x-status-badge :status="$booking->status" /></td>
+                                <td data-label="Tindakan">
+                                    <a href="{{ route('bookings.show', $booking) }}" class="cs-btn cs-btn-secondary cs-btn-sm mb-2">
+                                        Detail<span class="sr-only"> peminjaman {{ $booking->purpose }}</span>
+                                    </a>
+                                    @if ($isMine)
+                                        @include('bookings.partials.manage')
+                                    @else
+                                        @includeFirst(
+                                            ['bookings.partials.actions.' . $booking->status, 'bookings.partials.actions.none'],
+                                            ['booking' => $booking]
+                                        )
+                                    @endif
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        @endif
 
-    <div class="overflow-x-auto rounded-xl border border-slate-200 bg-white">
-        <table class="min-w-full divide-y divide-slate-200 text-sm">
-            <thead class="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                <tr>
-                    <th scope="col" class="px-4 py-3">Pemohon</th>
-                    <th scope="col" class="px-4 py-3">Ruang</th>
-                    <th scope="col" class="px-4 py-3 text-right">Peserta</th>
-                    <th scope="col" class="px-4 py-3">Jadwal</th>
-                    <th scope="col" class="px-4 py-3">Keperluan</th>
-                    <th scope="col" class="px-4 py-3">Status</th>
-                    <th scope="col" class="px-4 py-3">Aktual</th>
-                    <th scope="col" class="px-4 py-3">Aksi</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-100 align-top">
-                @forelse ($bookings as $booking)
-                    <tr class="hover:bg-slate-50">
-                        <td class="px-4 py-3">
-                            <p class="font-medium text-slate-900">{{ $booking->requester_name }}</p>
-                            <p class="text-xs text-slate-500">{{ $booking->requester_role }}</p>
-                        </td>
-                        <td class="px-4 py-3">
-                            <p class="text-slate-900">{{ $booking->room?->name }}</p>
-                            <p class="font-mono text-xs text-slate-500">{{ $booking->room?->code }}</p>
-                        </td>
-                        <td class="px-4 py-3 text-right tabular-nums">{{ $booking->participant_count }}</td>
-                        <td class="whitespace-nowrap px-4 py-3">
-                            <p class="text-slate-900">{{ $booking->start_time->format('d M Y') }}</p>
-                            <p class="text-xs tabular-nums text-slate-500">{{ $booking->start_time->format('H:i') }} – {{ $booking->end_time->format('H:i') }}</p>
-                        </td>
-                        <td class="max-w-xs px-4 py-3 text-slate-700">{{ $booking->purpose }}</td>
-                        <td class="px-4 py-3"><x-status-badge :status="$booking->status" /></td>
-                        <td class="whitespace-nowrap px-4 py-3 text-xs tabular-nums text-slate-600">
-                            <p>In: {{ $booking->checked_in_at?->format('H:i') ?? '—' }}</p>
-                            <p>Out: {{ $booking->checked_out_at?->format('H:i') ?? '—' }}</p>
-                        </td>
-                        <td class="px-4 py-3">
-                            @includeFirst(
-                                ['bookings.partials.actions.' . $booking->status, 'bookings.partials.actions.none'],
-                                ['booking' => $booking]
-                            )
-                        </td>
-                    </tr>
-                @empty
-                    <tr>
-                        <td colspan="8" class="px-4 py-10 text-center text-slate-500">
-                            Belum ada pengajuan booking.
-                            <a href="{{ route('bookings.create') }}" class="font-medium text-teal-700 hover:underline">Ajukan booking pertama</a>.
-                        </td>
-                    </tr>
-                @endforelse
-            </tbody>
-        </table>
-    </div>
-
-    <div class="mt-4">
-        {{ $bookings->links() }}
-    </div>
+        <div class="mt-6">{{ $bookings->links() }}</div>
+    </section>
 @endsection

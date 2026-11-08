@@ -4,12 +4,21 @@ namespace Tests\Feature;
 
 use App\Models\AcademicUnit;
 use App\Models\Room;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class CampusControllerTest extends TestCase
 {
     use RefreshDatabase;
+
+    // Tambah ruang & jadwal khusus pengelola sejak Fase 1 (auth + role).
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_LAB_HEAD]));
+    }
 
     private function createAcademicUnit(): AcademicUnit
     {
@@ -41,6 +50,7 @@ class CampusControllerTest extends TestCase
         $response = $this->post(route('rooms.store'), [
             'academic_unit_id' => $unit->id,
             'code' => 'C301',
+            'type' => 'laboratory',
             'name' => 'Laboratorium C301',
             'building' => 'Gedung C',
             'floor' => '3',
@@ -49,7 +59,7 @@ class CampusControllerTest extends TestCase
         ]);
 
         $response->assertSessionHasNoErrors();
-        $response->assertRedirect(route('rooms.index'));
+        $response->assertRedirect(route('rooms.manage'));
 
         $this->assertDatabaseHas('rooms', [
             'code' => 'C301',
