@@ -9,24 +9,23 @@
 <form method="POST" action="{{ route('bookings.checkin', $booking) }}" class="space-y-1.5" data-cs-validate>
     @csrf
     <label for="qr_token_in_{{ $booking->id }}" class="cs-form-label text-xs">
-        Token QR <span class="cs-form-required" aria-hidden="true">*</span>
+        Kode cadangan <span class="cs-form-required" aria-hidden="true">*</span>
     </label>
     <input id="qr_token_in_{{ $booking->id }}" name="qr_token" type="text" required maxlength="64"
-           pattern="[A-Za-z0-9]+" data-trim data-pattern-message="Token QR hanya berisi huruf dan angka, tanpa spasi."
-           autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Tempel isi QR"
+           pattern="[A-Za-z0-9]+" data-trim data-pattern-message="Kode cadangan hanya berisi huruf dan angka, tanpa spasi."
+           autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Tempel kode cadangan"
            aria-describedby="qr_token_in_{{ $booking->id }}-hint"
            class="cs-form-control font-mono text-xs md:w-48">
     <p id="qr_token_in_{{ $booking->id }}-hint" class="cs-form-hint">
-        Cara utama: scan QR di pintu ruangan. Kode cadangan ada di halaman Detail.
-        Check-in {{ $booking->checkInOpensAt()->format('H.i') }}–{{ $booking->checkInClosesAt()->format('H.i T') }}.
+        Cara utama: pindai QR di pintu ruangan. Kode cadangan ada di halaman Detail.
+        Check-in {{ \App\Support\DateFormat::time($booking->checkInOpensAt()) }}–{{ \App\Support\DateFormat::time($booking->checkInClosesAt()) }} WIB.
     </p>
     <button type="submit" class="cs-btn cs-btn-primary cs-btn-sm">
-        <svg aria-hidden="true" class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 12h10"/></svg>
-        Simulasi Scan QR Check-In
+        <x-icon name="qr" class="h-4 w-4" /> Check-in dengan kode cadangan
     </button>
 </form>
 @else
-<span class="text-xs text-ink-muted">Menunggu check-in pemilik</span>
+<span class="block text-xs text-ink-muted">Menunggu check-in pemilik</span>
 @endcan
 
 {{-- FE-06: Batalkan (hanya tampil bila route bookings.cancel tersedia) --}}
