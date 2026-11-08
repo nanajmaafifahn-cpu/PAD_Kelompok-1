@@ -15,7 +15,8 @@ class UtilizationDashboardService
 {
     public function __construct(
         private readonly UtilizationCalculatorContext $calculator,
-        private readonly BookingService $bookingService
+        private readonly BookingService $bookingService,
+        private readonly RoomStatusService $roomStatus
     ) {
     }
 
@@ -28,9 +29,8 @@ class UtilizationDashboardService
         $rooms = Room::with('academicUnit')->orderBy('code')->get();
         $results = $this->calculator->calculateAll($rooms, $period);
 
-        $liveStatuses = $rooms->mapWithKeys(
-            fn (Room $room) => [$room->id => $room->getLiveStatus()]
-        );
+        // Status live semua ruang dalam 2 query (RoomStatusService), bukan 2 query per ruang.
+        $liveStatuses = collect($this->roomStatus->forRooms($rooms));
 
         $byCategory = fn (string $category) => $results
             ->where('category', $category)

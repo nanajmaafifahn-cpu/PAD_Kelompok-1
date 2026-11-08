@@ -10,6 +10,7 @@ use App\Models\AcademicUnit;
 use App\Models\Facility;
 use App\Models\Room;
 use App\Services\RoomService;
+use App\Services\RoomStatusService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
@@ -21,7 +22,8 @@ use Illuminate\View\View;
 class RoomController extends Controller
 {
     public function __construct(
-        private readonly RoomService $roomService
+        private readonly RoomService $roomService,
+        private readonly RoomStatusService $roomStatus
     ) {
     }
 
@@ -43,6 +45,7 @@ class RoomController extends Controller
 
         return view('rooms.index', [
             'rooms' => $rooms,
+            'liveStatuses' => $this->roomStatus->forRooms($rooms->getCollection()),
             'filters' => $filters,
             'types' => Room::TYPE_LABELS,
             'facilityNames' => Facility::query()->distinct()->orderBy('name')->pluck('name'),

@@ -1,6 +1,7 @@
 {{-- FE-02 / FE-04 · Daftar Ruang/Laboratorium & Fasilitas
      Variabel dari RoomController@index:
        $rooms          paginator Room (relasi academicUnit & facilities, bookings_count), withQueryString()
+       $liveStatuses   [room_id => available|booked|occupied|maintenance] (RoomStatusService)
        $filters        ['q', 'type', 'min_capacity', 'facility'] nilai filter aktif (E4)
        $types          Room::TYPE_LABELS (kunci => label)
        $facilityNames  daftar nama fasilitas unik untuk filter
@@ -113,8 +114,8 @@
                             <td class="cs-cell-num">
                                 {{ $room->getCapacity() }} <span class="text-xs text-ink-muted">orang</span>
                             </td>
-                            {{-- Status live: occupied/booked dihitung dari booking (Room::getLiveStatus) --}}
-                            <td><x-status-badge :status="$room->getLiveStatus()" /></td>
+                            {{-- Status live dari controller (RoomStatusService), tanpa query di view --}}
+                            <td><x-status-badge :status="$liveStatuses[$room->id] ?? 'available'" /></td>
                             <td>
                                 @if ($room->facilities->isEmpty())
                                     <span class="text-xs text-ink-muted">Belum ada fasilitas</span>
