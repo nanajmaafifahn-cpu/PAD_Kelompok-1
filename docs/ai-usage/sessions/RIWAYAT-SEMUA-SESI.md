@@ -2110,3 +2110,28 @@ warning: in the working copy of 'docs/ai-usage/sessions/RIWAYAT-SEMUA-SESI.md', 
  docs/ai-usage/sessions/RIWAYAT-SEMUA-SESI.md | 179 +++++++++++++++++++++++++++
  3 files changed, 189 insertions(+)
 ```
+
+---
+
+## Sesi AI-20261108-092509 — 2026-11-08 09:25:09 +00:00
+
+- **Identitas Git**: aldikarmdhn (`aldikarmdhn@gmail.com`)
+- **Provider AI**: Claude Code
+- **Tujuan**: Perbaikan rubrik FE-04/05/06: istilah Inggris tersisa, tag figure, media query max-width 768px
+
+### Prompt Asli
+> cek tugas FE-04, FE-05, FE-06 lalu kerjakan perbaikannya
+
+### Output / Respons AI
+Ringkasan perbaikan FE-04/05/06 dan sisa yang belum dikerjakan
+
+### Ringkasan Perubahan (Before - Work - After)
+- **Before (Kondisi Awal)**: Branch feature/fe-perbaikan-rubrik dari main (c3abf59); laporan utilisasi masih memakai booking/ghost booking/underutilized, belum ada tag figure, breakpoint tabel ditulis width < 48rem
+- **Pekerjaan AI**: Ganti istilah Inggris di laporan utilisasi dan form ruang; figure + figcaption untuk kamera pindai QR, gambar QR cetak, dan foto ruang; media query tabel menjadi max-width 768px; tambah assertion tes; perbarui screenshot 09. max/pattern FE-04 dilewati atas keputusan user (tidak mengubah backend)
+- **After (Kondisi Akhir)**: Commit 40e7390 dan 70db589 di feature/fe-perbaikan-rubrik, belum di-push; cetak QR tetap 10 halaman A4
+- **Pengujian**: php artisan test: 111 passed, 716 assertions; npm.cmd run build berhasil
+
+### File Terdampak
+```text
+Tidak ada file yang dimodifikasi (hanya diskusi/analisis).
+```
