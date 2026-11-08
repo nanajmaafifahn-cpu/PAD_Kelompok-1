@@ -10,6 +10,7 @@ use App\Http\Requests\StoreBookingRequest;
 use App\Http\Requests\UpdateBookingRequest;
 use App\Models\Booking;
 use App\Services\BookingService;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -106,6 +107,11 @@ class BookingController extends Controller
             return back()
                 ->withInput()
                 ->withErrors($exception->toErrors());
+        } catch (QueryException $exception) {
+            report($exception);
+
+            return back()->withInput()
+                ->with('error', 'Peminjaman gagal disimpan. Coba lagi beberapa saat lagi.');
         }
 
         return redirect()
@@ -137,6 +143,11 @@ class BookingController extends Controller
             return back()
                 ->withInput()
                 ->withErrors($exception->toErrors());
+        } catch (QueryException $exception) {
+            report($exception);
+
+            return back()->withInput()
+                ->with('error', 'Perubahan peminjaman gagal disimpan. Coba lagi beberapa saat lagi.');
         }
 
         return redirect()

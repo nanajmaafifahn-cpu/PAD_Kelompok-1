@@ -15,6 +15,7 @@
 @use('App\Support\DateFormat')
 
 @section('title', 'Laporan Utilisasi')
+@section('inline_error_fields', 'start,end')
 
 @php
     // Pengelompokan tampilan dari data Service (tanpa query dan tanpa rumus utilisasi baru).
@@ -62,11 +63,15 @@
                   :cols="3" submit="Tampilkan Laporan" label="Filter periode laporan">
         <div>
             <label for="start_date" class="cs-form-label">Dari tanggal</label>
-            <input type="date" id="start_date" name="start" value="{{ request('start', $period['start']) }}" class="cs-form-control">
+            <input type="date" id="start_date" name="start" value="{{ old('start', request('start', $period['start'])) }}" class="cs-form-control"
+                   @error('start') aria-invalid="true" aria-describedby="start-error" @enderror>
+            <x-field-error for="start" />
         </div>
         <div>
             <label for="end_date" class="cs-form-label">Sampai tanggal</label>
-            <input type="date" id="end_date" name="end" value="{{ request('end', $period['end']) }}" class="cs-form-control">
+            <input type="date" id="end_date" name="end" value="{{ old('end', request('end', $period['end'])) }}" class="cs-form-control"
+                   @error('end') aria-invalid="true" aria-describedby="end-error" @enderror>
+            <x-field-error for="end" />
         </div>
         <p class="text-sm text-ink-soft md:self-center">
             Diperbarui saat halaman dibuka · WIB<br>

@@ -78,6 +78,40 @@ class StoreRoomRequest extends FormRequest
         ];
     }
 
+    public function messages(): array
+    {
+        return [
+            'academic_unit_id.required' => 'Unit akademik wajib dipilih.',
+            'academic_unit_id.integer' => 'Unit akademik harus berupa pilihan yang valid.',
+            'academic_unit_id.exists' => 'Unit akademik yang dipilih tidak ditemukan.',
+            'code.required' => 'Kode ruang wajib diisi.',
+            'code.string' => 'Kode ruang harus berupa teks.',
+            'code.max' => 'Kode ruang maksimal 30 karakter.',
+            'code.unique' => 'Kode ruang sudah digunakan.',
+            'type.required' => 'Tipe ruang wajib dipilih.',
+            'type.in' => 'Tipe ruang yang dipilih tidak valid.',
+            'name.required' => 'Nama ruang wajib diisi.',
+            'name.string' => 'Nama ruang harus berupa teks.',
+            'name.max' => 'Nama ruang maksimal 150 karakter.',
+            'building.required' => 'Gedung wajib diisi.',
+            'building.string' => 'Gedung harus berupa teks.',
+            'building.max' => 'Gedung maksimal 100 karakter.',
+            'floor.string' => 'Lantai harus berupa teks.',
+            'floor.max' => 'Lantai maksimal 30 karakter.',
+            'capacity.required' => 'Kapasitas ruang wajib diisi.',
+            'capacity.integer' => 'Kapasitas ruang harus berupa bilangan bulat.',
+            'capacity.min' => 'Kapasitas ruang minimal 1 orang.',
+            'status.required' => 'Status ruang wajib dipilih.',
+            'status.in' => 'Status ruang yang dipilih tidak valid.',
+            'description.string' => 'Deskripsi ruang harus berupa teks.',
+            'photo.image' => 'Foto ruang harus berupa gambar.',
+            'photo.mimes' => 'Foto ruang harus berformat JPG, PNG, atau WebP.',
+            'photo.max' => 'Ukuran foto ruang maksimal 2 MB.',
+            'photo.uploaded' => 'Foto ruang gagal diunggah. Pilih kembali foto dan coba lagi.',
+            'remove_photo.boolean' => 'Pilihan hapus foto tidak valid.',
+        ];
+    }
+
     // UpdateRoomRequest mengabaikan ruang yang sedang diubah.
     protected function uniqueCodeRule(): \Illuminate\Validation\Rules\Unique
     {

@@ -12,9 +12,11 @@ use App\Models\Room;
 use App\Services\CalendarService;
 use App\Services\RoomService;
 use App\Services\RoomStatusService;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
+use League\Flysystem\FilesystemException;
 
 /**
  * Controller untuk manajemen data master ruangan dan laboratorium.
@@ -118,12 +120,19 @@ class RoomController extends Controller
 
     public function update(UpdateRoomRequest $request, Room $room): RedirectResponse
     {
-        $this->roomService->update(
-            $room,
-            $request->validated(),
-            $request->file('photo'),
-            $request->boolean('remove_photo')
-        );
+        try {
+            $this->roomService->update(
+                $room,
+                $request->validated(),
+                $request->file('photo'),
+                $request->boolean('remove_photo')
+            );
+        } catch (RoomException|QueryException|FilesystemException $exception) {
+            report($exception);
+
+            return back()->withInput($request->except('photo'))
+                ->with('error', 'Perubahan ruang gagal disimpan. Coba lagi; pilih kembali foto jika ada.');
+        }
 
         return redirect()
             ->route('rooms.manage')
@@ -179,7 +188,14 @@ class RoomController extends Controller
     public function store(
         StoreRoomRequest $request
     ): RedirectResponse {
-        $this->roomService->create($request->validated(), $request->file('photo'));
+        try {
+            $this->roomService->create($request->validated(), $request->file('photo'));
+        } catch (RoomException|QueryException|FilesystemException $exception) {
+            report($exception);
+
+            return back()->withInput($request->except('photo'))
+                ->with('error', 'Ruang gagal disimpan. Coba lagi; pilih kembali foto jika ada.');
+        }
 
         return redirect()
             ->route('rooms.manage')

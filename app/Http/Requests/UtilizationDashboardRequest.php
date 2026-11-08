@@ -22,8 +22,19 @@ class UtilizationDashboardRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'start' => ['nullable', 'date'],
-            'end' => ['nullable', 'date', 'after_or_equal:start'],
+            'start' => ['nullable', 'required_with:end', 'date_format:Y-m-d'],
+            'end' => ['nullable', 'required_with:start', 'date_format:Y-m-d', 'after_or_equal:start'],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'start.required_with' => 'Tanggal awal wajib diisi bersama tanggal akhir.',
+            'start.date_format' => 'Tanggal awal harus berformat tahun-bulan-tanggal yang valid.',
+            'end.required_with' => 'Tanggal akhir wajib diisi bersama tanggal awal.',
+            'end.date_format' => 'Tanggal akhir harus berformat tahun-bulan-tanggal yang valid.',
+            'end.after_or_equal' => 'Tanggal akhir tidak boleh sebelum tanggal awal.',
         ];
     }
 
