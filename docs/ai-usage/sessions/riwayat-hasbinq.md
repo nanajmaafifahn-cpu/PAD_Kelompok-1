@@ -3,7 +3,7 @@
 ## Identitas Anggota
 - **Nama Lengkap (`user.name`)**: hasbinq
 - **Email Git (`user.email`)**: hasbinq@gmail.com
-- **Pembaruan Terakhir**: 2026-10-20 16:21:52 +00:00
+- **Pembaruan Terakhir**: 2026-11-09 00:52:26 +07:00
 
 ---
 
@@ -209,4 +209,93 @@ warning: in the working copy of 'docs/ai-usage/sessions/riwayat-hasbinq.md', CRL
  .../bookings/partials/actions/checked_in.blade.php |   3 +-
  .../bookings/partials/actions/pending.blade.php    |   1 -
  12 files changed, 398 insertions(+), 27 deletions(-)
+```
+
+---
+
+## Sesi AI-20261108-164119 — 2026-11-08 16:41:19 +00:00
+
+- **Identitas Git**: hasbinq (`hasbinq@gmail.com`)
+- **Provider AI**: Codex
+- **Tujuan**: Menarik pembaruan remote
+
+### Prompt Asli
+> pull
+
+### Output / Respons AI
+Git pull --ff-only berhasil pada main dari 1c3b722 ke 1ef9bcf tanpa konflik.
+
+### Ringkasan Perubahan (Before - Work - After)
+- **Before (Kondisi Awal)**: Branch main pada 1c3b722 dan working tree bersih.
+- **Pekerjaan AI**: Membaca aturan proyek, memeriksa status dan diff, lalu menjalankan git pull --ff-only.
+- **After (Kondisi Akhir)**: Branch main diperbarui ke 1ef9bcf melalui fast-forward.
+- **Pengujian**: Git pull berhasil; tes aplikasi tidak dijalankan karena tugas hanya sinkronisasi Git.
+
+### File Terdampak
+```text
+Tidak ada file yang dimodifikasi (hanya diskusi/analisis).
+```
+
+---
+
+## Sesi AI-20261109-005226 — 2026-11-09 00:52:26 +07:00
+
+- **Identitas Git**: hasbinq (`hasbinq@gmail.com`)
+- **Provider AI**: Codex
+- **Tujuan**: PAD-26 BE-05: integrasi frontend-backend, validasi Indonesia, dan penanganan galat
+
+### Prompt Asli
+> Kerjakan issue **PAD-26 (BE-05): Integrasi Frontend-Backend, Form Request Validation, & Error Handling** pada proyek Campus Space & Laboratory Utilization System.
+>
+> Gunakan seluruh sources yang sudah tersedia di project, khususnya materi PAD Week 1–10, rubrik Project III, dokumen tawaran topik, dan source code Laravel sebagai acuan.
+>
+> Selesaikan seluruh checklist PAD-26:
+>
+> 1. Sempurnakan `StoreRoomRequest` dan `StoreBookingRequest` dengan validasi server-side dan pesan bahasa Indonesia.
+> 2. Pastikan `ScheduleController`, `RoomController`, `BookingController`, dan `UtilizationDashboardController` terintegrasi dengan halaman Blade.
+> 3. Terapkan `try-catch`, flash session `success/error`, serta `old()` dan `withInput()` untuk menangani kesalahan dan mempertahankan input pengguna.
+>
+> Audit implementasi yang sudah ada, kemudian perbaiki bagian yang belum sesuai. Pertahankan arsitektur OOP dan MVC, jangan mengubah fitur lain yang sudah berjalan, dan pastikan hasilnya memenuhi rubrik Project III.
+>
+> Lakukan pengujian, lalu tampilkan file yang diubah, hasil pengujian, serta checklist yang sudah terpenuhi. Jangan mengklaim pengujian berhasil jika belum dijalankan.
+>
+> Instruksi susulan untuk pencatatan retroaktif: yang sebelumnya masukan ke log ai
+
+### Output / Respons AI
+Pekerjaan PAD-26 sebelumnya dicatat retroaktif atas permintaan pengguna. Tiga checklist Linear telah dicentang dan status In Review. Implementasi serta pengujian selesai; belum commit/push. Sesi ini hanya mencatat hasil pekerjaan sebelumnya, tanpa menjalankan ulang pengujian.
+
+### Ringkasan Perubahan (Before - Work - After)
+- **Before (Kondisi Awal)**: Aturan StoreRoomRequest dan StoreBookingRequest tersedia tanpa pesan Indonesia sendiri. Data empat controller sesuai Blade. Galat domain booking/jadwal telah ditangani, tetapi kegagalan database tambah/ubah dan penyimpanan ruang belum mengembalikan input secara lengkap. Filter satu tanggal diabaikan; kegagalan simpan foto bernilai false belum terdeteksi. Empat file log sudah staged sebelum pekerjaan.
+- **Pekerjaan AI**: Menambahkan messages() pada StoreRoomRequest, StoreBookingRequest, StoreScheduleRequest dan UtilizationDashboardRequest; memvalidasi pasangan/format/urutan tanggal laporan. Menambahkan try-catch, report(), flash error dan withInput() pada tambah/ubah di RoomController, BookingController, ScheduleController. RoomService menolak hasil simpan foto false. bootstrap/app.php membatasi respons exception 5xx aman pada empat controller PAD-26. dashboard/utilization.blade.php memakai old(), field-error dan aria-invalid. Menambah tests/Feature/FrontendBackendIntegrationTest.php. UtilizationDashboardController diaudit dan kontrak datanya diuji tanpa perubahan kode. Arsitektur service/model serta otorisasi dipertahankan; tidak ada perubahan dependensi atau database.
+- **After (Kondisi Akhir)**: 10 file aplikasi berubah dan 1 file tes baru; checklist PAD-26 selesai dan In Review di Linear. Input dan pesan galat terverifikasi setelah redirect dengan cookie sesi. Refleksi: tes awal gagal karena mock service terlalu luas dan cookie sesi belum dibawa saat redirect; diperbaiki menjadi partialMock dan meneruskan cookie, tanpa mengubah kode produksi untuk menutupi kegagalan tes. Pekerjaan tetap belum commit/push. Build frontend, audit visual browser dan MySQL/XAMPP belum diuji.
+- **Pengujian**: Hasil yang benar-benar dijalankan pada pekerjaan sebelumnya: php artisan test --filter=FrontendBackendIntegrationTest: 16 passed, 226 assertions; php artisan test: 127 passed, 942 assertions (termasuk 16 tes baru); php -l seluruh file PHP/Blade yang diubah dan tes baru: tanpa kesalahan sintaks; git diff --check: bersih. Tes memakai konfigurasi SQLite pengujian. Tidak ada pengujian ulang pada sesi pencatatan ini.
+
+### File Terdampak
+```text
+M	app/Http/Controllers/BookingController.php
+M	app/Http/Controllers/RoomController.php
+M	app/Http/Controllers/ScheduleController.php
+M	app/Http/Requests/StoreBookingRequest.php
+M	app/Http/Requests/StoreRoomRequest.php
+M	app/Http/Requests/StoreScheduleRequest.php
+M	app/Http/Requests/UtilizationDashboardRequest.php
+M	app/Services/RoomService.php
+M	bootstrap/app.php
+M	resources/views/dashboard/utilization.blade.php
+Untracked:
+tests/Feature/FrontendBackendIntegrationTest.php
+```
+Diff stat:
+```text
+ app/Http/Controllers/BookingController.php        | 11 ++++++++
+ app/Http/Controllers/RoomController.php           | 30 +++++++++++++++-----
+ app/Http/Controllers/ScheduleController.php       | 11 ++++++++
+ app/Http/Requests/StoreBookingRequest.php         | 21 ++++++++++++++
+ app/Http/Requests/StoreRoomRequest.php            | 34 +++++++++++++++++++++++
+ app/Http/Requests/StoreScheduleRequest.php        | 17 ++++++++++++
+ app/Http/Requests/UtilizationDashboardRequest.php | 15 ++++++++--
+ app/Services/RoomService.php                      |  8 ++++++
+ bootstrap/app.php                                 | 22 +++++++++++++++
+ resources/views/dashboard/utilization.blade.php   |  9 ++++--
+ 10 files changed, 167 insertions(+), 11 deletions(-)
 ```
