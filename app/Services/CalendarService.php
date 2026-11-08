@@ -44,6 +44,40 @@ class CalendarService
     }
 
     /**
+     * Kalender satu minggu (Senin-Minggu) yang memuat $date (default: minggu berjalan).
+     *
+     * @return array{start: CarbonInterface, end: CarbonInterface, total: int,
+     *               days: list<array{date: CarbonInterface, is_today: bool, events: Collection}>}
+     */
+    public function week(?CarbonInterface $date = null): array
+    {
+        $date ??= now();
+        $start = $date->copy()->startOfWeek();
+        $end = $date->copy()->endOfWeek();
+
+        // Hanya kegiatan yang MULAI di minggu ini, dikelompokkan menurut tanggal mulai.
+        $events = $this->events($start, $end)
+            ->filter(fn (array $e) => $e['start']->between($start, $end))
+            ->groupBy(fn (array $e) => $e['start']->toDateString());
+
+        $days = [];
+        for ($day = $start->copy(); $day->lte($end); $day = $day->copy()->addDay()) {
+            $days[] = [
+                'date' => $day,
+                'is_today' => $day->isSameDay(now()),
+                'events' => ($events[$day->toDateString()] ?? collect())->values(),
+            ];
+        }
+
+        return [
+            'start' => $start,
+            'end' => $end,
+            'total' => $events->flatten(1)->count(),
+            'days' => $days,
+        ];
+    }
+
+    /**
      * @return Collection<int, array<string, mixed>> diurutkan dari waktu mulai
      */
     protected function events(CarbonInterface $from, ?CarbonInterface $to = null, ?int $roomId = null): Collection
