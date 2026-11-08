@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Booking;
 use App\Models\Room;
 use App\Strategies\UtilizationCalculatorContext;
 use App\Support\Utilization\UtilizationPeriod;
@@ -53,6 +54,18 @@ class UtilizationDashboardService
                 'occupied_now' => $countLive('occupied'),
                 'booked_now' => $countLive('booked'),
                 'available_now' => $countLive('available'),
+                // BE-09: ringkasan laporan dihitung di service, bukan di view.
+                'maintenance_now' => $countLive('maintenance'),
+                'total_scheduled_hours' => round($results->sum(fn (UtilizationResult $r) => $r->scheduledHours), 2),
+                'total_actual_hours' => round($results->sum(fn (UtilizationResult $r) => $r->actualHours), 2),
+                'total_ghost_bookings' => (int) $results->sum(fn (UtilizationResult $r) => $r->ghostBookings),
+                'average_utilization_rate' => round((float) ($results->avg(fn (UtilizationResult $r) => $r->utilizationRate) ?? 0), 1),
+                'average_scheduled_rate' => round((float) ($results->avg(fn (UtilizationResult $r) => $r->scheduledRate) ?? 0), 1),
+                // Sesi yang sudah check-in tetapi belum check-out (jam aktualnya belum lengkap).
+                'open_sessions' => Booking::query()
+                    ->where('status', Booking::STATUS_CHECKED_IN)
+                    ->whereBetween('start_time', [$period->start, $period->end])
+                    ->count(),
             ],
             'rooms' => $results->map(fn (UtilizationResult $result) => [
                 ...$result->toArray(),
