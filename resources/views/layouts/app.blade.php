@@ -151,6 +151,9 @@
         </div>
     </div>
 
+    {{-- Dialog konfirmasi umum untuk semua <form data-confirm> (hapus, batal, setujui, perbarui QR). --}}
+    <x-confirm-dialog id="cs-confirm-dialog" title="Konfirmasi tindakan" />
+
     {{-- Mode CDN: interaksi (campus-space.js) disisipkan langsung; mode Vite memuatnya lewat app.js. --}}
     @unless (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
         <script>{!! file_get_contents(resource_path('js/campus-space.js')) !!}</script>

@@ -38,6 +38,14 @@ class Room extends BaseCampusEntity
         self::LIVE_MAINTENANCE => 'Perawatan',
     ];
 
+    // Versi pendek untuk badge di tabel.
+    public const LIVE_STATUS_SHORT_LABELS = [
+        self::LIVE_AVAILABLE => 'Tersedia',
+        self::LIVE_BOOKED => 'Dipesan',
+        self::LIVE_OCCUPIED => 'Sedang digunakan',
+        self::LIVE_MAINTENANCE => 'Perawatan',
+    ];
+
     // Nilai DB = kunci Strategy utilisasi (UtilizationCalculatorContext memilih strategi dari sini).
     // Label UI hanya ditentukan di sini. Lihat penjelasan pemetaan di docs/fe/KONTRAK-VIEW.md.
     public const TYPE_LABELS = [

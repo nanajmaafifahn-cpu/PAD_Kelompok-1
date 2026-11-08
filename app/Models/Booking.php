@@ -24,6 +24,17 @@ class Booking extends BaseCampusEntity
         self::STATUS_NO_SHOW,
     ];
 
+    // Label status untuk UI (satu sumber; dipakai x-status-badge & timeline).
+    public const STATUS_LABELS = [
+        self::STATUS_PENDING => 'Menunggu persetujuan',
+        self::STATUS_APPROVED => 'Disetujui',
+        self::STATUS_REJECTED => 'Ditolak',
+        self::STATUS_CANCELLED => 'Dibatalkan',
+        self::STATUS_CHECKED_IN => 'Check-in',
+        self::STATUS_COMPLETED => 'Selesai',
+        self::STATUS_NO_SHOW => 'Tidak hadir',
+    ];
+
     // Booking yang boleh dihapus pengelola: tidak ikut perhitungan utilisasi.
     public const DELETABLE_STATUSES = [
         self::STATUS_PENDING,

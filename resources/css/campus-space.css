@@ -72,6 +72,9 @@
     --cs-color-info: #0369a1;             /* sky-700 */
     --cs-color-info-soft: #f0f9ff;
     --cs-color-info-solid: #0ea5e9;
+    --cs-color-ghost: #6d28d9;            /* violet-700: ghost booking (no_show) */
+    --cs-color-ghost-soft: #f5f3ff;
+    --cs-color-ghost-solid: #8b5cf6;
     --cs-color-neutral: #334155;          /* slate-700 */
     --cs-color-neutral-soft: #f1f5f9;
     --cs-color-neutral-solid: #94a3b8;
@@ -1256,13 +1259,307 @@
         align-items: center;
         border-radius: var(--cs-radius-full);
         background-color: var(--cs-tone-soft, var(--cs-color-neutral-soft));
-        padding: 0.125rem var(--cs-space-2);
+        padding: 0.1875rem 0.625rem;
         color: var(--cs-tone, var(--cs-color-neutral));
-        font-size: 0.6875rem;
-        font-weight: var(--cs-font-weight-semibold);
-        letter-spacing: 0.025em;
-        text-transform: uppercase;
+        font-size: var(--cs-text-caption);
+        font-weight: var(--cs-font-weight-bold);
         white-space: nowrap;
+    }
+
+    /* ---------- Stat card ---------- */
+    .cs-stat-card {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        gap: var(--cs-space-2);
+        border: 1px solid var(--cs-color-border);
+        border-radius: var(--cs-radius-xl);
+        background-color: var(--cs-color-surface);
+        padding: var(--cs-space-6);
+    }
+
+    .cs-stat-card-label {
+        padding-right: 3rem;
+        color: var(--cs-color-text-secondary);
+        font-size: var(--cs-text-body);
+        font-weight: var(--cs-font-weight-semibold);
+    }
+
+    .cs-stat-card-value {
+        color: var(--cs-color-text-primary);
+        font-size: 2.5rem;
+        font-weight: var(--cs-font-weight-extrabold);
+        font-variant-numeric: tabular-nums;
+        letter-spacing: var(--cs-letter-spacing-tight);
+        line-height: 1.1;
+    }
+
+    .cs-stat-card-caption {
+        color: var(--cs-color-text-muted);
+        font-size: var(--cs-text-body);
+    }
+
+    /* Chip ikon berwarna lembut; warna mengikuti data-status / data-tone (default teal) */
+    .cs-icon-chip {
+        display: grid;
+        place-items: center;
+        width: 2.5rem;
+        height: 2.5rem;
+        border-radius: var(--cs-radius-lg);
+        background-color: var(--cs-tone-soft, var(--cs-color-primary-soft));
+        color: var(--cs-tone, var(--cs-color-primary));
+    }
+
+    .cs-stat-card .cs-icon-chip {
+        position: absolute;
+        top: var(--cs-space-5);
+        right: var(--cs-space-5);
+    }
+
+    .cs-icon-chip svg {
+        width: 1.25rem;
+        height: 1.25rem;
+    }
+
+    /* ---------- Empty state (komponen x-empty-state) ---------- */
+    .cs-empty {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: var(--cs-space-2);
+        padding: var(--cs-space-10) var(--cs-space-4);
+        text-align: center;
+    }
+
+    .cs-empty-title {
+        color: var(--cs-color-text-primary);
+        font-size: 1.125rem;
+        font-weight: var(--cs-font-weight-bold);
+    }
+
+    .cs-empty-text {
+        max-width: 32rem;
+        color: var(--cs-color-text-secondary);
+        font-size: var(--cs-text-body);
+    }
+
+    /* ---------- Kartu ruang (komponen x-room-card) ---------- */
+    .cs-room-card {
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        border: 1px solid var(--cs-color-border);
+        border-radius: var(--cs-radius-xl);
+        background-color: var(--cs-color-surface);
+    }
+
+    .cs-room-card-media {
+        position: relative;
+        display: grid;
+        place-items: center;
+        aspect-ratio: 16 / 9;
+        background: linear-gradient(135deg, #e6edf5, #d9e3ee);
+        color: #4d6a87;
+        text-align: center;
+    }
+
+    .cs-room-card-media img {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .cs-room-card-code {
+        display: block;
+        margin-top: var(--cs-space-2);
+        font-size: 1.75rem;
+        font-weight: var(--cs-font-weight-extrabold);
+        letter-spacing: 0.08em;
+    }
+
+    .cs-room-card-chip {
+        position: absolute;
+        top: var(--cs-space-3);
+        left: var(--cs-space-3);
+        z-index: 1;
+        border-radius: var(--cs-radius-md);
+        background-color: var(--cs-color-surface);
+        padding: 0.25rem 0.625rem;
+        color: var(--cs-color-text-primary);
+        font-size: var(--cs-text-caption);
+        font-weight: var(--cs-font-weight-bold);
+    }
+
+    .cs-room-card-body {
+        display: flex;
+        flex: 1;
+        flex-direction: column;
+        gap: var(--cs-space-1);
+        padding: var(--cs-space-5) var(--cs-space-6) var(--cs-space-6);
+    }
+
+    .cs-room-card-name {
+        color: var(--cs-color-text-primary);
+        font-size: 1.375rem;
+        font-weight: var(--cs-font-weight-extrabold);
+    }
+
+    .cs-room-card-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--cs-space-2) var(--cs-space-4);
+        margin-top: var(--cs-space-3);
+        border-top: 1px solid var(--cs-color-border);
+        padding-top: var(--cs-space-3);
+        color: var(--cs-color-text-secondary);
+        font-size: var(--cs-text-body);
+    }
+
+    .cs-room-card-meta span {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--cs-space-1);
+    }
+
+    .cs-room-card-meta svg {
+        width: 1rem;
+        height: 1rem;
+    }
+
+    /* Titik status live: "Tersedia sekarang", "Sedang digunakan", ... (warna dari data-status) */
+    .cs-live-dot {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--cs-space-2);
+        color: var(--cs-tone, var(--cs-color-neutral));
+        font-size: var(--cs-text-caption);
+        font-weight: var(--cs-font-weight-bold);
+        white-space: nowrap;
+    }
+
+    .cs-live-dot::before {
+        content: '';
+        width: 0.5rem;
+        height: 0.5rem;
+        border-radius: var(--cs-radius-full);
+        background-color: var(--cs-tone-solid, var(--cs-color-neutral-solid));
+    }
+
+    /* ---------- Filter bar (komponen x-filter-bar) ---------- */
+    .cs-filter-bar {
+        display: grid;
+        gap: var(--cs-space-4);
+        margin-bottom: var(--cs-space-6);
+        border: 1px solid var(--cs-color-border);
+        border-radius: var(--cs-radius-xl);
+        background-color: var(--cs-color-surface);
+        padding: var(--cs-space-5);
+    }
+
+    @media (width >= 48rem) {
+        .cs-filter-bar {
+            grid-template-columns: repeat(var(--cs-filter-cols, 4), minmax(0, 1fr)) auto;
+            align-items: end;
+        }
+    }
+
+    .cs-filter-bar-actions {
+        display: flex;
+        gap: var(--cs-space-2);
+    }
+
+    /* ---------- Dialog konfirmasi (komponen x-confirm-dialog, <dialog> HTML) ---------- */
+    .cs-dialog {
+        position: fixed;
+        inset: 0;
+        width: min(28rem, calc(100vw - 2rem));
+        height: fit-content;
+        max-height: calc(100vh - 2rem);
+        /* !important: dialog sering berada di dalam wadah ber-utility space-y-* yang menimpa margin anak */
+        margin: auto !important;
+        border: 0;
+        border-radius: var(--cs-radius-xl);
+        background-color: var(--cs-color-surface);
+        padding: 0;
+        color: var(--cs-color-text-body);
+        box-shadow: 0 20px 50px -12px rgb(11 37 69 / 0.35);
+    }
+
+    .cs-dialog::backdrop {
+        background-color: rgb(11 37 69 / 0.5);
+    }
+
+    .cs-dialog-body {
+        display: grid;
+        gap: var(--cs-space-4);
+        padding: var(--cs-space-6);
+    }
+
+    .cs-dialog-title {
+        color: var(--cs-color-text-primary);
+        font-size: 1.25rem;
+        font-weight: var(--cs-font-weight-extrabold);
+    }
+
+    .cs-dialog-actions {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: var(--cs-space-2);
+    }
+
+    /* ---------- Paginasi (resources/views/vendor/pagination/tailwind.blade.php) ---------- */
+    .cs-pagination {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--cs-space-3);
+        font-size: var(--cs-text-body);
+    }
+
+    .cs-pagination-info {
+        color: var(--cs-color-text-secondary);
+    }
+
+    .cs-pagination-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--cs-space-1);
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .cs-page-link {
+        display: inline-grid;
+        place-items: center;
+        min-width: 2.5rem;
+        height: 2.5rem;
+        border: 1px solid var(--cs-color-border);
+        border-radius: var(--cs-radius-lg);
+        background-color: var(--cs-color-surface);
+        padding-inline: var(--cs-space-3);
+        color: var(--cs-color-text-primary);
+        font-weight: var(--cs-font-weight-semibold);
+        text-decoration: none;
+    }
+
+    a.cs-page-link:hover {
+        background-color: var(--cs-color-surface-muted);
+    }
+
+    .cs-page-link[aria-current='page'] {
+        border-color: var(--cs-color-primary);
+        background-color: var(--cs-color-primary);
+        color: #ffffff;
+    }
+
+    .cs-page-link[aria-disabled='true'] {
+        color: var(--cs-color-text-muted);
+        opacity: 0.6;
     }
 
     .cs-status-indicator {
@@ -1448,7 +1745,6 @@
         [data-status='maintenance' i],
         [data-status='damaged' i],
         [data-status='rejected' i],
-        [data-status='no_show' i],
         [data-status='overutilized' i]
     ) {
         --cs-tone: var(--cs-color-danger);
@@ -1456,5 +1752,18 @@
         --cs-tone-solid: var(--cs-color-danger-solid);
     }
 
-    /* cancelled & status lain memakai warna netral bawaan komponen */
+    /* Ghost booking punya warna sendiri agar tidak tertukar dengan "Ditolak" */
+    [data-status='no_show' i] {
+        --cs-tone: var(--cs-color-ghost);
+        --cs-tone-soft: var(--cs-color-ghost-soft);
+        --cs-tone-solid: var(--cs-color-ghost-solid);
+    }
+
+    [data-status='active' i] {
+        --cs-tone: var(--cs-color-success);
+        --cs-tone-soft: var(--cs-color-success-soft);
+        --cs-tone-solid: var(--cs-color-success-solid);
+    }
+
+    /* cancelled, inactive & status lain memakai warna netral bawaan komponen */
 }

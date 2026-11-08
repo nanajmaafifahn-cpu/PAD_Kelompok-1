@@ -36,7 +36,7 @@
                             <tr>
                                 <th scope="row">{{ $facility->name }}</th>
                                 <td class="cs-cell-num">{{ $facility->getQuantity() }}</td>
-                                <td><x-status-badge :status="$facility->getStatus()" /> <span class="text-xs text-ink-muted">{{ $statuses[$facility->getStatus()] ?? '' }}</span></td>
+                                <td><x-status-badge :status="$facility->getStatus()" domain="facility" /></td>
                                 <td>
                                     <div class="cs-actions">
                                         <a href="{{ route('facilities.edit', $facility) }}" class="cs-btn cs-btn-secondary cs-btn-sm">

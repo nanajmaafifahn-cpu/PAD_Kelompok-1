@@ -37,23 +37,25 @@
     </header>
 
     {{-- Filter (E4): GET query string, bertahan saat paginasi --}}
-    <form method="GET" action="{{ route('rooms.index') }}" class="cs-card cs-card-body mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-5" role="search" aria-label="Filter ruang">
-        <div class="lg:col-span-2">
-            <label for="filter-q" class="cs-form-label">Cari nama / kode</label>
-            <input id="filter-q" name="q" type="search" value="{{ $filters['q'] ?? '' }}" maxlength="100" placeholder="TULT-0805 atau R1" class="cs-form-control">
+    <x-filter-bar :action="route('rooms.index')" :reset="route('rooms.index')" :active="$hasFilters" :cols="5" label="Filter ruang">
+        <div class="md:col-span-2">
+            <label for="filter-q" class="cs-form-label">Cari ruangan</label>
+            <input id="filter-q" name="q" type="search" value="{{ $filters['q'] ?? '' }}" maxlength="100"
+                   placeholder="Nama ruangan atau kode lokasi…" class="cs-form-control">
         </div>
         <div>
-            <label for="filter-type" class="cs-form-label">Tipe</label>
+            <label for="filter-type" class="cs-form-label">Jenis</label>
             <select id="filter-type" name="type" class="cs-form-control">
-                <option value="">Semua tipe</option>
+                <option value="">Semua jenis</option>
                 @foreach ($types ?? [] as $value => $label)
                     <option value="{{ $value }}" @selected(($filters['type'] ?? null) === $value)>{{ $label }}</option>
                 @endforeach
             </select>
         </div>
         <div>
-            <label for="filter-capacity" class="cs-form-label">Kapasitas minimal</label>
-            <input id="filter-capacity" name="min_capacity" type="number" min="1" step="1" inputmode="numeric" value="{{ $filters['min_capacity'] ?? '' }}" class="cs-form-control">
+            <label for="filter-capacity" class="cs-form-label">Peserta</label>
+            <input id="filter-capacity" name="min_capacity" type="number" min="1" step="1" inputmode="numeric"
+                   value="{{ $filters['min_capacity'] ?? '' }}" placeholder="Jumlah" class="cs-form-control">
         </div>
         <div>
             <label for="filter-facility" class="cs-form-label">Fasilitas</label>
@@ -64,13 +66,7 @@
                 @endforeach
             </select>
         </div>
-        <div class="flex gap-2 sm:col-span-2 lg:col-span-5">
-            <button type="submit" class="cs-btn cs-btn-primary cs-btn-sm">Terapkan filter</button>
-            @if ($hasFilters)
-                <a href="{{ route('rooms.index') }}" class="cs-btn cs-btn-ghost cs-btn-sm">Reset</a>
-            @endif
-        </div>
-    </form>
+    </x-filter-bar>
 
     <section aria-labelledby="rooms-heading">
         <h2 id="rooms-heading" class="sr-only">Daftar ruang</h2>
@@ -126,7 +122,7 @@
                                                 title="{{ $facility->getEntitySummary() }}">
                                                 {{ $facility->name }}
                                                 <span class="tabular-nums text-ink-muted">×{{ $facility->getQuantity() }}</span>
-                                                <x-status-badge :status="$facility->getStatus()" class="ml-0.5 px-1.5 text-[10px]" />
+                                                <x-status-badge :status="$facility->getStatus()" domain="facility" class="ml-0.5 px-1.5 text-[10px]" />
                                             </li>
                                         @endforeach
                                     </ul>

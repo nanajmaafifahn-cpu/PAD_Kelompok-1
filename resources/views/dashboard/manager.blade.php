@@ -19,11 +19,11 @@
         <a href="{{ route('dashboard.utilization') }}" class="cs-btn cs-btn-primary">Lihat Laporan</a>
     </header>
 
-    <dl class="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div class="cs-card cs-card-body"><dt class="cs-caption">Ruangan aktif</dt><dd class="cs-stat-value">{{ $stats['rooms_active'] }}</dd></div>
-        <div class="cs-card cs-card-body"><dt class="cs-caption">Tersedia sekarang</dt><dd class="cs-stat-value">{{ $stats['available_now'] }}</dd></div>
-        <div class="cs-card cs-card-body"><dt class="cs-caption">Sedang digunakan</dt><dd class="cs-stat-value">{{ $stats['occupied_now'] }}</dd></div>
-        <div class="cs-card cs-card-body"><dt class="cs-caption">Menunggu persetujuan</dt><dd class="cs-stat-value">{{ $stats['pending'] }}</dd></div>
+    <dl class="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <x-stat-card label="Ruangan aktif" :value="$stats['rooms_active']" caption="Selain yang sedang perawatan" icon="building" />
+        <x-stat-card label="Tersedia sekarang" :value="$stats['available_now']" caption="Tanpa peminjaman berjalan" icon="door" tone="available" />
+        <x-stat-card label="Sedang digunakan" :value="$stats['occupied_now']" caption="Check-in telah tercatat" icon="activity" tone="occupied" />
+        <x-stat-card label="Menunggu persetujuan" :value="$stats['pending']" caption="Pengajuan peminjaman" icon="clock" tone="pending" />
     </dl>
 
     <div class="grid gap-6 lg:grid-cols-2">
@@ -39,7 +39,7 @@
                     @include('bookings.partials.actions.pending', ['booking' => $booking])
                 </div>
             @empty
-                <p class="cs-empty-state">Tidak ada pengajuan yang menunggu.</p>
+                <x-empty-state title="Tidak ada pengajuan" text="Semua pengajuan peminjaman sudah diputuskan." />
             @endforelse
         </section>
 

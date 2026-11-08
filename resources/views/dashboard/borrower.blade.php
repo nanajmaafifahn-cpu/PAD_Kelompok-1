@@ -18,11 +18,11 @@
         <a href="{{ route('rooms.index') }}" class="cs-btn cs-btn-primary">Temukan Ruangan</a>
     </header>
 
-    <dl class="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div class="cs-card cs-card-body"><dt class="cs-caption">Peminjaman saya</dt><dd class="cs-stat-value">{{ $stats['total'] }}</dd></div>
-        <div class="cs-card cs-card-body"><dt class="cs-caption">Menunggu persetujuan</dt><dd class="cs-stat-value">{{ $stats['pending'] }}</dd></div>
-        <div class="cs-card cs-card-body"><dt class="cs-caption">Peminjaman aktif</dt><dd class="cs-stat-value">{{ $stats['active'] }}</dd></div>
-        <div class="cs-card cs-card-body"><dt class="cs-caption">Kegiatan selesai</dt><dd class="cs-stat-value">{{ $stats['completed'] }}</dd></div>
+    <dl class="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <x-stat-card label="Peminjaman saya" :value="$stats['total']" caption="Seluruh pengajuan" icon="clipboard" />
+        <x-stat-card label="Menunggu persetujuan" :value="$stats['pending']" caption="Dalam pemeriksaan" icon="clock" tone="pending" />
+        <x-stat-card label="Peminjaman aktif" :value="$stats['active']" caption="Disetujui / sedang digunakan" icon="activity" tone="checked_in" />
+        <x-stat-card label="Kegiatan selesai" :value="$stats['completed']" caption="Check-out tercatat" icon="check-circle" tone="completed" />
     </dl>
 
     @if ($nextBooking)
@@ -49,10 +49,9 @@
                 · <x-status-badge :status="$booking->status" />
             </p>
         @empty
-            <div class="cs-empty-state">
-                <p class="cs-empty-state-title">Belum ada peminjaman</p>
-                <p class="mt-1"><a href="{{ route('bookings.create') }}" class="cs-link">Ajukan Peminjaman</a></p>
-            </div>
+            <x-empty-state title="Belum ada peminjaman" text="Data akan muncul setelah Anda mengajukan peminjaman ruang.">
+                <a href="{{ route('bookings.create') }}" class="cs-btn cs-btn-primary">Ajukan Peminjaman</a>
+            </x-empty-state>
         @endforelse
     </section>
 @endsection

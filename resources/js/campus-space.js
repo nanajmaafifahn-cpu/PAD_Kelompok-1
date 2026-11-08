@@ -26,7 +26,9 @@
    PROMPT 2 (layout sidebar):
    - sidebar drawer di layar < 1024px                  ([data-drawer], [data-drawer-open], [data-drawer-close],
                                                       [data-drawer-overlay]; Esc menutup, fokus terkunci);
-   - tombol tutup pesan flash                          ([data-dismissible] berisi [data-dismiss]).
+   - tombol tutup pesan flash                          ([data-dismissible] berisi [data-dismiss]);
+   - konfirmasi data-confirm lewat <dialog id="cs-confirm-dialog"> (bukan confirm() bawaan),
+     dialog berform sendiri lewat [data-dialog-open="id"] / [data-dialog-close].
    Script ini TIDAK mengubah status booking apa pun; semua transaksi tetap lewat server.
    ============================================================================= */
 (function () {
@@ -216,12 +218,74 @@
     }
 
     // Konfirmasi sebelum aksi destruktif. Server tetap wajib memvalidasi aksi ini.
+    // Konfirmasi <form data-confirm="pesan"> memakai <dialog id="cs-confirm-dialog"> (x-confirm-dialog di layout).
+    // Browser tanpa dukungan <dialog> jatuh ke window.confirm.
     function initConfirm() {
+        var dialog = document.getElementById('cs-confirm-dialog');
+        var supportsDialog = dialog && typeof dialog.showModal === 'function';
+        var pendingForm = null;
+
+        if (supportsDialog) {
+            dialog.addEventListener('close', function () {
+                var form = pendingForm;
+                pendingForm = null;
+                if (form && dialog.returnValue === 'confirm') {
+                    form.dataset.confirmed = 'true';
+                    if (typeof form.requestSubmit === 'function') {
+                        form.requestSubmit();
+                    } else {
+                        form.submit();
+                    }
+                }
+            });
+        }
+
         document.addEventListener('submit', function (event) {
             var form = event.target;
-            if (form.matches('form[data-confirm]') && !window.confirm(form.dataset.confirm)) {
-                event.preventDefault();
+            if (!form.matches('form[data-confirm]')) {
+                return;
             }
+            if (form.dataset.confirmed === 'true') {
+                delete form.dataset.confirmed;
+                return;
+            }
+            event.preventDefault();
+
+            if (!supportsDialog) {
+                if (window.confirm(form.dataset.confirm)) {
+                    form.dataset.confirmed = 'true';
+                    form.submit();
+                }
+                return;
+            }
+
+            pendingForm = form;
+            dialog.querySelector('[data-confirm-message]').textContent = form.dataset.confirm;
+            dialog.returnValue = '';
+            dialog.showModal();
+        });
+    }
+
+    // Dialog dengan form sendiri (mis. Tolak + alasan): [data-dialog-open="id"] membuka, [data-dialog-close] menutup.
+    function initDialogs() {
+        document.querySelectorAll('[data-dialog-open]').forEach(function (button) {
+            var dialog = document.getElementById(button.getAttribute('data-dialog-open'));
+            if (!dialog || typeof dialog.showModal !== 'function') {
+                return;
+            }
+            button.hidden = false;
+            button.addEventListener('click', function () {
+                dialog.showModal();
+                var field = dialog.querySelector('textarea, input:not([type="hidden"]), select');
+                if (field) {
+                    field.focus();
+                }
+            });
+        });
+        document.querySelectorAll('dialog [data-dialog-close]').forEach(function (button) {
+            button.addEventListener('click', function () {
+                button.closest('dialog').close();
+            });
         });
     }
 
@@ -384,6 +448,7 @@
         initAutoRefresh();
         initDrawer();
         initDismiss();
+        initDialogs();
         document.querySelectorAll('form[data-cs-validate]').forEach(enhanceForm);
 
         // Fokus ke field pertama yang ditandai galat oleh server setelah redirect.
