@@ -25,6 +25,19 @@ class Room extends BaseCampusEntity
 
     private array $allowedStatuses = self::STATUSES;
 
+    // Status live (dihitung, tidak disimpan) dan labelnya untuk UI.
+    public const LIVE_AVAILABLE = 'available';
+    public const LIVE_BOOKED = 'booked';
+    public const LIVE_OCCUPIED = 'occupied';
+    public const LIVE_MAINTENANCE = 'maintenance';
+
+    public const LIVE_STATUS_LABELS = [
+        self::LIVE_AVAILABLE => 'Tersedia sekarang',
+        self::LIVE_OCCUPIED => 'Sedang digunakan',
+        self::LIVE_BOOKED => 'Dipesan ≤2 jam',
+        self::LIVE_MAINTENANCE => 'Perawatan',
+    ];
+
     // Nilai DB = kunci Strategy utilisasi (UtilizationCalculatorContext memilih strategi dari sini).
     // Label UI hanya ditentukan di sini. Lihat penjelasan pemetaan di docs/fe/KONTRAK-VIEW.md.
     public const TYPE_LABELS = [
@@ -68,6 +81,18 @@ class Room extends BaseCampusEntity
     public static function newQrToken(): string
     {
         return Str::random(40);
+    }
+
+    /**
+     * Jumlah komputer = jumlah fasilitas yang namanya mengandung "PC" / "Komputer" / "Computer".
+     * Memakai relasi facilities yang sudah di-eager-load (tanpa query tambahan bila sudah dimuat).
+     * 0 berarti ruang nonkomputer.
+     */
+    public function computerCount(): int
+    {
+        return (int) $this->facilities
+            ->filter(fn (Facility $f) => preg_match('/\b(pc|komputer|computer)\b/i', (string) $f->name) === 1)
+            ->sum(fn (Facility $f) => $f->getQuantity());
     }
 
     public function typeLabel(): string

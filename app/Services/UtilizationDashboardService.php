@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Booking;
 use App\Models\Room;
 use App\Strategies\UtilizationCalculatorContext;
 use App\Support\Utilization\UtilizationPeriod;
@@ -15,7 +16,8 @@ class UtilizationDashboardService
 {
     public function __construct(
         private readonly UtilizationCalculatorContext $calculator,
-        private readonly BookingService $bookingService
+        private readonly BookingService $bookingService,
+        private readonly RoomStatusService $roomStatus
     ) {
     }
 
@@ -28,9 +30,8 @@ class UtilizationDashboardService
         $rooms = Room::with('academicUnit')->orderBy('code')->get();
         $results = $this->calculator->calculateAll($rooms, $period);
 
-        $liveStatuses = $rooms->mapWithKeys(
-            fn (Room $room) => [$room->id => $room->getLiveStatus()]
-        );
+        // Status live semua ruang dalam 2 query (RoomStatusService), bukan 2 query per ruang.
+        $liveStatuses = collect($this->roomStatus->forRooms($rooms));
 
         $byCategory = fn (string $category) => $results
             ->where('category', $category)
@@ -53,6 +54,18 @@ class UtilizationDashboardService
                 'occupied_now' => $countLive('occupied'),
                 'booked_now' => $countLive('booked'),
                 'available_now' => $countLive('available'),
+                // BE-09: ringkasan laporan dihitung di service, bukan di view.
+                'maintenance_now' => $countLive('maintenance'),
+                'total_scheduled_hours' => round($results->sum(fn (UtilizationResult $r) => $r->scheduledHours), 2),
+                'total_actual_hours' => round($results->sum(fn (UtilizationResult $r) => $r->actualHours), 2),
+                'total_ghost_bookings' => (int) $results->sum(fn (UtilizationResult $r) => $r->ghostBookings),
+                'average_utilization_rate' => round((float) ($results->avg(fn (UtilizationResult $r) => $r->utilizationRate) ?? 0), 1),
+                'average_scheduled_rate' => round((float) ($results->avg(fn (UtilizationResult $r) => $r->scheduledRate) ?? 0), 1),
+                // Sesi yang sudah check-in tetapi belum check-out (jam aktualnya belum lengkap).
+                'open_sessions' => Booking::query()
+                    ->where('status', Booking::STATUS_CHECKED_IN)
+                    ->whereBetween('start_time', [$period->start, $period->end])
+                    ->count(),
             ],
             'rooms' => $results->map(fn (UtilizationResult $result) => [
                 ...$result->toArray(),

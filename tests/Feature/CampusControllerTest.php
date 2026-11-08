@@ -59,7 +59,7 @@ class CampusControllerTest extends TestCase
         ]);
 
         $response->assertSessionHasNoErrors();
-        $response->assertRedirect(route('rooms.index'));
+        $response->assertRedirect(route('rooms.manage'));
 
         $this->assertDatabaseHas('rooms', [
             'code' => 'C301',

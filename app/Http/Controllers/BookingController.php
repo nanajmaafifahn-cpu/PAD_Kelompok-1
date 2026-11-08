@@ -77,10 +77,16 @@ class BookingController extends Controller
     /**
      * Menampilkan form pengajuan peminjaman ruangan.
      */
-    public function create(): View
+    public function create(Request $request): View
     {
+        $rooms = $this->bookingService->roomsForBooking();
+
+        // ?room_id=.. dari detail ruang: ruang langsung terpilih bila ada & tidak maintenance.
+        $selected = $rooms->firstWhere('id', $request->integer('room_id'));
+
         return view('bookings.create', [
-            'rooms' => $this->bookingService->roomsForBooking(),
+            'rooms' => $rooms,
+            'selectedRoomId' => $selected && $selected->getStatus() !== 'maintenance' ? $selected->id : null,
         ]);
     }
 

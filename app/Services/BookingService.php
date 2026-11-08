@@ -36,6 +36,25 @@ class BookingService
             ->paginate($perPage);
     }
 
+    /** Jumlah pengajuan yang menunggu persetujuan pengelola. */
+    public function pendingCount(): int
+    {
+        return Booking::query()->where('status', Booking::STATUS_PENDING)->count();
+    }
+
+    /**
+     * Antrean persetujuan: pengajuan pending dengan waktu mulai paling dekat lebih dulu
+     * (yang sudah lewat waktu mulainya tetap ikut agar bisa ditolak / dihapus).
+     */
+    public function pendingQueue(int $limit = 5): EloquentCollection
+    {
+        return Booking::with(['room', 'user'])
+            ->where('status', Booking::STATUS_PENDING)
+            ->orderBy('start_time')
+            ->limit($limit)
+            ->get();
+    }
+
     /** Ruangan untuk pilihan di form peminjaman. */
     public function roomsForBooking(): EloquentCollection
     {

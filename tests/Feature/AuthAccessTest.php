@@ -68,13 +68,16 @@ class AuthAccessTest extends TestCase
 
         $this->post(route('login.store'), ['email' => $borrower->email, 'password' => 'password'])
             ->assertRedirect(route('home'));
-        $this->get('/')->assertRedirect(route('bookings.mine'));
+        // '/' selalu ke dashboard; isinya sesuai role.
+        $this->get('/')->assertRedirect(route('dashboard'));
+        $this->get(route('dashboard'))->assertViewIs('dashboard.borrower');
 
         $this->post(route('logout'))->assertRedirect(route('login'));
         $this->assertGuest();
 
         $this->post(route('login.store'), ['email' => $labHead->email, 'password' => 'password']);
         $this->get('/')->assertRedirect(route('dashboard'));
+        $this->get(route('dashboard'))->assertViewIs('dashboard.manager');
     }
 
     public function test_login_gagal_menampilkan_pesan(): void
@@ -157,7 +160,9 @@ class AuthAccessTest extends TestCase
     {
         $this->actingAs($this->userWithRole(User::ROLE_BORROWER));
         $this->getJson(route('dashboard.utilization'))->assertForbidden();
-        $this->get(route('dashboard.utilization'))->assertOk(); // halaman HTML tetap boleh
+        // Laporan Utilisasi (HTML) juga khusus pengelola/admin/pimpinan; peminjam punya dashboard sendiri.
+        $this->get(route('dashboard.utilization'))->assertForbidden();
+        $this->get(route('dashboard'))->assertOk();
 
         foreach ([User::ROLE_LAB_HEAD, User::ROLE_ADMIN, User::ROLE_LEADER] as $role) {
             $this->actingAs($this->userWithRole($role))

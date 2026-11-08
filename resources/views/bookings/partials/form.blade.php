@@ -2,6 +2,7 @@
      Variabel:
        $rooms     collection Room (data ruang dari backend; option membawa data-capacity untuk cek kapasitas)
        $booking   (opsional) Booking yang diubah; nilai awal = old() lalu fallback ke data model.
+       $selectedRoomId (opsional, bookings.create?room_id=..) ruang yang langsung terpilih.
      Data pemohon (nama & peran) tidak diinput: diambil dari akun login oleh BookingService (B2).
      Nama field = key StoreBookingRequest:
        room_id, participant_count, start_time, end_time, purpose.
@@ -10,7 +11,7 @@
      Halaman pemakai wajib mendaftarkan @section('inline_error_fields', ...) dengan nama field di atas. --}}
 @php
     $booking = $booking ?? null;
-    $selectedRoom = old('room_id', $booking?->room_id);
+    $selectedRoom = old('room_id', $booking?->room_id ?? ($selectedRoomId ?? null));
 @endphp
 
 @if ($rooms->isEmpty())

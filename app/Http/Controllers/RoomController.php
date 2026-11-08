@@ -9,7 +9,9 @@ use App\Http\Requests\UpdateRoomRequest;
 use App\Models\AcademicUnit;
 use App\Models\Facility;
 use App\Models\Room;
+use App\Services\CalendarService;
 use App\Services\RoomService;
+use App\Services\RoomStatusService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
@@ -21,7 +23,8 @@ use Illuminate\View\View;
 class RoomController extends Controller
 {
     public function __construct(
-        private readonly RoomService $roomService
+        private readonly RoomService $roomService,
+        private readonly RoomStatusService $roomStatus
     ) {
     }
 
@@ -43,6 +46,7 @@ class RoomController extends Controller
 
         return view('rooms.index', [
             'rooms' => $rooms,
+            'liveStatuses' => $this->roomStatus->forRooms($rooms->getCollection()),
             'filters' => $filters,
             'types' => Room::TYPE_LABELS,
             'facilityNames' => Facility::query()->distinct()->orderBy('name')->pluck('name'),
@@ -61,6 +65,43 @@ class RoomController extends Controller
         return view('rooms.create', [
             'academicUnits' => $academicUnits,
             'types' => Room::TYPE_LABELS,
+        ]);
+    }
+
+    /**
+     * Detail ruang untuk semua user login: foto, atribut, fasilitas, status live,
+     * dan kegiatan terdekat (jadwal kuliah + peminjaman disetujui).
+     */
+    public function show(Room $room, CalendarService $calendar): View
+    {
+        Gate::authorize('viewAny', Room::class);
+
+        $room->load(['academicUnit', 'facilities']);
+
+        return view('rooms.show', [
+            'room' => $room,
+            'liveStatus' => $this->roomStatus->forRooms([$room])[$room->id],
+            'computerCount' => $room->computerCount(),
+            'upcomingEvents' => $calendar->upcomingForRoom($room),
+        ]);
+    }
+
+    /**
+     * "Ruangan & Foto" (data master, pengelola/admin): tabel ruang + aksi ubah/hapus/fasilitas.
+     * Halaman Jelajahi (rooms.index) tetap untuk semua user.
+     */
+    public function manage(): View
+    {
+        Gate::authorize('create', Room::class);
+
+        $rooms = Room::with(['academicUnit', 'facilities'])
+            ->withCount('bookings')
+            ->orderBy('code')
+            ->paginate(15);
+
+        return view('rooms.manage', [
+            'rooms' => $rooms,
+            'liveStatuses' => $this->roomStatus->forRooms($rooms->getCollection()),
         ]);
     }
 
@@ -85,7 +126,7 @@ class RoomController extends Controller
         );
 
         return redirect()
-            ->route('rooms.index')
+            ->route('rooms.manage')
             ->with('success', "Ruang {$room->name} berhasil diperbarui.");
     }
 
@@ -100,7 +141,7 @@ class RoomController extends Controller
         }
 
         return redirect()
-            ->route('rooms.index')
+            ->route('rooms.manage')
             ->with('success', "Ruang {$room->name} berhasil dihapus.");
     }
 
@@ -141,7 +182,7 @@ class RoomController extends Controller
         $this->roomService->create($request->validated(), $request->file('photo'));
 
         return redirect()
-            ->route('rooms.index')
+            ->route('rooms.manage')
             ->with(
                 'success',
                 'Ruangan berhasil ditambahkan.'

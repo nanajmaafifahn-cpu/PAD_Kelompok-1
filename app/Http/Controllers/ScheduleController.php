@@ -7,6 +7,7 @@ use App\Http\Requests\StoreScheduleRequest;
 use App\Http\Requests\UpdateScheduleRequest;
 use App\Models\Room;
 use App\Models\Schedule;
+use App\Services\CalendarService;
 use App\Services\ScheduleService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
@@ -28,7 +29,7 @@ class ScheduleController extends Controller
      * Menampilkan daftar jadwal perkuliahan/praktikum terurut berdasarkan waktu mulai,
      * beserta daftar ruang untuk form tambah jadwal (A5 / BE-03).
      */
-    public function index(): View
+    public function index(CalendarService $calendar): View
     {
         $schedules = Schedule::with('room')
             ->orderBy('start_time')
@@ -37,6 +38,9 @@ class ScheduleController extends Controller
         return view('schedules.index', [
             'schedules' => $schedules,
             'rooms' => Room::orderBy('name')->get(),
+            // Kalender minggu berjalan: jadwal kuliah + peminjaman disetujui per hari.
+            'week' => $calendar->week(),
+            'eventTypes' => CalendarService::TYPE_LABELS,
         ]);
     }
 

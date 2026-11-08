@@ -7,6 +7,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\FacilityController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\BookingController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\RoomController;
 use App\Http\Controllers\ScanController;
@@ -63,6 +64,12 @@ Route::middleware(['auth', 'active'])->group(function () {
     ])->name('rooms.index');
 
     Route::middleware('role:lab_head,admin')->group(function () {
+        // "Ruangan & Foto": tabel data master untuk pengelola (rooms.index = Jelajahi Ruangan)
+        Route::get('/rooms/manage', [
+            RoomController::class,
+            'manage',
+        ])->name('rooms.manage');
+
         Route::get('/rooms/create', [
             RoomController::class,
             'create',
@@ -126,6 +133,12 @@ Route::middleware(['auth', 'active'])->group(function () {
             'destroy',
         ])->name('facilities.destroy');
     });
+
+    // Detail ruang (semua user login). Didaftarkan setelah /rooms/create, /rooms/manage, /rooms/qr-codes.
+    Route::get('/rooms/{room}', [
+        RoomController::class,
+        'show',
+    ])->whereNumber('room')->name('rooms.show');
 
     // ==========================================
     // 3. JADWAL KULIAH & PRAKTIKUM (SCHEDULES)
@@ -274,20 +287,16 @@ Route::middleware(['auth', 'active'])->group(function () {
     });
 
     // ==========================================
-    // 5. LIVE DASHBOARD UTILISASI
+    // 5. DASHBOARD & LAPORAN UTILISASI
     // ==========================================
-    // Data JSON (Accept: application/json) hanya untuk pengelola, admin, pimpinan
-    // (UtilizationDashboardRequest::authorize).
+    // Dashboard per role (peminjam vs pengelola/admin/pimpinan).
+    Route::get('/dashboard', DashboardController::class)->name('dashboard');
 
+    // Laporan Utilisasi (HTML & JSON) khusus pengelola, admin, pimpinan.
     Route::get('/dashboard/utilization', [
         UtilizationDashboardController::class,
         'index',
-    ])->name('dashboard.utilization');
-
-    Route::get('/dashboard', [
-        UtilizationDashboardController::class,
-        'index',
-    ])->name('dashboard');
+    ])->middleware('role:lab_head,admin,leader')->name('dashboard.utilization');
 
     // ==========================================
     // 6. ADMIN: UNIT AKADEMIK & PENGGUNA (C5)
