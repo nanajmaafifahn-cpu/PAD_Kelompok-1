@@ -82,7 +82,7 @@
     {{-- ===================== FILTER PERIODE ===================== --}}
     <section aria-labelledby="filter-heading" class="cs-card cs-card-body cs-no-print mb-6">
         <h2 id="filter-heading" class="sr-only">Filter periode analisis</h2>
-        <form method="GET" action="{{ route('dashboard') }}" class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <form method="GET" action="{{ route('dashboard.utilization') }}" class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div class="flex flex-wrap items-end gap-3">
                 <div>
                     <label for="start_date" class="cs-form-label">Dari tanggal</label>
@@ -97,7 +97,7 @@
                 <div class="flex gap-2">
                     <button type="submit" class="cs-btn cs-btn-primary">Terapkan Filter</button>
                     @if (request()->has('start') || request()->has('end'))
-                        <a href="{{ route('dashboard') }}" class="cs-btn cs-btn-secondary">Reset</a>
+                        <a href="{{ route('dashboard.utilization') }}" class="cs-btn cs-btn-secondary">Reset</a>
                     @endif
                 </div>
             </div>

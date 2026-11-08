@@ -35,7 +35,10 @@
 
             <nav aria-label="Navigasi utama">
                 <ul class="cs-nav-list">
-                    <x-nav-link route="dashboard" :active="['dashboard*', 'home']">Dashboard</x-nav-link>
+                    <x-nav-link route="dashboard" :active="['dashboard', 'home']">Dashboard</x-nav-link>
+                    @can('viewAll', \App\Models\Booking::class)
+                        <x-nav-link route="dashboard.utilization" active="dashboard.utilization">Laporan Utilisasi</x-nav-link>
+                    @endcan
                     <x-nav-link route="rooms.index" active="rooms.*">Ruang &amp; Lab</x-nav-link>
                     <x-nav-link route="schedules.index" active="schedules.*">Jadwal</x-nav-link>
                     @can('viewAll', \App\Models\Booking::class)
