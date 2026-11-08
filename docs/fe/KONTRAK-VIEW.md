@@ -17,6 +17,8 @@ Controller/Service lalu catat di dokumen ini; **jangan menulis query di Blade**.
 | `components/nav-link.blade.php` | menu; hanya tampil bila route-nya ada (`Route::has`) |
 | `components/status-badge.blade.php` | badge status (warna via CSS `data-status`) |
 | `components/progress-bar.blade.php`, `components/field-error.blade.php`, `components/route-form.blade.php` | komponen umum |
+| `components/icon`, `sidebar-link`, `page-header`, `stat-card`, `empty-state`, `room-card`, `confirm-dialog`, `filter-bar` | komponen UI PROMPT 2 (lihat bagian 9) |
+| `vendor/pagination/tailwind.blade.php` | paginasi bergaya Campus Space untuk semua `$paginator->links()` |
 | `auth/login.blade.php`, `auth/register.blade.php` | `LoginController@create`, `RegisterController@create` |
 | `dashboard/borrower.blade.php` | `DashboardController` (role `borrower`) |
 | `dashboard/manager.blade.php` | `DashboardController` (role `lab_head`, `admin`, `leader`) |
@@ -256,3 +258,40 @@ Setiap tombol aksi wajib dibungkus `@can(...)` sesuai `BookingPolicy` (`approve`
 Belum dikerjakan (jangan buat tombol/menu palsu): aturan operasional & hari libur, scheduler ghost/auto check-out,
 export CSV, notifikasi, filter jadwal (tanggal/ruang, minggu sebelumnya/berikutnya) dan filter booking, halaman panduan,
 fakultas pada akun user (topbar memakai teks tetap "Fakultas Rekayasa Industri"), waktu persetujuan booking (`approved_at`).
+
+## 9. Komponen & pola UI (PROMPT 2, layout sidebar)
+
+| Komponen / pola | Pakai untuk | Catatan |
+|---|---|---|
+| `@section('page_header')` + `<x-page-header eyebrow title subtitle crumb>` | header setiap halaman (breadcrumb "Campus Space / …", eyebrow, judul, subjudul, slot `actions`) | layout menaruh pesan flash tepat di bawahnya |
+| `<x-icon name="…">` | ikon SVG garis (home, search, calendar, clipboard, qr, chart, building, monitor, printer, users, academic, clock, check-circle, activity, door, alert, …) | dekoratif (`aria-hidden`); tombol ikon wajib `aria-label` |
+| `<x-sidebar-link route icon active>` | menu sidebar | tampil hanya bila `Route::has()`; menu per role di `layouts/app.blade.php` |
+| `<x-stat-card label value caption icon tone>` | kartu statistik di dalam `<dl>` | `tone` = nama status (`pending`, `completed`, `occupied`, …) untuk warna chip |
+| `<x-empty-state title text>` + slot tombol | keadaan kosong | — |
+| `<x-status-badge :status domain>` | badge status berbahasa Indonesia | label dari `Booking::STATUS_LABELS`, `Room::LIVE_STATUS_SHORT_LABELS`, `Schedule::STATUS_LABELS`, `Facility::STATUS_LABELS`, `UtilizationResult::CATEGORY_LABELS`; kondisi fasilitas wajib `domain="facility"` |
+| `<x-room-card :room :live-status>` | grid Jelajahi Ruangan | butuh relasi `facilities` sudah dimuat (jumlah komputer) |
+| `<form data-confirm="pesan">` / `<x-route-form confirm="…">` | konfirmasi hapus/batal/setujui | memakai `<dialog id="cs-confirm-dialog">` di layout (bukan `confirm()`) |
+| `<x-confirm-dialog id title :action reason>` + `<button data-dialog-open="id" hidden>` | dialog berform sendiri, mis. Tolak + alasan wajib | sediakan fallback `<noscript>` bila perlu |
+| `<x-filter-bar :action :reset :active :cols>` | filter GET (Jelajahi Ruangan, Laporan) | nilai field diisi dari variabel controller |
+| `App\Support\DateFormat` | **satu-satunya** tempat format tanggal/jam di view | `date`, `longDate`, `time`, `dateTime` ("8 Nov 2026, 10.36 WIB"), `range`, `weekRange`, `dayName`, `monthYear`, `inputValue` (datetime-local), `timezoneLabel` |
+| `Booking::timelineSteps()` | timeline detail peminjaman | state `done/current/upcoming/failed` |
+| Tabel responsif | semua tabel data | `cs-table-wrap cs-table-wrap-stack` + `cs-table cs-table-stack` + `data-label` di setiap `<td>`; di bawah 768px menjadi kartu |
+| Tombol submit | semua form POST | otomatis nonaktif + "Menyimpan..." (teks lain: `data-loading-text`) |
+| Cetak | Laporan (A4 lanskap), Cetak QR (`@page qr-cards`, A4 potret, 2 kartu/halaman, QR 6,5 cm) | sidebar/topbar/tombol (`.cs-no-print`) tidak dicetak |
+
+Warna grafik Laporan Utilisasi: terjadwal `#2a78d6`, aktual `#1baf7a` (divalidasi untuk buta warna; label persen selalu tampil).
+Teal merek `#0A7E78` (bukan `#0E9F97` dari prototipe) agar teks putih ≥ 4.5:1.
+
+### Kebutuhan backend untuk sesi berikutnya
+
+| Kebutuhan | Dipakai di | Usulan |
+|---|---|---|
+| Unit akademik pada akun user (`users.academic_unit_id`) | topbar (nama fakultas) | sekarang teks tetap "Fakultas Rekayasa Industri" |
+| Halaman panduan (`help` / `guide`) | tombol "?" topbar, link "Buka panduan" sidebar | disembunyikan sampai route ada |
+| Filter jadwal: `?date=`, `?room_id=` + minggu sebelumnya/berikutnya di `ScheduleController@index` (`CalendarService::week($date)`) | Jadwal Ruangan, tombol "Buka Kalender" per ruang | kalender saat ini hanya minggu berjalan |
+| Filter status peminjaman (`?status=`) di `bookings.index` / `bookings.mine` | Kelola Peminjaman, Peminjaman Saya | dropdown status belum ditampilkan |
+| Daftar fasilitas semua ruang (`facilities.index`) | menu "Fasilitas" | menu sementara menuju Ruangan & Foto |
+| Waktu keputusan (`approved_at`, `rejected_at`) | timeline detail peminjaman | langkah "Disetujui" belum punya jam |
+| Jenis akses ruang (mis. smartdoor) | detail ruang | diganti "Lokasi" |
+| Endpoint JSON evaluasi scan | panel kanan Pindai QR tanpa pindah halaman | sekarang membuka halaman `scan.room` |
+| Export CSV, notifikasi, aturan operasional | Laporan, topbar, menu Pengelolaan | belum ada (tidak ditampilkan) |
