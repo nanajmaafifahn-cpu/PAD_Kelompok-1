@@ -56,3 +56,23 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+## Menjalankan MySQL di XAMPP
+
+1. Jalankan MySQL dari XAMPP.
+2. Impor `database/campus_space_xampp.sql` melalui phpMyAdmin. Skrip membuat database `campus_space_xampp` beserta tabel dan data demo.
+3. Pastikan konfigurasi `.env` memakai koneksi MySQL:
+
+   ```dotenv
+   DB_CONNECTION=mysql
+   DB_HOST=127.0.0.1
+   DB_PORT=3306
+   DB_DATABASE=campus_space_xampp
+   DB_USERNAME=root
+   DB_PASSWORD=
+   ```
+
+   Sesuaikan username dan password jika instalasi MySQL Anda tidak memakai kredensial bawaan XAMPP.
+4. Jalankan `php artisan config:clear` agar Laravel membaca konfigurasi terbaru.
+
+Akun demo yang diimpor hanya untuk pengembangan lokal; kata sandi semua akun demo adalah `password`.
