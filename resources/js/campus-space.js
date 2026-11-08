@@ -29,7 +29,8 @@
    - tombol tutup pesan flash                          ([data-dismissible] berisi [data-dismiss]);
    - konfirmasi data-confirm lewat <dialog id="cs-confirm-dialog"> (bukan confirm() bawaan),
      dialog berform sendiri lewat [data-dialog-open="id"] / [data-dialog-close];
-   - pratinjau foto ruang sebelum diunggah            (input[data-photo-input] -> img[data-photo-preview]).
+   - pratinjau foto ruang sebelum diunggah            (input[data-photo-input] -> img[data-photo-preview]);
+   - status loading tombol submit form POST            ("Menyimpan...", nonaktif; teks lain lewat data-loading-text).
    Script ini TIDAK mengubah status booking apa pun; semua transaksi tetap lewat server.
    ============================================================================= */
 (function () {
@@ -462,7 +463,43 @@
         });
     }
 
+    // Cegah kirim ganda: tombol submit form POST dinonaktifkan + teks "Menyimpan..." setelah submit benar-benar
+    // berjalan (dicek setelah validasi klien & dialog konfirmasi sempat membatalkannya). Form GET (filter) tidak diubah.
+    function initSubmitLoading() {
+        document.addEventListener('submit', function (event) {
+            var form = event.target;
+            if ((form.getAttribute('method') || 'get').toLowerCase() !== 'post') {
+                return;
+            }
+            var button = event.submitter || form.querySelector('[type="submit"]');
+            window.setTimeout(function () {
+                if (event.defaultPrevented || !button || button.disabled) {
+                    return;
+                }
+                button.dataset.originalHtml = button.innerHTML;
+                button.disabled = true;
+                button.setAttribute('aria-busy', 'true');
+                button.textContent = button.dataset.loadingText || 'Menyimpan...';
+            }, 0);
+        });
+
+        // Kembali lewat tombol Back (bfcache): pulihkan tombol agar bisa dipakai lagi.
+        window.addEventListener('pageshow', function (event) {
+            if (!event.persisted) {
+                return;
+            }
+            document.querySelectorAll('button[aria-busy="true"]').forEach(function (button) {
+                button.disabled = false;
+                button.removeAttribute('aria-busy');
+                if (button.dataset.originalHtml) {
+                    button.innerHTML = button.dataset.originalHtml;
+                }
+            });
+        });
+    }
+
     function init() {
+        initSubmitLoading();
         initPhotoPreview();
         initConfirm();
         initPrint();

@@ -30,7 +30,7 @@
             Ingat saya
         </label>
 
-        <button type="submit" class="cs-btn cs-btn-primary w-full">Masuk</button>
+        <button type="submit" class="cs-btn cs-btn-primary w-full" data-loading-text="Memproses...">Masuk</button>
 
         <p class="text-sm text-ink-muted">
             Belum punya akun? <a href="{{ route('register') }}" class="cs-link">Daftar sebagai Mahasiswa / Dosen</a>

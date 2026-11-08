@@ -29,7 +29,6 @@
     $isManager = $user?->hasRole(\App\Models\User::ROLE_LAB_HEAD, \App\Models\User::ROLE_ADMIN);
     $isLeader = $user?->hasRole(\App\Models\User::ROLE_LEADER);
     $isAdmin = $user?->hasRole(\App\Models\User::ROLE_ADMIN);
-    $offsetHours = now()->utcOffset() / 60;
 @endphp
 <body>
     <a href="#main-content" class="cs-skip-link">Lewati ke konten utama</a>
@@ -100,7 +99,7 @@
 
             <div class="cs-sidebar-footer">
                 <p>Campus Space · FRI</p>
-                <p>Waktu aplikasi: {{ now()->format('T') }} (UTC{{ $offsetHours >= 0 ? '+' : '−' }}{{ abs($offsetHours) }})</p>
+                <p>Waktu aplikasi: {{ \App\Support\DateFormat::timezoneLabel() }}</p>
             </div>
         </aside>
         <div class="cs-drawer-overlay" data-drawer-overlay hidden></div>
@@ -125,7 +124,7 @@
                         </span>
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
-                            <button type="submit" class="cs-btn cs-btn-primary cs-btn-sm">
+                            <button type="submit" class="cs-btn cs-btn-primary cs-btn-sm" data-loading-text="Keluar...">
                                 <x-icon name="logout" class="h-4 w-4 sm:hidden" />
                                 <span class="sr-only sm:not-sr-only">Keluar</span>
                             </button>

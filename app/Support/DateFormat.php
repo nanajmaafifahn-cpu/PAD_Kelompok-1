@@ -45,6 +45,33 @@ final class DateFormat
         return self::dateTime($start) . ' – ' . self::dateTime($end);
     }
 
+    /** Minggu */
+    public static function dayName(CarbonInterface $at): string
+    {
+        return $at->locale('id')->isoFormat('dddd');
+    }
+
+    /** Nov 2026 */
+    public static function monthYear(CarbonInterface $at): string
+    {
+        return $at->locale('id')->isoFormat('MMM YYYY');
+    }
+
+    /** Nilai untuk <input type="datetime-local">: 2026-11-08T10:36 */
+    public static function inputValue(?CarbonInterface $at): ?string
+    {
+        return $at?->format('Y-m-d\TH:i');
+    }
+
+    /** WIB (UTC+7) — zona waktu aplikasi (config app.timezone) */
+    public static function timezoneLabel(): string
+    {
+        $now = now();
+        $hours = $now->utcOffset() / 60;
+
+        return $now->format('T') . ' (UTC' . ($hours >= 0 ? '+' : '−') . abs($hours) . ')';
+    }
+
     /** 02 Nov – 08 Nov 2026 */
     public static function weekRange(CarbonInterface $start, CarbonInterface $end): string
     {

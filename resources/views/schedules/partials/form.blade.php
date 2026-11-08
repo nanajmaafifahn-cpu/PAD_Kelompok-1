@@ -37,7 +37,7 @@
 <div>
     <label for="start_time" class="cs-form-label">Mulai <span class="cs-form-required" aria-hidden="true">*</span></label>
     <input id="start_time" name="start_time" type="datetime-local"
-           value="{{ old('start_time', $schedule?->start_time?->format('Y-m-d\TH:i')) }}" required
+           value="{{ old('start_time', \App\Support\DateFormat::inputValue($schedule?->start_time)) }}" required
            class="cs-form-control"
            @error('start_time') aria-invalid="true" aria-describedby="start_time-error" @enderror>
     <x-field-error for="start_time" />
@@ -46,7 +46,7 @@
 <div>
     <label for="end_time" class="cs-form-label">Selesai <span class="cs-form-required" aria-hidden="true">*</span></label>
     <input id="end_time" name="end_time" type="datetime-local"
-           value="{{ old('end_time', $schedule?->end_time?->format('Y-m-d\TH:i')) }}" required
+           value="{{ old('end_time', \App\Support\DateFormat::inputValue($schedule?->end_time)) }}" required
            data-after="start_time" class="cs-form-control"
            aria-describedby="end_time-hint @error('end_time') end_time-error @enderror"
            @error('end_time') aria-invalid="true" @enderror>

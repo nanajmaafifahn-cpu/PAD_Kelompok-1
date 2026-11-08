@@ -141,7 +141,7 @@ class BookingController extends Controller
 
         return redirect()
             ->route('bookings.show', $booking)
-            ->with('success', 'Perubahan booking disimpan dan tetap menunggu persetujuan.');
+            ->with('success', 'Perubahan peminjaman disimpan dan tetap menunggu persetujuan.');
     }
 
     /**
@@ -159,7 +159,7 @@ class BookingController extends Controller
 
         return redirect()
             ->route('bookings.show', $booking)
-            ->with('success', 'Booking dibatalkan.');
+            ->with('success', 'Peminjaman dibatalkan.');
     }
 
     /**
@@ -177,7 +177,7 @@ class BookingController extends Controller
 
         return redirect()
             ->route('bookings.index')
-            ->with('success', 'Booking dihapus.');
+            ->with('success', 'Peminjaman dihapus.');
     }
 
     /**

@@ -34,7 +34,7 @@
                 <p class="mt-4 text-base">Periksa jadwal laboratorium, ajukan peminjaman, lalu catat penggunaan ruangan lewat QR di pintu.</p>
             </div>
 
-            <p class="text-xs text-[color:var(--cs-sidebar-text-muted)]">Campus Space · FRI · Waktu aplikasi {{ now()->format('T') }}</p>
+            <p class="text-xs text-[color:var(--cs-sidebar-text-muted)]">Campus Space · FRI · Waktu aplikasi {{ \App\Support\DateFormat::timezoneLabel() }}</p>
         </section>
 
         <main id="main-content" class="cs-auth-main">

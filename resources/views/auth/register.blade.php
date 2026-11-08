@@ -41,7 +41,7 @@
                    class="cs-form-control">
         </div>
 
-        <button type="submit" class="cs-btn cs-btn-primary w-full">Daftar</button>
+        <button type="submit" class="cs-btn cs-btn-primary w-full" data-loading-text="Memproses...">Daftar</button>
 
         <p class="text-sm text-ink-muted">
             Sudah punya akun? <a href="{{ route('login') }}" class="cs-link">Masuk</a>

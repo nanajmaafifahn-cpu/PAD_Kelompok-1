@@ -24,14 +24,15 @@ class BookingException extends RuntimeException
     public static function notApprover(): self
     {
         return new self(
-            'Hanya Kepala Laboratorium atau Admin Akademik yang dapat memverifikasi booking.'
+            'Hanya Kepala Laboratorium atau Admin Akademik yang dapat memverifikasi peminjaman.'
         );
     }
 
     public static function invalidState(string $action, string $status): self
     {
         return new self(
-            "Booking tidak dapat {$action} karena statusnya '{$status}'."
+            'Peminjaman tidak dapat ' . $action . ' karena statusnya "'
+            . (\App\Models\Booking::STATUS_LABELS[$status] ?? $status) . '".'
         );
     }
 
@@ -53,7 +54,7 @@ class BookingException extends RuntimeException
     public static function scheduleConflict(): self
     {
         return new self(
-            'Jadwal bentrok dengan jadwal atau booking lain di ruangan yang sama.',
+            'Jadwal bentrok dengan jadwal atau peminjaman lain di ruangan yang sama.',
             'start_time'
         );
     }
@@ -65,12 +66,12 @@ class BookingException extends RuntimeException
 
     public static function notOwner(): self
     {
-        return new self('Hanya pemilik booking yang dapat melakukan aksi ini.');
+        return new self('Hanya pemilik peminjaman yang dapat melakukan tindakan ini.');
     }
 
     public static function cannotCancelStarted(): self
     {
-        return new self('Booking yang sudah dimulai tidak dapat dibatalkan.');
+        return new self('Peminjaman yang sudah dimulai tidak dapat dibatalkan.');
     }
 
     public static function invalidQrToken(): self
@@ -80,12 +81,12 @@ class BookingException extends RuntimeException
 
     public static function alreadyCheckedIn(): self
     {
-        return new self('Booking sudah melakukan check-in.');
+        return new self('Peminjaman ini sudah check-in.');
     }
 
     public static function alreadyCheckedOut(): self
     {
-        return new self('Booking sudah melakukan check-out.');
+        return new self('Peminjaman ini sudah check-out.');
     }
 
     // Jam ditulis dalam zona waktu aplikasi (format "13.45 WIB").

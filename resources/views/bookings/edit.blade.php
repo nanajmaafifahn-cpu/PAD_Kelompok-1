@@ -67,7 +67,7 @@
         @else
             <div role="status" class="cs-alert cs-alert-warning">
                 <span aria-hidden="true" class="cs-alert-icon">!</span>
-                <p>Perubahan booking belum dapat disimpan karena layanan pembaruan booking belum tersedia di sistem.</p>
+                <p>Perubahan peminjaman belum dapat disimpan karena layanan pembaruan peminjaman belum tersedia.</p>
             </div>
             <a href="{{ route('bookings.mine') }}" class="cs-btn cs-btn-secondary">Kembali ke Peminjaman Saya</a>
         @endif

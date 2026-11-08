@@ -17,7 +17,7 @@
 @if ($rooms->isEmpty())
     <div role="alert" class="cs-alert cs-alert-warning">
         <span aria-hidden="true" class="cs-alert-icon">!</span>
-        <p>Belum ada ruang terdaftar, sehingga booking belum dapat diajukan.
+        <p>Belum ada ruang terdaftar, sehingga peminjaman belum dapat diajukan.
             <a href="{{ route('rooms.create') }}" class="cs-link">Tambah ruang</a> terlebih dahulu.</p>
     </div>
 @endif
@@ -88,7 +88,7 @@
                 Waktu Mulai <span class="cs-form-required" aria-hidden="true">*</span>
             </label>
             <input id="start_time" name="start_time" type="datetime-local"
-                   value="{{ old('start_time', $booking?->start_time?->format('Y-m-d\TH:i')) }}" required
+                   value="{{ old('start_time', \App\Support\DateFormat::inputValue($booking?->start_time)) }}" required
                    class="cs-form-control"
                    @error('start_time') aria-invalid="true" aria-describedby="start_time-error" @enderror>
             <x-field-error for="start_time" />
@@ -99,7 +99,7 @@
                 Waktu Selesai <span class="cs-form-required" aria-hidden="true">*</span>
             </label>
             <input id="end_time" name="end_time" type="datetime-local"
-                   value="{{ old('end_time', $booking?->end_time?->format('Y-m-d\TH:i')) }}" required
+                   value="{{ old('end_time', \App\Support\DateFormat::inputValue($booking?->end_time)) }}" required
                    data-after="start_time" class="cs-form-control"
                    aria-describedby="end_time-hint @error('end_time') end_time-error @enderror"
                    @error('end_time') aria-invalid="true" @enderror>
@@ -125,6 +125,6 @@
 
 <div class="cs-alert cs-alert-info mb-0">
     <span aria-hidden="true" class="cs-alert-icon">i</span>
-    <p>Sistem akan menolak pengajuan bila ruang sedang perawatan, jadwal bentrok dengan booking/jadwal lain
+    <p>Sistem akan menolak pengajuan bila ruang sedang perawatan, jadwal bentrok dengan peminjaman/jadwal lain
         di ruang yang sama, atau jumlah peserta melebihi kapasitas ruang.</p>
 </div>

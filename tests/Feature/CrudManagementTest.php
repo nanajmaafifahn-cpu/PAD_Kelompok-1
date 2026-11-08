@@ -191,12 +191,12 @@ class CrudManagementTest extends TestCase
 
         $this->from(route('rooms.manage'))->delete(route('rooms.destroy', $room))
             ->assertRedirect(route('rooms.manage'))
-            ->assertSessionHas('error', fn ($m) => str_contains($m, '1 booking aktif'));
+            ->assertSessionHas('error', fn ($m) => str_contains($m, '1 peminjaman aktif'));
         $this->assertModelExists($room);
 
         Booking::query()->update(['status' => Booking::STATUS_COMPLETED]);
         $this->delete(route('rooms.destroy', $room))
-            ->assertSessionHas('error', fn ($m) => str_contains($m, 'riwayat booking'));
+            ->assertSessionHas('error', fn ($m) => str_contains($m, 'riwayat peminjaman'));
         $this->assertModelExists($room);
 
         $empty = $this->room(['code' => 'TULT-0906', 'name' => 'R5']);

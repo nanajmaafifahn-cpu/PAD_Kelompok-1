@@ -129,7 +129,7 @@
     {{-- ===================== UNDER / OVER UTILIZED ===================== --}}
     <div class="mb-8 grid gap-6 lg:grid-cols-2">
         <section aria-labelledby="under-heading" class="cs-card cs-card-body">
-            <h2 id="under-heading" class="cs-section-title">Ruang Underutilized</h2>
+            <h2 id="under-heading" class="cs-section-title">Ruang kurang dimanfaatkan</h2>
             <p class="cs-section-description">Utilisasi aktual di bawah 30% pada periode terpilih.</p>
             @if ($underRooms->isEmpty())
                 <p class="cs-caption mt-4">Tidak ada ruang underutilized pada periode ini.</p>
@@ -152,7 +152,7 @@
         </section>
 
         <section aria-labelledby="over-heading" class="cs-card cs-card-body">
-            <h2 id="over-heading" class="cs-section-title">Ruang Overutilized</h2>
+            <h2 id="over-heading" class="cs-section-title">Ruang sangat padat</h2>
             <p class="cs-section-description">Utilisasi aktual 80% atau lebih pada periode terpilih.</p>
             @if ($overRooms->isEmpty())
                 <p class="cs-caption mt-4">Tidak ada ruang overutilized pada periode ini.</p>
@@ -305,7 +305,7 @@
                 <thead>
                     <tr>
                         <th scope="col">Ruangan &amp; Tipe</th>
-                        <th scope="col">Status Live</th>
+                        <th scope="col">Status sekarang</th>
                         <th scope="col">Terjadwal</th>
                         <th scope="col">Aktual &amp; Utilisasi</th>
                         <th scope="col" class="text-right">Ghost Booking</th>

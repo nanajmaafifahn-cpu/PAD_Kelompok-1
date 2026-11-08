@@ -46,10 +46,10 @@
         <ol class="cs-calendar">
             @foreach ($week['days'] as $day)
                 <li class="cs-calendar-day" @if ($day['is_today']) data-today="true" aria-current="date" @endif>
-                    <p class="cs-calendar-dayname">{{ $day['date']->locale('id')->isoFormat('dddd') }}</p>
+                    <p class="cs-calendar-dayname">{{ DateFormat::dayName($day['date']) }}</p>
                     <p class="cs-calendar-date">
                         <time datetime="{{ $day['date']->toDateString() }}">{{ $day['date']->format('d') }}</time>
-                        <span class="text-sm font-semibold text-ink-muted lg:hidden">{{ $day['date']->locale('id')->isoFormat('MMM YYYY') }}</span>
+                        <span class="text-sm font-semibold text-ink-muted lg:hidden">{{ DateFormat::monthYear($day['date']) }}</span>
                     </p>
 
                     @forelse ($day['events'] as $event)
@@ -105,16 +105,14 @@
                                     <span class="cs-code">{{ $schedule->room?->code }}</span>
                                 </td>
                                 <td data-label="Hari & Tanggal" class="cs-cell-nowrap">
-                                    <time datetime="{{ $schedule->start_time->toDateString() }}">
-                                        {{ $schedule->start_time->locale('id')->isoFormat('dddd, D MMMM YYYY') }}
-                                    </time>
+                                    <time datetime="{{ $schedule->start_time->toDateString() }}">{{ DateFormat::longDate($schedule->start_time) }}</time>
                                 </td>
                                 <td data-label="Waktu" class="cs-cell-nowrap tabular-nums">
-                                    <time datetime="{{ $schedule->start_time->toIso8601String() }}">{{ $schedule->start_time->format('H:i') }}</time>
+                                    <time datetime="{{ $schedule->start_time->toIso8601String() }}">{{ DateFormat::time($schedule->start_time) }}</time>
                                     –
-                                    <time datetime="{{ $schedule->end_time->toIso8601String() }}">{{ $schedule->end_time->format('H:i') }}</time>
+                                    <time datetime="{{ $schedule->end_time->toIso8601String() }}">{{ DateFormat::time($schedule->end_time) }}</time> WIB
                                     @unless ($schedule->start_time->isSameDay($schedule->end_time))
-                                        <span class="block text-xs text-ink-muted">s/d {{ $schedule->end_time->locale('id')->isoFormat('D MMM YYYY') }}</span>
+                                        <span class="block text-xs text-ink-muted">s/d {{ DateFormat::date($schedule->end_time) }}</span>
                                     @endunless
                                 </td>
                                 <td data-label="Status"><x-status-badge :status="$schedule->status" /></td>
