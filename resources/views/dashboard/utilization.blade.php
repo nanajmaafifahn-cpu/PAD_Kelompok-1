@@ -132,7 +132,7 @@
             <h2 id="under-heading" class="cs-section-title">Ruang kurang dimanfaatkan</h2>
             <p class="cs-section-description">Utilisasi aktual di bawah 30% pada periode terpilih.</p>
             @if ($underRooms->isEmpty())
-                <p class="cs-caption mt-4">Tidak ada ruang underutilized pada periode ini.</p>
+                <p class="cs-caption mt-4">Tidak ada ruang yang kurang dimanfaatkan pada periode ini.</p>
             @else
                 <ul class="mt-4 divide-y divide-border">
                     @foreach ($underRooms as $room)
@@ -155,7 +155,7 @@
             <h2 id="over-heading" class="cs-section-title">Ruang sangat padat</h2>
             <p class="cs-section-description">Utilisasi aktual 80% atau lebih pada periode terpilih.</p>
             @if ($overRooms->isEmpty())
-                <p class="cs-caption mt-4">Tidak ada ruang overutilized pada periode ini.</p>
+                <p class="cs-caption mt-4">Tidak ada ruang yang sangat padat pada periode ini.</p>
             @else
                 <ul class="mt-4 divide-y divide-border">
                     @foreach ($overRooms as $room)
@@ -179,7 +179,7 @@
     <section aria-labelledby="recommendation-heading" class="mb-8">
         <h2 id="recommendation-heading" class="cs-section-title">Rekomendasi Keputusan</h2>
         <p class="cs-section-description">
-            Disusun dari kategori utilisasi, ghost booking, dan status ruang pada periode terpilih.
+            Disusun dari kategori utilisasi, peminjaman tidak hadir, dan status ruang pada periode terpilih.
             Bersifat pendukung keputusan; keputusan akhir tetap pada pimpinan fakultas. Keputusan permanen
             (mis. alih fungsi ruang) sebaiknya didasarkan pada perbandingan beberapa periode, bukan satu periode.
         </p>
@@ -188,7 +188,7 @@
             <div class="cs-card mt-4">
                 <div class="cs-empty-state">
                     <p class="cs-empty-state-title">Belum ada data ruang untuk dianalisis.</p>
-                    <p class="mt-1">Rekomendasi muncul setelah ruang, jadwal, dan booking tercatat.
+                    <p class="mt-1">Rekomendasi muncul setelah ruang, jadwal, dan peminjaman tercatat.
                         <a href="{{ route('rooms.create') }}" class="cs-link">Tambah ruang</a>.</p>
                 </div>
             </div>
@@ -200,10 +200,10 @@
                             <h3 class="font-semibold text-ink">Redistribusi beban ruang (load balancing)</h3>
                             <p class="mt-1 text-sm text-ink-soft">
                                 Pemakaian tidak merata: {{ $roomRates($overRooms) }} berada di atas 80%, sementara
-                                {{ $roomRates($underRooms) }} di bawah 30%. Evaluasi pemindahan sebagian jadwal/booking dari ruang
+                                {{ $roomRates($underRooms) }} di bawah 30%. Evaluasi pemindahan sebagian jadwal/peminjaman dari ruang
                                 padat ke ruang yang kurang dimanfaatkan dengan kapasitas dan tipe ruang yang sesuai.
                             </p>
-                            <p class="cs-caption mt-2">Dasar data: utilisasi aktual per ruang &amp; kategori over/underutilized.</p>
+                            <p class="cs-caption mt-2">Dasar data: utilisasi aktual per ruang &amp; kategori sangat padat / kurang dimanfaatkan.</p>
                         </article>
                     </li>
                 @elseif ($overRooms->isNotEmpty())
@@ -214,7 +214,7 @@
                                 {{ $roomRates($overRooms) }} berada pada utilisasi 80% atau lebih. Evaluasi pemerataan jadwal ke
                                 jam/hari yang lebih longgar dan kecukupan kapasitas ruang sejenis sebagai alternatif.
                             </p>
-                            <p class="cs-caption mt-2">Dasar data: utilisasi aktual per ruang &amp; kategori overutilized.</p>
+                            <p class="cs-caption mt-2">Dasar data: utilisasi aktual per ruang &amp; kategori sangat padat.</p>
                         </article>
                     </li>
                 @elseif ($underRooms->isNotEmpty())
@@ -225,7 +225,7 @@
                                 {{ $roomRates($underRooms) }} berada di bawah 30%. Evaluasi redistribusi pemakaian: alihkan kegiatan
                                 dari ruang lain, buka untuk peminjaman unit akademik lain, atau tinjau alih fungsi bila rendah berulang.
                             </p>
-                            <p class="cs-caption mt-2">Dasar data: utilisasi aktual per ruang &amp; kategori underutilized.</p>
+                            <p class="cs-caption mt-2">Dasar data: utilisasi aktual per ruang &amp; kategori kurang dimanfaatkan.</p>
                         </article>
                     </li>
                 @endif
@@ -233,14 +233,14 @@
                 @if ($ghostRooms->isNotEmpty())
                     <li class="cs-card cs-card-body">
                         <article>
-                            <h3 class="font-semibold text-ink">Evaluasi prosedur booking &amp; check-in</h3>
+                            <h3 class="font-semibold text-ink">Evaluasi prosedur peminjaman &amp; check-in</h3>
                             <p class="mt-1 text-sm text-ink-soft">
-                                {{ $totalGhosts }} dari {{ $totalApproved }} booking disetujui berakhir no-show:
+                                {{ $totalGhosts }} dari {{ $totalApproved }} peminjaman disetujui berakhir tidak hadir:
                                 {{ $ghostRooms->map(fn ($room) => $room['room_code'] . ' (' . $room['ghost_bookings'] . ')')->join(', ') }}.
                                 Evaluasi konfirmasi ulang menjelang jadwal, pelepasan slot setelah toleransi {{ $ghostTolerance }} menit,
                                 dan aturan bagi peminjam yang berulang kali tidak hadir.
                             </p>
-                            <p class="cs-caption mt-2">Dasar data: ghost booking &amp; booking disetujui per ruang.</p>
+                            <p class="cs-caption mt-2">Dasar data: peminjaman tidak hadir &amp; peminjaman disetujui per ruang.</p>
                         </article>
                     </li>
                 @endif
@@ -250,10 +250,10 @@
                         <article>
                             <h3 class="font-semibold text-ink">Pemulihan kapasitas ruang</h3>
                             <p class="mt-1 text-sm text-ink-soft">
-                                {{ $maintenanceRooms->pluck('room_code')->join(', ') }} sedang dalam perawatan dan tidak dapat dibooking.
+                                {{ $maintenanceRooms->pluck('room_code')->join(', ') }} sedang dalam perawatan dan tidak dapat dipinjam.
                                 Prioritaskan perbaikan agar kapasitas kembali tersedia.
                             </p>
-                            <p class="cs-caption mt-2">Dasar data: status live maintenance.</p>
+                            <p class="cs-caption mt-2">Dasar data: status ruang dalam perawatan.</p>
                         </article>
                     </li>
                 @endif
@@ -263,9 +263,9 @@
                         <article>
                             <h3 class="font-semibold text-ink">Pertahankan pola jadwal</h3>
                             <p class="mt-1 text-sm text-ink-soft">
-                                Semua ruang berada pada kategori normal, tanpa ghost booking dan tanpa ruang dalam perawatan.
+                                Semua ruang berada pada kategori normal, tanpa peminjaman tidak hadir dan tanpa ruang dalam perawatan.
                             </p>
-                            <p class="cs-caption mt-2">Dasar data: kategori utilisasi, ghost booking, status live.</p>
+                            <p class="cs-caption mt-2">Dasar data: kategori utilisasi, peminjaman tidak hadir, status ruang saat ini.</p>
                         </article>
                     </li>
                 @endif
@@ -301,14 +301,14 @@
 
         <div class="cs-table-wrap" role="region" aria-labelledby="detail-heading" tabindex="0">
             <table class="cs-table">
-                <caption class="sr-only">Utilisasi terjadwal, aktual, ghost booking, dan kategori setiap ruang pada periode terpilih</caption>
+                <caption class="sr-only">Utilisasi terjadwal, aktual, peminjaman tidak hadir, dan kategori setiap ruang pada periode terpilih</caption>
                 <thead>
                     <tr>
                         <th scope="col">Ruangan &amp; Tipe</th>
                         <th scope="col">Status sekarang</th>
                         <th scope="col">Terjadwal</th>
                         <th scope="col">Aktual &amp; Utilisasi</th>
-                        <th scope="col" class="text-right">Ghost Booking</th>
+                        <th scope="col" class="text-right">Tidak hadir</th>
                         <th scope="col">Kategori</th>
                         <th scope="col">Metrik Khusus</th>
                     </tr>
@@ -364,7 +364,7 @@
                                     {{ $room['ghost_bookings'] }}
                                 </span>
                                 <span class="text-xs text-ink-muted">/ {{ $room['approved_bookings'] }}</span>
-                                <span class="block text-[11px] text-ink-muted">{{ $room['ghost_rate'] }}% no-show</span>
+                                <span class="block text-[11px] text-ink-muted">{{ $room['ghost_rate'] }}% tidak hadir</span>
                             </td>
 
                             {{-- Kategori --}}
@@ -399,7 +399,7 @@
                             <td colspan="7">
                                 <div class="cs-empty-state">
                                     <p class="cs-empty-state-title">Belum ada data ruang atau aktivitas pada periode ini.</p>
-                                    <p class="mt-1">Data utilisasi dihitung dari ruang, jadwal, dan booking yang tercatat.
+                                    <p class="mt-1">Data utilisasi dihitung dari ruang, jadwal, dan peminjaman yang tercatat.
                                         <a href="{{ route('rooms.create') }}" class="cs-link">Tambah ruang baru</a>.</p>
                                 </div>
                             </td>
@@ -417,8 +417,8 @@
             <h2 id="method-heading" class="cs-alert-title">Cara membaca angka</h2>
             <ul class="mt-1 list-disc space-y-0.5 pl-5">
                 <li>Jam tersedia = jam operasional {{ sprintf('%02d.00', $openingHour) }}–{{ sprintf('%02d.00', $closingHour) }}, Senin–Jumat; jam yang belum terjadi tidak dihitung.</li>
-                <li>Terjadwal = jadwal resmi + booking disetujui. Aktual = durasi check-in sampai check-out; rumus laboratorium ikut memperhitungkan waktu setup dan penalti ghost booking.</li>
-                <li>Ghost booking = booking disetujui yang tidak check-in lebih dari {{ $ghostTolerance }} menit setelah jadwal mulai.</li>
+                <li>Terjadwal = jadwal resmi + peminjaman disetujui. Aktual = durasi check-in sampai check-out; rumus laboratorium ikut memperhitungkan waktu setup dan penalti peminjaman tidak hadir.</li>
+                <li>Tidak hadir (<i>ghost booking</i>) = peminjaman disetujui yang tidak check-in lebih dari {{ $ghostTolerance }} menit setelah jadwal mulai.</li>
                 <li>Konflik jadwal dicegah saat pengajuan (pengajuan yang bentrok ditolak), sehingga tidak muncul sebagai metrik di dashboard.</li>
             </ul>
         </div>

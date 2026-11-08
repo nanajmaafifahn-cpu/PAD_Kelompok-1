@@ -73,7 +73,7 @@
                     <option value="{{ $value }}" @selected(old('type', $room?->type) === $value)>{{ $label }}</option>
                 @endforeach
             </select>
-            <p id="type-hint" class="cs-form-hint">Menentukan rumus utilisasi: Computer Lab menghitung waktu setup &amp; penalti ghost booking.</p>
+            <p id="type-hint" class="cs-form-hint">Menentukan rumus utilisasi: Computer Lab menghitung waktu setup &amp; penalti peminjaman tidak hadir.</p>
             <x-field-error for="type" />
         </div>
     </div>
