@@ -95,6 +95,7 @@ class BorrowerPagesTest extends TestCase
             ->assertSee('Pindai dari Foto')
             ->assertSee('Masukkan tautan QR secara manual')
             ->assertSee('Siap memindai')
+            ->assertSee('<figcaption class="sr-only">Pratinjau kamera pemindai QR</figcaption>', false)
             ->assertDontSee('Request Camera Permissions');
     }
 

@@ -57,6 +57,10 @@ class ManagerPagesTest extends TestCase
             ->assertSee('Terjadwal vs aktual')
             ->assertSee('data-print', false)
             ->assertDontSee('Unduh CSV')
+            ->assertSee('Rekomendasi Keputusan')
+            ->assertSee('<th scope="col" class="text-right">Tidak hadir</th>', false)
+            ->assertDontSee('Ghost Booking')
+            ->assertDontSee('status live')
             ->getContent();
 
         $this->assertSame(Room::count(), substr_count($html, 'class="cs-chart-row"'));
@@ -71,7 +75,7 @@ class ManagerPagesTest extends TestCase
         $html = $this->get(route('rooms.qr.index'))->assertSee('Campus Space · FRI')->getContent();
 
         $this->assertSame(Room::count(), substr_count($html, 'class="cs-qr-card"'));
-        $this->assertSame(Room::count(), substr_count($html, 'Pindai untuk check-in / check-out'));
+        $this->assertSame(Room::count(), substr_count($html, '<figcaption class="font-semibold text-ink">Pindai untuk check-in / check-out</figcaption>'));
         $this->assertStringContainsString(route('rooms.qr.regenerate', Room::first()), $html);
     }
 

@@ -30,7 +30,7 @@
 @section('content')
     <div class="grid gap-6 lg:grid-cols-3">
         <section class="cs-card cs-card-body space-y-6 lg:col-span-2" aria-labelledby="about-heading">
-            <div class="cs-room-card-media overflow-hidden rounded-xl">
+            <figure class="cs-room-card-media overflow-hidden rounded-xl">
                 @if ($room->photoUrl())
                     <img src="{{ $room->photoUrl() }}" alt="Foto {{ $room->name }}">
                 @else
@@ -40,7 +40,7 @@
                         <span class="text-xs">Foto ruangan belum ditambahkan oleh pengelola.</span>
                     </div>
                 @endif
-            </div>
+            </figure>
 
             <div>
                 <h2 id="about-heading" class="text-xl font-extrabold text-ink">Tentang ruangan</h2>

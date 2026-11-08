@@ -51,9 +51,11 @@
                     <p class="cs-eyebrow mb-0">Campus Space · FRI</p>
                     <p class="cs-qr-card-name">{{ $room->name }}</p>
                     <p class="text-lg text-ink-body">{{ $room->code }}</p>
-                    <canvas class="cs-qr-canvas" data-qr-path="{{ $path }}" width="320" height="320"
-                            role="img" aria-label="QR check-in ruang {{ $room->name }}"></canvas>
-                    <p class="font-semibold text-ink">Pindai untuk check-in / check-out</p>
+                    <figure class="cs-qr-figure">
+                        <canvas class="cs-qr-canvas" data-qr-path="{{ $path }}" width="320" height="320"
+                                role="img" aria-label="QR check-in ruang {{ $room->name }}"></canvas>
+                        <figcaption class="font-semibold text-ink">Pindai untuk check-in / check-out</figcaption>
+                    </figure>
                     <p class="break-all font-mono text-[10px] text-ink-muted" data-qr-url-for="{{ $path }}">{{ $baseUrl . $path }}</p>
                     <x-route-form route="rooms.qr.regenerate" :params="$room" class="cs-no-print"
                                   confirm="Perbarui QR {{ $room->name }}? QR lama yang sudah tertempel tidak berlaku lagi dan harus diganti.">

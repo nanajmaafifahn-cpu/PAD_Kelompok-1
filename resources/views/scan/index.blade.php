@@ -20,7 +20,8 @@
         <section class="cs-card cs-card-body space-y-5 lg:col-span-3" aria-labelledby="scanner-heading">
             <h2 id="scanner-heading" class="text-xl font-extrabold text-ink">Pindai QR ruangan</h2>
 
-            <div class="rounded-xl border border-dashed border-[color:var(--cs-color-border-strong)] p-4 text-center">
+            <figure class="rounded-xl border border-dashed border-[color:var(--cs-color-border-strong)] p-4 text-center">
+                <figcaption class="sr-only">Pratinjau kamera pemindai QR</figcaption>
                 <div id="qr-reader" data-qr-scanner class="mx-auto w-full max-w-sm"></div>
                 <x-icon name="camera" class="mx-auto h-10 w-10 text-ink-muted" data-qr-placeholder />
                 <div class="mt-4 flex flex-wrap justify-center gap-2">
@@ -33,7 +34,7 @@
                     </label>
                 </div>
                 <noscript><p class="mt-3 text-sm text-ink-muted">JavaScript nonaktif: gunakan tautan QR manual di bawah.</p></noscript>
-            </div>
+            </figure>
 
             <p class="text-sm text-ink-soft">
                 Kamera memerlukan HTTPS atau localhost. Jika akses dari ponsel menggunakan HTTP, pindai QR lewat
