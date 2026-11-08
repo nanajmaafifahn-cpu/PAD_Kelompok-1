@@ -1,19 +1,22 @@
-{{-- Notifikasi pesan dari Controller:
-     - redirect()->with('success', '...')  -> kotak hijau
-     - redirect()->with('error', '...')    -> kotak merah
-     - validasi gagal / withErrors([...])  -> daftar galat merah --}}
+{{-- Notifikasi pesan dari Controller (ditampilkan layout tepat di bawah header halaman):
+     - redirect()->with('success', '...')  -> kartu hijau
+     - redirect()->with('error', '...')    -> kartu merah
+     - validasi gagal / withErrors([...])  -> daftar galat merah
+     Tombol × (data-dismiss) menutup kartu; tanpa JS tombol disembunyikan (atribut hidden dibuka oleh campus-space.js). --}}
 
 @if (session('success'))
-    <div role="status" class="cs-alert cs-alert-success">
-        <span aria-hidden="true" class="cs-alert-icon">✓</span>
+    <div role="status" class="cs-alert cs-alert-success" data-dismissible>
+        <x-icon name="check-circle" class="cs-alert-icon h-5 w-5" />
         <p>{{ session('success') }}</p>
+        <button type="button" class="cs-alert-dismiss" data-dismiss hidden aria-label="Tutup pesan">&times;</button>
     </div>
 @endif
 
 @if (session('error'))
-    <div role="alert" class="cs-alert cs-alert-danger">
-        <span aria-hidden="true" class="cs-alert-icon">!</span>
+    <div role="alert" class="cs-alert cs-alert-danger" data-dismissible>
+        <x-icon name="alert" class="cs-alert-icon h-5 w-5" />
         <p>{{ session('error') }}</p>
+        <button type="button" class="cs-alert-dismiss" data-dismiss hidden aria-label="Tutup pesan">&times;</button>
     </div>
 @endif
 
@@ -26,8 +29,8 @@
         $inlineCount = count(array_intersect($errors->keys(), $inlineFields));
         $otherMessages = collect($errors->getMessages())->except($inlineFields)->flatten();
     @endphp
-    <div role="alert" class="cs-alert cs-alert-danger">
-        <span aria-hidden="true" class="cs-alert-icon">!</span>
+    <div role="alert" class="cs-alert cs-alert-danger" data-dismissible>
+        <x-icon name="alert" class="cs-alert-icon h-5 w-5" />
         <div>
             <p class="cs-alert-title">Permintaan tidak dapat diproses.</p>
             @if ($inlineCount > 0)
@@ -41,5 +44,6 @@
                 </ul>
             @endif
         </div>
+        <button type="button" class="cs-alert-dismiss" data-dismiss hidden aria-label="Tutup pesan">&times;</button>
     </div>
 @endif

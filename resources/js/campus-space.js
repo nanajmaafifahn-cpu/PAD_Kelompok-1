@@ -23,6 +23,10 @@
    - pembaruan otomatis dashboard yang bisa dijeda     (atribut data-auto-refresh="detik"); refresh ditunda
      saat pengguna sedang mengisi form, tab tidak terlihat, atau dialog cetak terbuka.
      Tanpa JS, <noscript><meta http-equiv="refresh"></noscript> di halaman tetap berlaku.
+   PROMPT 2 (layout sidebar):
+   - sidebar drawer di layar < 1024px                  ([data-drawer], [data-drawer-open], [data-drawer-close],
+                                                      [data-drawer-overlay]; Esc menutup, fokus terkunci);
+   - tombol tutup pesan flash                          ([data-dismissible] berisi [data-dismiss]).
    Script ini TIDAK mengubah status booking apa pun; semua transaksi tetap lewat server.
    ============================================================================= */
 (function () {
@@ -285,10 +289,101 @@
         window.setTimeout(tick, seconds * 1000);
     }
 
+    // Sidebar sebagai drawer di layar < 1024px: tombol [data-drawer-open] membuka, overlay / Esc /
+    // [data-drawer-close] menutup, fokus Tab terkunci di dalam drawer, fokus kembali ke tombol pembuka.
+    function initDrawer() {
+        var drawer = document.querySelector('[data-drawer]');
+        var openButton = document.querySelector('[data-drawer-open]');
+        var overlay = document.querySelector('[data-drawer-overlay]');
+        if (!drawer || !openButton || !overlay) {
+            return;
+        }
+
+        var desktop = window.matchMedia('(min-width: 64rem)');
+        var focusable = 'a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex="-1"])';
+
+        function setOpen(open) {
+            drawer.setAttribute('data-open', open ? 'true' : 'false');
+            overlay.hidden = !open;
+            openButton.setAttribute('aria-expanded', open ? 'true' : 'false');
+            document.body.style.overflow = open ? 'hidden' : '';
+            if (open) {
+                var first = drawer.querySelector(focusable);
+                if (first) {
+                    first.focus();
+                }
+            } else {
+                openButton.focus();
+            }
+        }
+
+        function isOpen() {
+            return drawer.getAttribute('data-open') === 'true';
+        }
+
+        openButton.addEventListener('click', function () { setOpen(true); });
+        overlay.addEventListener('click', function () { setOpen(false); });
+        drawer.querySelectorAll('[data-drawer-close]').forEach(function (button) {
+            button.addEventListener('click', function () { setOpen(false); });
+        });
+
+        document.addEventListener('keydown', function (event) {
+            if (!isOpen() || desktop.matches) {
+                return;
+            }
+            if (event.key === 'Escape') {
+                setOpen(false);
+                return;
+            }
+            if (event.key === 'Tab') {
+                var items = Array.prototype.filter.call(drawer.querySelectorAll(focusable), function (el) {
+                    return el.offsetParent !== null;
+                });
+                if (!items.length) {
+                    return;
+                }
+                var first = items[0];
+                var last = items[items.length - 1];
+                if (event.shiftKey && document.activeElement === first) {
+                    event.preventDefault();
+                    last.focus();
+                } else if (!event.shiftKey && document.activeElement === last) {
+                    event.preventDefault();
+                    first.focus();
+                }
+            }
+        });
+
+        // Saat layar dilebarkan ke desktop, tutup state drawer agar tidak mengunci scroll.
+        desktop.addEventListener('change', function (event) {
+            if (event.matches && isOpen()) {
+                drawer.setAttribute('data-open', 'false');
+                overlay.hidden = true;
+                openButton.setAttribute('aria-expanded', 'false');
+                document.body.style.overflow = '';
+            }
+        });
+    }
+
+    // Tombol × pada pesan flash ([data-dismiss] di dalam [data-dismissible]).
+    function initDismiss() {
+        document.querySelectorAll('[data-dismissible] [data-dismiss]').forEach(function (button) {
+            button.hidden = false;
+            button.addEventListener('click', function () {
+                var box = button.closest('[data-dismissible]');
+                if (box) {
+                    box.remove();
+                }
+            });
+        });
+    }
+
     function init() {
         initConfirm();
         initPrint();
         initAutoRefresh();
+        initDrawer();
+        initDismiss();
         document.querySelectorAll('form[data-cs-validate]').forEach(enhanceForm);
 
         // Fokus ke field pertama yang ditandai galat oleh server setelah redirect.

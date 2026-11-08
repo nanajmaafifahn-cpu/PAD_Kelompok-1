@@ -61,6 +61,16 @@ class User extends Authenticatable
         return in_array($this->getAttribute('role'), $roles, true);
     }
 
+    // Inisial avatar: huruf pertama dua kata pertama nama (mis. "Andi Pratama" -> "AP").
+    public function initials(): string
+    {
+        return collect(preg_split('/\s+/', trim((string) $this->name)) ?: [])
+            ->filter()
+            ->take(2)
+            ->map(fn (string $word) => mb_strtoupper(mb_substr($word, 0, 1)))
+            ->implode('') ?: '?';
+    }
+
     public function roleLabel(): string
     {
         $role = (string) $this->getAttribute('role');

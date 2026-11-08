@@ -3,7 +3,7 @@
 @extends('layouts.guest')
 
 @section('title', 'Masuk')
-@section('inline_error_fields', 'email,password')
+@section('inline_error_fields', 'email,password,throttle')
 
 @section('content')
     <form method="POST" action="{{ route('login.store') }}" class="cs-card cs-card-body space-y-5">
@@ -15,6 +15,7 @@
             <input id="email" name="email" type="email" value="{{ old('email') }}" required autofocus autocomplete="username"
                    class="cs-form-control" @error('email') aria-invalid="true" aria-describedby="email-error" @enderror>
             <x-field-error for="email" />
+            <x-field-error for="throttle" />
         </div>
 
         <div>
