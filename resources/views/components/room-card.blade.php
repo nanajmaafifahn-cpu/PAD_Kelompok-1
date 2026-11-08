@@ -9,7 +9,7 @@
     $computers = $room->computerCount();
 @endphp
 
-<article {{ $attributes->class(['cs-room-card']) }} aria-labelledby="room-{{ $room->id }}-name">
+<article {{ $attributes->class(['cs-room-card']) }} aria-labelledby="room-{{ $room->id }}-name" data-room-code="{{ $room->code }}">
     <div class="cs-room-card-media">
         <span class="cs-room-card-chip">{{ $room->typeLabel() }}</span>
         @if ($room->photoUrl())

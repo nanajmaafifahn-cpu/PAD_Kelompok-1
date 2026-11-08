@@ -41,7 +41,7 @@ class RoomController extends Controller
             ->withCount('bookings')
             ->filter($filters)
             ->orderBy('name')
-            ->paginate(10)
+            ->paginate(12) // grid 3 kolom
             ->withQueryString();
 
         return view('rooms.index', [

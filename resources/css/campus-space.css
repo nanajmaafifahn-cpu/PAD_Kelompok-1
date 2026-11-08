@@ -1510,6 +1510,177 @@
         gap: var(--cs-space-2);
     }
 
+    /* ---------- Kalender mingguan (schedules.index) ----------
+       Desktop (>= 1024px): 7 kolom hari. Lebih kecil: daftar per hari (satu kartu per hari). */
+    .cs-calendar {
+        display: grid;
+        gap: var(--cs-space-3);
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    @media (width >= 64rem) {
+        .cs-calendar {
+            grid-template-columns: repeat(7, minmax(0, 1fr));
+        }
+    }
+
+    .cs-calendar-day {
+        display: flex;
+        min-width: 0;
+        min-height: 6rem;
+        flex-direction: column;
+        gap: var(--cs-space-2);
+        border: 1px solid var(--cs-color-border);
+        border-radius: var(--cs-radius-xl);
+        background-color: var(--cs-color-surface);
+        padding: var(--cs-space-4);
+    }
+
+    @media (width >= 64rem) {
+        .cs-calendar-day {
+            min-height: 18rem;
+        }
+    }
+
+    .cs-calendar-day[data-today='true'] {
+        border-color: var(--cs-color-primary);
+        box-shadow: inset 0 0 0 1px var(--cs-color-primary);
+    }
+
+    .cs-calendar-dayname {
+        color: var(--cs-color-text-muted);
+        font-size: var(--cs-text-caption);
+    }
+
+    .cs-calendar-date {
+        display: flex;
+        align-items: baseline;
+        gap: var(--cs-space-2);
+        margin-bottom: var(--cs-space-2);
+        border-bottom: 1px solid var(--cs-color-border);
+        padding-bottom: var(--cs-space-2);
+        color: var(--cs-color-text-primary);
+        font-size: 1.75rem;
+        font-weight: var(--cs-font-weight-extrabold);
+    }
+
+    .cs-calendar-day[data-today='true'] .cs-calendar-date time {
+        color: var(--cs-color-primary);
+    }
+
+    .cs-calendar-empty {
+        margin: auto 0;
+        color: var(--cs-color-text-muted);
+        font-size: var(--cs-text-caption);
+        text-align: center;
+    }
+
+    /* Jenis kegiatan: jadwal kuliah (navy) vs peminjaman disetujui (teal) */
+    .cs-calendar-event {
+        border-left: 3px solid var(--cs-event-color);
+        border-radius: var(--cs-radius-md);
+        background-color: var(--cs-event-soft);
+        padding: var(--cs-space-2) var(--cs-space-3);
+        color: var(--cs-color-text-primary);
+        /* Kolom hari sempit di desktop: kata panjang dipotong dengan tanda hubung (lang="id") */
+        overflow-wrap: anywhere;
+        hyphens: auto;
+    }
+
+    [data-type='schedule'] {
+        --cs-event-color: var(--cs-color-secondary);
+        --cs-event-soft: var(--cs-color-secondary-soft);
+    }
+
+    [data-type='booking'] {
+        --cs-event-color: var(--cs-color-primary);
+        --cs-event-soft: var(--cs-color-primary-soft);
+    }
+
+    .cs-calendar-legend {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--cs-space-2);
+        color: var(--cs-color-text-secondary);
+    }
+
+    .cs-calendar-legend::before {
+        content: '';
+        width: 0.75rem;
+        height: 0.75rem;
+        border-left: 3px solid var(--cs-event-color);
+        border-radius: 0.2rem;
+        background-color: var(--cs-event-soft);
+    }
+
+    /* ---------- Timeline status booking (bookings.show) ---------- */
+    .cs-timeline {
+        display: grid;
+        gap: var(--cs-space-4);
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    @media (width >= 40rem) {
+        .cs-timeline {
+            grid-auto-columns: minmax(0, 1fr);
+            grid-auto-flow: column;
+        }
+    }
+
+    .cs-timeline-step {
+        display: flex;
+        gap: var(--cs-space-3);
+    }
+
+    .cs-timeline-marker {
+        display: grid;
+        flex-shrink: 0;
+        place-items: center;
+        width: 2rem;
+        height: 2rem;
+        border: 2px solid var(--cs-color-border-strong);
+        border-radius: var(--cs-radius-full);
+        background-color: var(--cs-color-surface);
+        color: var(--cs-color-text-muted);
+        font-size: var(--cs-text-caption);
+        font-weight: var(--cs-font-weight-bold);
+    }
+
+    .cs-timeline-marker svg {
+        width: 1rem;
+        height: 1rem;
+    }
+
+    .cs-timeline-step[data-state='done'] .cs-timeline-marker {
+        border-color: var(--cs-color-primary);
+        background-color: var(--cs-color-primary);
+        color: #ffffff;
+    }
+
+    .cs-timeline-step[data-state='current'] .cs-timeline-marker {
+        border-color: var(--cs-color-primary);
+        color: var(--cs-color-primary);
+    }
+
+    .cs-timeline-step[data-state='failed'] .cs-timeline-marker {
+        border-color: var(--cs-color-danger);
+        background-color: var(--cs-color-danger);
+        color: #ffffff;
+    }
+
+    .cs-timeline-label {
+        color: var(--cs-color-text-primary);
+        font-weight: var(--cs-font-weight-bold);
+    }
+
+    .cs-timeline-step[data-state='upcoming'] .cs-timeline-label {
+        color: var(--cs-color-text-muted);
+    }
+
     /* ---------- Paginasi (resources/views/vendor/pagination/tailwind.blade.php) ---------- */
     .cs-pagination {
         display: flex;

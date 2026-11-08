@@ -1,147 +1,117 @@
-{{-- FE-03 / FE-05 · Daftar Booking + Panel Verify + Simulator Scan QR
+{{-- Daftar peminjaman — dua mode:
+       $scope = 'mine' (bookings.mine)  : Peminjaman Saya (ref 05) — ruang, waktu, keperluan, status, Detail/Ubah/Batalkan
+       $scope = 'all'  (bookings.index) : Kelola Peminjaman pengelola/admin/pimpinan (ref 08) — Peminjam, Ruang, Waktu,
+                                          Peserta, Status, Tindakan (Setujui/Tolak/Hapus lewat x-confirm-dialog)
      Variabel dari BookingController@index / @mine:
-       $bookings  paginator Booking (dengan relasi room & user)
-       $scope     'all' (bookings.index, pengelola/admin/pimpinan) | 'mine' (bookings.mine, milik user login)
-     Tombol aksi dipilih berdasarkan nama status lewat partial
-     bookings/partials/actions/{status}.blade.php — tanpa if/else di view ini.
-     Menambah status baru cukup menambah satu file partial.
-     Di bawah 768px tabel tampil sebagai kartu (.cs-table-stack, label dari data-label).
-     Halaman wajib login. Tombol aksi hanya tampil bila user berhak (@can + BookingPolicy);
-     server tetap menolak aksi yang tidak berhak (403). --}}
+       $bookings  paginator Booking 10/halaman (relasi room & user), urut waktu mulai terbaru
+       $scope     'all' | 'mine'
+     Tombol aksi status dipilih dari bookings/partials/actions/{status}.blade.php (ber-@can).
+     Filter status belum didukung controller, jadi tidak ditampilkan. Di bawah 768px tabel tampil sebagai kartu. --}}
 @extends('layouts.app')
+
+@use('App\Support\DateFormat')
 
 @php
     $isMine = ($scope ?? 'all') === 'mine';
 @endphp
 
-@section('title', $isMine ? 'Peminjaman Saya' : 'Booking Ruang')
+@section('title', $isMine ? 'Peminjaman Saya' : 'Kelola Peminjaman')
+
+@section('page_header')
+    <x-page-header eyebrow="Pengajuan & aktivitas" :title="$isMine ? 'Peminjaman saya.' : 'Kelola peminjaman.'"
+                   :crumb="$isMine ? 'Peminjaman Saya' : 'Peminjaman'"
+                   subtitle="Pantau keputusan, akses ruangan, dan riwayat penggunaan.">
+        @can('create', \App\Models\Booking::class)
+            <x-slot:actions>
+                <a href="{{ route('bookings.create') }}" class="cs-btn cs-btn-primary">Ajukan Peminjaman</a>
+            </x-slot:actions>
+        @endcan
+    </x-page-header>
+@endsection
 
 @section('content')
-    <header class="cs-page-header">
-        <div>
-            <h1 class="cs-page-title">{{ $isMine ? 'Peminjaman Saya' : 'Booking Ruang' }}</h1>
-            <p class="cs-page-description">
-                {{ $isMine
-                    ? 'Riwayat pengajuan Anda. Buka detail untuk melihat kode cadangan QR, lalu scan QR di pintu ruangan untuk check-in / check-out.'
-                    : 'Pengajuan, verifikasi, dan simulasi scan QR check-in / check-out.' }}
-            </p>
-        </div>
-        @can('create', \App\Models\Booking::class)
-            <a href="{{ route('bookings.create') }}" class="cs-btn cs-btn-primary">
-                <span aria-hidden="true">+</span> Ajukan Booking
-            </a>
-        @endcan
-    </header>
-
-    {{-- Alur kerja lintas stakeholder (informasi statis) --}}
-    <section aria-labelledby="flow-heading" class="mb-6">
-        <h2 id="flow-heading" class="sr-only">Alur peminjaman ruang</h2>
-        <ol class="grid gap-2 text-xs sm:grid-cols-2 lg:grid-cols-4">
-            <li class="cs-card px-3 py-2">
-                <span class="font-semibold text-ink">1. Submit</span>
-                <span class="block text-ink-muted">Mahasiswa / Dosen</span>
-            </li>
-            <li class="cs-card px-3 py-2">
-                <span class="font-semibold text-ink">2. Verify</span>
-                <span class="block text-ink-muted">Kepala Lab / Admin Akademik</span>
-            </li>
-            <li class="cs-card px-3 py-2">
-                <span class="font-semibold text-ink">3. QR Check-In</span>
-                <span class="block text-ink-muted">Pengguna di depan ruang</span>
-            </li>
-            <li class="cs-card px-3 py-2">
-                <span class="font-semibold text-ink">4. QR Check-Out</span>
-                <span class="block text-ink-muted">Pengguna selesai memakai</span>
-            </li>
-        </ol>
-    </section>
-
     <section aria-labelledby="bookings-heading">
-        <h2 id="bookings-heading" class="sr-only">Daftar booking</h2>
+        <h2 id="bookings-heading" class="mb-4 text-ink-soft">{{ $bookings->total() }} pengajuan</h2>
 
-        <div class="cs-table-wrap cs-table-wrap-stack" role="region" aria-labelledby="bookings-heading" tabindex="0">
-            <table class="cs-table cs-table-stack">
-                <caption class="sr-only">
-                    Daftar booking ruang, halaman {{ $bookings->currentPage() }} dari {{ $bookings->lastPage() }}
-                </caption>
-                <thead>
-                    <tr>
-                        <th scope="col">Pemohon</th>
-                        <th scope="col">Ruang</th>
-                        <th scope="col" class="text-right">Peserta</th>
-                        <th scope="col">Jadwal</th>
-                        <th scope="col">Keperluan</th>
-                        <th scope="col">Status</th>
-                        <th scope="col">Aktual</th>
-                        <th scope="col">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse ($bookings as $booking)
+        @if ($bookings->isEmpty())
+            <div class="cs-card">
+                <x-empty-state title="Belum ada peminjaman"
+                               :text="$isMine ? 'Ajukan peminjaman ruang; statusnya akan dipantau di sini.' : 'Pengajuan dari mahasiswa dan dosen akan muncul di sini.'">
+                    @can('create', \App\Models\Booking::class)
+                        <a href="{{ route('bookings.create') }}" class="cs-btn cs-btn-primary">Ajukan Peminjaman</a>
+                    @endcan
+                </x-empty-state>
+            </div>
+        @else
+            <div class="cs-table-wrap cs-table-wrap-stack" role="region" aria-labelledby="bookings-heading" tabindex="0">
+                <table class="cs-table cs-table-stack">
+                    <caption class="sr-only">
+                        Daftar peminjaman, halaman {{ $bookings->currentPage() }} dari {{ $bookings->lastPage() }}
+                    </caption>
+                    <thead>
                         <tr>
-                            <th scope="row">
-                                <span class="block font-medium text-ink">{{ $booking->requester_name ?? $booking->user?->name }}</span>
-                                @if ($booking->requester_role)
-                                    <span class="block text-xs text-ink-muted">{{ $booking->requester_role }}</span>
+                            @unless ($isMine)
+                                <th scope="col">Peminjam</th>
+                            @endunless
+                            <th scope="col">Ruang</th>
+                            <th scope="col">Waktu</th>
+                            @if ($isMine)
+                                <th scope="col">Keperluan</th>
+                            @else
+                                <th scope="col" class="text-right">Peserta</th>
+                            @endif
+                            <th scope="col">Status</th>
+                            <th scope="col">Tindakan</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($bookings as $booking)
+                            <tr>
+                                @unless ($isMine)
+                                    <th scope="row">
+                                        <span class="block font-semibold text-ink">{{ $booking->requester_name ?? $booking->user?->name }}</span>
+                                        @if ($booking->requester_role)
+                                            <span class="block text-xs text-ink-muted">{{ $booking->requester_role }}</span>
+                                        @endif
+                                    </th>
+                                @endunless
+                                {{-- Mode "mine": kolom Ruang menjadi header baris (<th scope="row">). --}}
+                                <{{ $isMine ? 'th scope=row' : 'td' }} data-label="Ruang">
+                                    <span class="block font-semibold text-ink">{{ $booking->room?->name }}</span>
+                                    <span class="cs-code">{{ $booking->room?->code }}</span>
+                                </{{ $isMine ? 'th' : 'td' }}>
+                                <td data-label="Waktu">
+                                    <time datetime="{{ $booking->start_time->toIso8601String() }}">{{ DateFormat::range($booking->start_time, $booking->end_time) }}</time>
+                                    @unless ($isMine)
+                                        <span class="block text-xs text-ink-muted">{{ $booking->purpose }}</span>
+                                    @endunless
+                                </td>
+                                @if ($isMine)
+                                    <td data-label="Keperluan" class="md:max-w-xs">{{ $booking->purpose }}</td>
+                                @else
+                                    <td data-label="Peserta" class="cs-cell-num">{{ $booking->participant_count }} <span class="text-xs text-ink-muted">orang</span></td>
                                 @endif
-                            </th>
-                            <td data-label="Ruang">
-                                <span class="block text-ink">{{ $booking->room?->name }}</span>
-                                <span class="cs-code">{{ $booking->room?->code }}</span>
-                            </td>
-                            <td data-label="Peserta" class="cs-cell-num">{{ $booking->participant_count }} <span class="text-xs text-ink-muted">orang</span></td>
-                            <td data-label="Jadwal" class="cs-cell-nowrap">
-                                <time datetime="{{ $booking->start_time->toIso8601String() }}" class="block text-ink">
-                                    {{ $booking->start_time->locale('id')->isoFormat('ddd, D MMM YYYY') }}
-                                </time>
-                                <span class="block text-xs tabular-nums text-ink-muted">
-                                    {{ $booking->start_time->format('H:i') }} –
-                                    <time datetime="{{ $booking->end_time->toIso8601String() }}">{{ $booking->end_time->format('H:i') }}</time>
-                                </span>
-                            </td>
-                            <td data-label="Keperluan" class="md:max-w-xs">{{ $booking->purpose }}</td>
-                            <td data-label="Status"><x-status-badge :status="$booking->status" /></td>
-                            <td data-label="Aktual" class="cs-cell-nowrap text-xs tabular-nums text-ink-soft">
-                                <span class="block">In:
-                                    @if ($booking->checked_in_at)
-                                        <time datetime="{{ $booking->checked_in_at->toIso8601String() }}">{{ $booking->checked_in_at->format('H:i') }}</time>
+                                <td data-label="Status"><x-status-badge :status="$booking->status" /></td>
+                                <td data-label="Tindakan">
+                                    <a href="{{ route('bookings.show', $booking) }}" class="cs-btn cs-btn-secondary cs-btn-sm mb-2">
+                                        Detail<span class="sr-only"> peminjaman {{ $booking->purpose }}</span>
+                                    </a>
+                                    @if ($isMine)
+                                        @include('bookings.partials.manage')
                                     @else
-                                        <span aria-hidden="true">—</span><span class="sr-only">belum ada</span>
+                                        @includeFirst(
+                                            ['bookings.partials.actions.' . $booking->status, 'bookings.partials.actions.none'],
+                                            ['booking' => $booking]
+                                        )
                                     @endif
-                                </span>
-                                <span class="block">Out:
-                                    @if ($booking->checked_out_at)
-                                        <time datetime="{{ $booking->checked_out_at->toIso8601String() }}">{{ $booking->checked_out_at->format('H:i') }}</time>
-                                    @else
-                                        <span aria-hidden="true">—</span><span class="sr-only">belum ada</span>
-                                    @endif
-                                </span>
-                            </td>
-                            <td data-label="Aksi">
-                                <a href="{{ route('bookings.show', $booking) }}" class="cs-link mb-2 block text-xs">Detail</a>
-                                @includeFirst(
-                                    ['bookings.partials.actions.' . $booking->status, 'bookings.partials.actions.none'],
-                                    ['booking' => $booking]
-                                )
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="8">
-                                <div class="cs-empty-state">
-                                    <p class="cs-empty-state-title">Belum ada pengajuan booking.</p>
-                                    <p class="mt-1">Booking yang diajukan akan muncul di sini beserta status verifikasi dan kehadirannya.
-                                        <a href="{{ route('bookings.create') }}" class="cs-link">Ajukan booking pertama</a>.</p>
-                                </div>
-                            </td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        @endif
 
-        <div class="mt-4">
-            {{ $bookings->links() }}
-        </div>
+        <div class="mt-6">{{ $bookings->links() }}</div>
     </section>
 @endsection

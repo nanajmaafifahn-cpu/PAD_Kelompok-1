@@ -1,56 +1,70 @@
-{{-- Hasil pindai QR ruangan (scan.room). Dibuka langsung dari kamera ponsel.
+{{-- Hasil pindai QR ruangan (scan.room). Dibuka langsung dari kamera ponsel atau dari halaman Pindai QR.
      Variabel dari ScanController@show:
        $room    Room yang QR-nya dipindai
        $result  App\Support\Scan\ScanResult: action ('check_in' | 'check_out' | null), booking, message
-     Halaman ini TIDAK mengubah data; tombol konfirmasi mengirim POST scan.confirm. --}}
+     Halaman ini TIDAK mengubah data; tombol konfirmasi mengirim POST scan.confirm.
+     Galat konfirmasi kembali ke halaman ini sebagai pesan flash (di bawah header). --}}
 @extends('layouts.app')
 
-@section('title', 'Hasil Scan QR')
+@use('App\Support\DateFormat')
+@use('App\Support\Scan\ScanResult')
+
+@section('title', 'Hasil Pindai QR')
+
+@section('page_header')
+    <x-page-header eyebrow="Penggunaan aktual" title="Ruangan {{ $room->name }}" crumb="Pindai QR"
+                   subtitle="{{ $room->code }} · {{ $room->building }}">
+        <x-slot:actions>
+            <a href="{{ route('scan.index') }}" class="cs-btn cs-btn-secondary">Pindai QR lain</a>
+        </x-slot:actions>
+    </x-page-header>
+@endsection
 
 @section('content')
-    <section class="cs-container-narrow space-y-6" aria-labelledby="page-title">
-        <header>
-            <a href="{{ route('scan.index') }}" class="cs-back-link"><span aria-hidden="true">←</span> Kembali ke pemindai</a>
-            <h1 id="page-title" class="cs-page-title mt-2">{{ $room->name }}</h1>
-            <p class="cs-page-description"><span class="cs-code">{{ $room->code }}</span> · {{ $room->building }}</p>
-        </header>
+    <section class="cs-card cs-card-body mx-auto max-w-xl space-y-5 text-center lg:mx-0" aria-live="polite">
+        @if ($result->isAllowed())
+            <span class="cs-icon-chip mx-auto h-14 w-14" data-status="{{ $result->action === ScanResult::ACTION_CHECK_OUT ? 'checked_in' : 'completed' }}">
+                <x-icon name="{{ $result->action === ScanResult::ACTION_CHECK_OUT ? 'logout' : 'door' }}" />
+            </span>
+            <div>
+                <p class="text-xl font-extrabold text-ink">
+                    {{ $result->action === ScanResult::ACTION_CHECK_OUT ? 'Siap check-out' : 'Peminjaman ditemukan' }}
+                </p>
+                <p class="mt-1 text-ink-soft">{{ $result->message }}</p>
+            </div>
 
-        <div class="cs-card cs-card-body space-y-4">
-            @if ($result->isAllowed())
-                <div role="status" class="cs-alert cs-alert-info mb-0">
-                    <span aria-hidden="true" class="cs-alert-icon">i</span>
-                    <p>{{ $result->message }}</p>
+            <dl class="grid gap-3 rounded-xl bg-[color:var(--cs-color-surface-muted)] p-4 text-left text-sm sm:grid-cols-2">
+                <div>
+                    <dt class="cs-caption">Keperluan</dt>
+                    <dd class="font-semibold text-ink">{{ $result->booking->purpose }}</dd>
                 </div>
-
-                <dl class="grid gap-3 text-sm sm:grid-cols-2">
-                    <div>
-                        <dt class="cs-form-label">Keperluan</dt>
-                        <dd>{{ $result->booking->purpose }}</dd>
-                    </div>
-                    <div>
-                        <dt class="cs-form-label">Jadwal</dt>
-                        <dd class="tabular-nums">{{ $result->booking->start_time->format('H.i') }}–{{ $result->booking->end_time->format('H.i T') }}</dd>
-                    </div>
-                </dl>
-
-                <form method="POST" action="{{ route('scan.confirm', $room) }}">
-                    @csrf
-                    <button type="submit" class="cs-btn cs-btn-primary w-full sm:w-auto">
-                        {{ $result->action === \App\Support\Scan\ScanResult::ACTION_CHECK_OUT ? 'Konfirmasi Check-Out' : 'Konfirmasi Check-In' }}
-                    </button>
-                </form>
-            @else
-                <div role="alert" class="cs-alert cs-alert-warning mb-0">
-                    <span aria-hidden="true" class="cs-alert-icon">!</span>
-                    <p>{{ $result->message }}</p>
+                <div>
+                    <dt class="cs-caption">Waktu</dt>
+                    <dd class="font-semibold text-ink">{{ DateFormat::range($result->booking->start_time, $result->booking->end_time) }}</dd>
                 </div>
+            </dl>
 
+            <form method="POST" action="{{ route('scan.confirm', $room) }}">
+                @csrf
+                <button type="submit" class="cs-btn cs-btn-primary w-full">
+                    {{ $result->action === ScanResult::ACTION_CHECK_OUT ? 'Konfirmasi Check-out' : 'Konfirmasi Check-in' }}
+                </button>
+            </form>
+        @else
+            <span class="cs-icon-chip mx-auto h-14 w-14" data-status="booked"><x-icon name="alert" /></span>
+            <div>
+                <p class="text-xl font-extrabold text-ink">Belum bisa check-in / check-out</p>
+                <p class="mt-1 text-ink-soft" role="alert">{{ $result->message }}</p>
+            </div>
+
+            <div class="flex flex-wrap justify-center gap-2">
                 @if ($result->booking)
-                    <a href="{{ route('bookings.show', $result->booking) }}" class="cs-link text-sm">Lihat detail peminjaman</a>
-                @else
-                    <a href="{{ route('bookings.create') }}" class="cs-link text-sm">Ajukan peminjaman ruang ini</a>
+                    <a href="{{ route('bookings.show', $result->booking) }}" class="cs-btn cs-btn-secondary">Lihat detail peminjaman</a>
+                @elseif ($room->getStatus() !== 'maintenance')
+                    <a href="{{ route('bookings.create', ['room_id' => $room->id]) }}" class="cs-btn cs-btn-secondary">Ajukan peminjaman ruang ini</a>
                 @endif
-            @endif
-        </div>
+                <a href="{{ route('bookings.mine') }}" class="cs-btn cs-btn-ghost">Peminjaman Saya</a>
+            </div>
+        @endif
     </section>
 @endsection

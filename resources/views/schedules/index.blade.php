@@ -1,28 +1,79 @@
-{{-- FE-03 / FE-05 · Jadwal Ruang (dasar perhitungan Scheduled Utilization)
+{{-- Jadwal Ruangan (schedules.index) — referensi 04-mhs-jadwal / 12-pengelola-jadwal.
      Variabel dari ScheduleController@index:
-       $schedules  paginator Schedule (dengan relasi room), urut waktu mulai
-       $rooms      collection Room untuk form tambah jadwal (AKTIF sejak Fase 3, BE-03).
+       $week        CalendarService::week(): start, end, total, days[7] (date, is_today, events)
+       $eventTypes  CalendarService::TYPE_LABELS (legenda: Jadwal kuliah / Peminjaman disetujui)
+       $schedules   paginator Schedule (relasi room) — tabel "Kelola jadwal" khusus pengelola/admin
+       $rooms       collection Room untuk form tambah jadwal (pengelola/admin)
+     Kalender hanya minggu berjalan: filter tanggal/ruang & Sebelumnya/Berikutnya belum didukung controller.
      Form tambah & kolom Aksi (Ubah / Batalkan / Hapus) hanya untuk pengelola/admin (@can SchedulePolicy).
-     Nama field form = key StoreScheduleRequest: room_id, title, start_time, end_time (status otomatis "scheduled").
-     Field ada di schedules/partials/form.blade.php (dipakai juga oleh schedules/edit).
-     Di bawah 768px tabel tampil sebagai kartu (.cs-table-stack). --}}
+     Nama field form = key StoreScheduleRequest: room_id, title, start_time, end_time (status otomatis "scheduled"). --}}
 @extends('layouts.app')
 
-@section('title', 'Jadwal Ruang')
+@use('App\Services\CalendarService')
+@use('App\Support\DateFormat')
+
+@section('title', 'Jadwal Ruangan')
 @section('inline_error_fields', 'room_id,title,start_time,end_time')
 
 @php
     $canManage = auth()->user()->can('create', \App\Models\Schedule::class);
 @endphp
 
-@section('content')
-    <header class="cs-page-header">
-        <div>
-            <h1 class="cs-page-title">Jadwal Ruang</h1>
-            <p class="cs-page-description">Jadwal resmi perkuliahan/praktikum yang menjadi acuan <em>scheduled utilization</em>.</p>
-        </div>
-    </header>
+@section('page_header')
+    <x-page-header eyebrow="Kalender laboratorium" title="Jadwal ruangan." crumb="Jadwal Ruangan"
+                   subtitle="Jadwal akademik dan peminjaman yang telah disetujui.">
+        @can('create', \App\Models\Booking::class)
+            <x-slot:actions>
+                <a href="{{ route('bookings.create') }}" class="cs-btn cs-btn-primary">Ajukan Peminjaman</a>
+            </x-slot:actions>
+        @endcan
+    </x-page-header>
+@endsection
 
+@section('content')
+    <section aria-labelledby="week-heading" class="mb-10">
+        <div class="mb-4 flex flex-wrap items-end justify-between gap-3">
+            <h2 id="week-heading" class="text-2xl font-extrabold text-ink">{{ DateFormat::weekRange($week['start'], $week['end']) }}</h2>
+            <p class="text-sm text-ink-soft">WIB · {{ $week['total'] }} kegiatan</p>
+        </div>
+
+        <ul class="mb-4 flex flex-wrap gap-4 text-sm" aria-label="Keterangan warna">
+            @foreach ($eventTypes as $type => $label)
+                <li class="cs-calendar-legend" data-type="{{ $type }}">{{ $label }}</li>
+            @endforeach
+        </ul>
+
+        <ol class="cs-calendar">
+            @foreach ($week['days'] as $day)
+                <li class="cs-calendar-day" @if ($day['is_today']) data-today="true" aria-current="date" @endif>
+                    <p class="cs-calendar-dayname">{{ $day['date']->locale('id')->isoFormat('dddd') }}</p>
+                    <p class="cs-calendar-date">
+                        <time datetime="{{ $day['date']->toDateString() }}">{{ $day['date']->format('d') }}</time>
+                        <span class="text-sm font-semibold text-ink-muted lg:hidden">{{ $day['date']->locale('id')->isoFormat('MMM YYYY') }}</span>
+                    </p>
+
+                    @forelse ($day['events'] as $event)
+                        <div class="cs-calendar-event" data-type="{{ $event['type'] }}">
+                            <p class="text-xs font-bold tabular-nums">{{ DateFormat::time($event['start']) }}–{{ DateFormat::time($event['end']) }}</p>
+                            <p class="text-xs">{{ $event['room_name'] }}</p>
+                            <p class="mt-0.5 text-sm font-semibold leading-snug">{{ $event['title'] }}</p>
+                            <span class="sr-only">({{ $eventTypes[$event['type']] }})</span>
+                        </div>
+                    @empty
+                        <p class="cs-calendar-empty">Belum ada jadwal</p>
+                    @endforelse
+                </li>
+            @endforeach
+        </ol>
+
+        <p class="cs-alert cs-alert-info mt-6 mb-0">
+            Slot kosong pada kalender menunjukkan belum ada jadwal kuliah atau peminjaman yang disetujui.
+            Pengajuan baru tetap melalui pemeriksaan pengelola.
+        </p>
+    </section>
+
+    @if ($canManage)
+    <h2 class="mb-4 text-2xl font-extrabold text-ink">Kelola jadwal</h2>
     <div class="flex flex-col gap-6 lg:flex-row lg:items-start">
         {{-- Daftar jadwal --}}
         <section aria-labelledby="schedules-heading" class="min-w-0 flex-1">
@@ -118,4 +169,5 @@
             </aside>
         @endif
     </div>
+    @endif
 @endsection

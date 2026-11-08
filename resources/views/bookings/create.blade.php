@@ -1,32 +1,32 @@
-{{-- FE-03 / FE-05 · Form Pengajuan Booking (Submit)
+{{-- Form Ajukan Peminjaman (bookings.create -> POST bookings.store).
      Variabel dari BookingController@create:
-       $rooms  collection Room
-     Dikirim ke route bookings.store. Field form ada di bookings/partials/form.blade.php
-     (dipakai juga oleh bookings/edit). Galat BookingService dikirim sebagai session('error')
-     dan tampil di alert atas (layout). --}}
+       $rooms           collection Room (option membawa data-capacity untuk peringatan kapasitas di klien)
+       $selectedRoomId  ?int, dari ?room_id= (tombol "Ajukan Peminjaman" di detail ruang)
+     Field ada di bookings/partials/form.blade.php (dipakai juga bookings/edit). Pemohon & peran baca-saja dari akun.
+     Galat server (kapasitas, bentrok, waktu lampau, maintenance) tampil di bawah field (x-field-error). --}}
 @extends('layouts.app')
 
-@section('title', 'Ajukan Booking')
+@section('title', 'Ajukan Peminjaman')
 @section('inline_error_fields', 'room_id,participant_count,start_time,end_time,purpose')
 
-@section('content')
-    <section class="cs-container-narrow" aria-labelledby="page-title">
-        <header class="mb-6">
-            <a href="{{ route('bookings.index') }}" class="cs-back-link"><span aria-hidden="true">←</span> Kembali ke daftar booking</a>
-            <h1 id="page-title" class="cs-page-title mt-2">Ajukan Booking Ruang</h1>
-            <p class="cs-page-description">
-                Pengajuan akan berstatus <x-status-badge status="pending" /> sampai diverifikasi Kepala Laboratorium / Admin Akademik.
-                Kolom bertanda <span class="cs-form-required" aria-hidden="true">*</span> wajib diisi.
-            </p>
-        </header>
+@section('page_header')
+    <x-page-header eyebrow="Pengajuan baru" title="Ajukan peminjaman." crumb="Ajukan Peminjaman"
+                   subtitle="Pengajuan berstatus Menunggu persetujuan sampai diverifikasi pengelola ruang. Kolom bertanda * wajib diisi.">
+        <x-slot:actions>
+            <a href="{{ route('bookings.mine') }}" class="cs-btn cs-btn-secondary">Peminjaman Saya</a>
+        </x-slot:actions>
+    </x-page-header>
+@endsection
 
+@section('content')
+    <section class="cs-container-narrow ml-0" aria-label="Form pengajuan peminjaman">
         <form method="POST" action="{{ route('bookings.store') }}" class="cs-card cs-card-body space-y-6" data-cs-validate>
             @csrf
 
             @include('bookings.partials.form')
 
             <div class="cs-form-actions">
-                <a href="{{ route('bookings.index') }}" class="cs-btn cs-btn-ghost">Batal</a>
+                <a href="{{ route('bookings.mine') }}" class="cs-btn cs-btn-ghost">Batal</a>
                 <button type="submit" class="cs-btn cs-btn-primary">Kirim Pengajuan</button>
             </div>
         </form>

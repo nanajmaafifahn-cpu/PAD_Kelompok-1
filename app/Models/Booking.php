@@ -181,6 +181,42 @@ class Booking extends BaseCampusEntity
         return $bookings->exists();
     }
 
+    /**
+     * Langkah timeline detail booking: Diajukan -> Disetujui/Ditolak/Dibatalkan -> Check-in -> Selesai.
+     * state: done | current | upcoming | failed. Waktu persetujuan belum disimpan (tanpa approved_at).
+     *
+     * @return list<array{label: string, state: string, at: ?CarbonInterface, note: ?string}>
+     */
+    public function timelineSteps(): array
+    {
+        $status = $this->getStatus();
+        $step = fn (string $label, string $state, ?CarbonInterface $at = null, ?string $note = null) =>
+            ['label' => $label, 'state' => $state, 'at' => $at, 'note' => $note];
+
+        $steps = [$step('Diajukan', 'done', $this->created_at)];
+
+        if ($status === self::STATUS_REJECTED) {
+            return [...$steps, $step('Ditolak', 'failed', $this->updated_at, $this->rejection_reason)];
+        }
+
+        if ($status === self::STATUS_CANCELLED) {
+            return [...$steps, $step('Dibatalkan', 'failed', $this->updated_at)];
+        }
+
+        $approved = in_array($status, self::APPROVED_STATUSES, true);
+        $steps[] = $step('Disetujui', $approved ? 'done' : 'current');
+
+        if ($status === self::STATUS_NO_SHOW) {
+            return [...$steps, $step('Tidak hadir', 'failed', null, 'Tidak check-in sampai batas waktu.')];
+        }
+
+        $checkedIn = $this->checked_in_at !== null;
+        $steps[] = $step('Check-in', $checkedIn ? 'done' : ($status === self::STATUS_APPROVED ? 'current' : 'upcoming'), $this->checked_in_at);
+        $steps[] = $step('Selesai', $status === self::STATUS_COMPLETED ? 'done' : ($checkedIn ? 'current' : 'upcoming'), $this->checked_out_at);
+
+        return $steps;
+    }
+
     public function checkInOpensAt(): CarbonInterface
     {
         return $this->start_time->copy()->subMinutes(self::CHECK_IN_OPENS_BEFORE_MINUTES);
