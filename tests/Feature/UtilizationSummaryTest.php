@@ -35,8 +35,23 @@ class UtilizationSummaryTest extends TestCase
             $this->assertEqualsWithDelta($rooms->sum('scheduled_hours'), $summary['total_scheduled_hours'], 0.01);
             $this->assertEqualsWithDelta($rooms->sum('actual_hours'), $summary['total_actual_hours'], 0.01);
             $this->assertSame($rooms->sum('ghost_bookings'), $summary['total_ghost_bookings']);
+            $this->assertEqualsWithDelta(
+                $rooms->sum(fn ($room) => $room['metrics']['ghost_booking_hours']),
+                $summary['total_ghost_booking_hours'],
+                0.01
+            );
+            $this->assertEqualsWithDelta(
+                $rooms->sum(fn ($room) => $room['metrics']['ghost_opportunity_loss_seat_hours']),
+                $summary['total_ghost_opportunity_loss_seat_hours'],
+                0.01
+            );
             $this->assertEqualsWithDelta(round($rooms->avg('utilization_rate'), 1), $summary['average_utilization_rate'], 0.01);
             $this->assertEqualsWithDelta(round($rooms->avg('scheduled_rate'), 1), $summary['average_scheduled_rate'], 0.01);
+            $this->assertEqualsWithDelta(
+                round($rooms->avg(fn ($room) => $room['metrics']['seat_occupancy_efficiency']), 1),
+                $summary['average_seat_occupancy_efficiency'],
+                0.01
+            );
             $this->assertSame($rooms->where('live_status', 'maintenance')->count(), $summary['maintenance_now']);
             $this->assertArrayHasKey('open_sessions', $summary);
         }
@@ -45,5 +60,13 @@ class UtilizationSummaryTest extends TestCase
         $this->assertSame(1, $summary['open_sessions']);
         $this->assertSame(2, $summary['maintenance_now']); // KLS-203 & R15
         $this->assertSame(1, $summary['total_ghost_bookings']); // no_show demo R7 kemarin (Selasa)
+
+        $this->get(route('dashboard.utilization', [
+            'start' => $monday->toDateString(),
+            'end' => $monday->addDays(6)->toDateString(),
+        ]))->assertOk()
+            ->assertSee('Efisiensi okupansi kursi')
+            ->assertSee('Estimasi kursi-jam tertahan')
+            ->assertSee('Kapasitas indikatif');
     }
 }

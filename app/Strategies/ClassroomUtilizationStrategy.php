@@ -30,20 +30,6 @@ class ClassroomUtilizationStrategy extends AbstractUtilizationStrategy
         $scheduled = $this->scheduledHours($room, $period, $bookings);
         $actual = $this->actualHours($bookings, $period);
 
-        $usedSessions = $bookings->filter(
-            fn ($booking) => $booking->checked_in_at !== null
-        );
-
-        $capacity = $room->getCapacity();
-        $seatOccupancy = ($usedSessions->isNotEmpty() && $capacity > 0)
-            ? round(
-                $usedSessions->avg(
-                    fn ($booking) => min(1, $booking->participant_count / $capacity)
-                ) * 100,
-                1
-            )
-            : null;
-
         return $this->buildResult(
             $room,
             $period,
@@ -55,7 +41,6 @@ class ClassroomUtilizationStrategy extends AbstractUtilizationStrategy
                 'realization_ratio' => $scheduled > 0
                     ? $this->percentage($actual, $scheduled)
                     : null,
-                'seat_occupancy_ratio' => $seatOccupancy,
             ]
         );
     }

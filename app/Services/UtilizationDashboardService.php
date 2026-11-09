@@ -59,20 +59,34 @@ class UtilizationDashboardService
                 'total_scheduled_hours' => round($results->sum(fn (UtilizationResult $r) => $r->scheduledHours), 2),
                 'total_actual_hours' => round($results->sum(fn (UtilizationResult $r) => $r->actualHours), 2),
                 'total_ghost_bookings' => (int) $results->sum(fn (UtilizationResult $r) => $r->ghostBookings),
+                'total_ghost_booking_hours' => round((float) $results->sum(
+                    fn (UtilizationResult $r) => $r->metrics['ghost_booking_hours'] ?? 0
+                ), 2),
+                'total_ghost_opportunity_loss_seat_hours' => round((float) $results->sum(
+                    fn (UtilizationResult $r) => $r->metrics['ghost_opportunity_loss_seat_hours'] ?? 0
+                ), 2),
                 'average_utilization_rate' => round((float) ($results->avg(fn (UtilizationResult $r) => $r->utilizationRate) ?? 0), 1),
                 'average_scheduled_rate' => round((float) ($results->avg(fn (UtilizationResult $r) => $r->scheduledRate) ?? 0), 1),
+                'average_seat_occupancy_efficiency' => round((float) ($results
+                    ->map(fn (UtilizationResult $r) => $r->metrics['seat_occupancy_efficiency'] ?? null)
+                    ->filter(fn ($value) => $value !== null)
+                    ->avg() ?? 0), 1),
                 // Sesi yang sudah check-in tetapi belum check-out (jam aktualnya belum lengkap).
                 'open_sessions' => Booking::query()
                     ->where('status', Booking::STATUS_CHECKED_IN)
                     ->whereBetween('start_time', [$period->start, $period->end])
                     ->count(),
             ],
-            'rooms' => $results->map(fn (UtilizationResult $result) => [
-                ...$result->toArray(),
-                'live_status' => $liveStatuses[$result->roomId],
-                'academic_unit' => $rooms->firstWhere('id', $result->roomId)
-                    ?->academicUnit?->name,
-            ])->values()->all(),
+            'rooms' => $results->map(function (UtilizationResult $result) use ($liveStatuses, $rooms): array {
+                $room = $rooms->firstWhere('id', $result->roomId);
+
+                return [
+                    ...$result->toArray(),
+                    'capacity' => $room?->getCapacity(),
+                    'live_status' => $liveStatuses[$result->roomId],
+                    'academic_unit' => $room?->academicUnit?->name,
+                ];
+            })->values()->all(),
             'underutilized' => $byCategory(UtilizationResult::CATEGORY_UNDERUTILIZED)
                 ->pluck('roomCode')->all(),
             'overutilized' => $byCategory(UtilizationResult::CATEGORY_OVERUTILIZED)

@@ -115,6 +115,11 @@ class UtilizationStrategyTest extends TestCase
         $this->assertSame(3, $result->approvedBookings);
         $this->assertSame(1, $result->ghostBookings);
         $this->assertSame(33.3, $result->ghostRate);        // 1 / 3
+        $this->assertSame(2.0, $result->metrics['ghost_booking_hours']);
+        $this->assertSame(50.0, $result->metrics['ghost_opportunity_loss_seat_hours']);
+        $this->assertSame(4.0, $result->metrics['ghost_opportunity_loss_rate']);
+        $this->assertSame('insufficient_data', $result->metrics['capacity_recommendation']);
+        $this->assertNull($result->metrics['recommended_capacity']);
         $this->assertSame(UtilizationResult::CATEGORY_UNDERUTILIZED, $result->category); // 10% < 30%
     }
 
@@ -128,7 +133,22 @@ class UtilizationStrategyTest extends TestCase
         $result = (new ClassroomUtilizationStrategy())->calculate($room, $this->week);
 
         $this->assertSame(71.4, $result->metrics['realization_ratio']);    // 5 / 7 jam terjadwal
-        $this->assertSame(62.5, $result->metrics['seat_occupancy_ratio']); // rata-rata(20/40, 30/40)
+        $this->assertSame(65.0, $result->metrics['seat_occupancy_ratio']); // (20x2 + 30x3) / (40x5)
+        $this->assertSame(6.5, $result->metrics['seat_occupancy_efficiency']); // 130 / (40x50)
+    }
+
+    public function test_rekomendasi_kapasitas_menggunakan_p90_checkin_dan_buffer(): void
+    {
+        $room = $this->room('classroom', 40);
+        foreach ([18, 20, 20, 22, 25] as $day => $participants) {
+            $this->booking($room, $day, '08:00', '10:00', $participants, 'completed');
+        }
+
+        $result = (new ClassroomUtilizationStrategy())->calculate($room, $this->week);
+
+        $this->assertSame(5, $result->metrics['capacity_sample_sessions']);
+        $this->assertSame(28, $result->metrics['recommended_capacity']); // ceil(P90 25 x 1,1)
+        $this->assertSame('consider_smaller_room', $result->metrics['capacity_recommendation']);
     }
 
     public function test_kelas_penuh_setiap_hari_termasuk_overutilized(): void
@@ -184,6 +204,8 @@ class UtilizationStrategyTest extends TestCase
         $this->assertSame(10.0, $result->actualHours);                 // 3 + 4 + 3
         $this->assertSame(1.5, $result->metrics['setup_hours']);       // 3 sesi x 0,5 jam
         $this->assertSame(1.0, $result->metrics['ghost_penalty_hours']); // 2 jam x 0,5
+        $this->assertSame(2.0, $result->metrics['ghost_booking_hours']);
+        $this->assertSame(40.0, $result->metrics['ghost_opportunity_loss_seat_hours']);
         $this->assertSame(21.0, $result->utilizationRate);             // (10 + 1,5 - 1) / 50
         $this->assertSame(20.0, $result->metrics['raw_actual_rate']);  // 10 / 50
         $this->assertSame(24.0, $result->scheduledRate);               // 12 / 50

@@ -14,6 +14,9 @@ use Illuminate\Support\Collection;
  */
 abstract class AbstractUtilizationStrategy implements UtilizationStrategyInterface
 {
+    protected const CAPACITY_SAMPLE_MINIMUM = 5;
+    protected const CAPACITY_REDUCTION_THRESHOLD = 80.0;
+
     // Ambang kategori (persen), mengacu contoh Project Report 1:
     // 12% = underutilized, 44% = normal, 88% = overutilized.
     protected const UNDERUTILIZED_BELOW = 30.0;
@@ -82,21 +85,86 @@ abstract class AbstractUtilizationStrategy implements UtilizationStrategyInterfa
         Collection $bookings,
         UtilizationPeriod $period
     ): float {
-        $hours = 0.0;
+        return $bookings
+            ->filter(fn (Booking $booking) => $booking->checked_in_at !== null)
+            ->sum(fn (Booking $booking) => $this->sessionHours($booking, $period));
+    }
+
+    protected function sessionHours(Booking $booking, UtilizationPeriod $period): float
+    {
         $now = now();
+        $out = $booking->checked_out_at
+            ?? ($now->lt($booking->end_time) ? $now : $booking->end_time);
 
-        foreach ($bookings as $booking) {
-            if ($booking->checked_in_at === null) {
-                continue;
-            }
+        return $period->operatingHoursWithin($booking->checked_in_at, $out);
+    }
 
-            $out = $booking->checked_out_at
-                ?? ($now->lt($booking->end_time) ? $now : $booking->end_time);
+    /**
+     * Estimate occupied seat-hours from declared participants on checked-in
+     * bookings; actual headcounts are not collected by the application.
+     *
+     * @param Collection<int, Booking> $bookings
+     * @return array<string, float|int|null|string>
+     */
+    protected function capacityMetrics(
+        Room $room,
+        UtilizationPeriod $period,
+        Collection $bookings,
+        float $actualHours
+    ): array {
+        $attended = $bookings->filter(
+            fn (Booking $booking) => $booking->checked_in_at !== null
+        );
+        $capacity = $room->getCapacity();
+        $seatHours = $attended->sum(
+            fn (Booking $booking) => $booking->participant_count * $this->sessionHours($booking, $period)
+        );
+        $ghosts = $bookings->filter(
+            fn (Booking $booking) => $booking->isGhostBooking()
+        );
+        $ghostHours = $ghosts->sum(
+            fn (Booking $booking) => $period->operatingHoursWithin($booking->start_time, $booking->end_time)
+        );
+        $ghostSeatHours = $ghosts->sum(
+            fn (Booking $booking) => $booking->participant_count
+                * $period->operatingHoursWithin($booking->start_time, $booking->end_time)
+        );
 
-            $hours += $period->operatingHoursWithin($booking->checked_in_at, $out);
+        $recommendation = 'insufficient_data';
+        $recommendedCapacity = null;
+
+        if ($attended->count() >= self::CAPACITY_SAMPLE_MINIMUM) {
+            $participantCounts = $attended
+                ->pluck('participant_count')
+                ->sort()
+                ->values();
+            $percentileIndex = (int) ceil($participantCounts->count() * 0.9) - 1;
+            $recommendedCapacity = (int) ceil($participantCounts[$percentileIndex] * 1.1);
+            $occupancyThreshold = $capacity * self::CAPACITY_REDUCTION_THRESHOLD / 100;
+
+            $recommendation = match (true) {
+                $recommendedCapacity > $capacity => 'review_larger_room',
+                $recommendedCapacity < $occupancyThreshold => 'consider_smaller_room',
+                default => 'maintain',
+            };
         }
 
-        return $hours;
+        return [
+            'seat_hours_used' => round($seatHours, 2),
+            'seat_occupancy_ratio' => $actualHours > 0 && $capacity > 0
+                ? $this->percentage($seatHours, $capacity * $actualHours)
+                : null,
+            'seat_occupancy_efficiency' => $this->percentage(
+                $seatHours,
+                $capacity * $period->availableHours()
+            ),
+            'ghost_booking_hours' => round($ghostHours, 2),
+            'ghost_opportunity_loss_seat_hours' => round($ghostSeatHours, 2),
+            'ghost_opportunity_loss_rate' => $this->percentage($ghostHours, $period->availableHours()),
+            'capacity_sample_sessions' => $attended->count(),
+            'recommended_capacity' => $recommendedCapacity,
+            'capacity_recommendation' => $recommendation,
+        ];
     }
 
     protected function percentage(float $part, float $whole): float
@@ -127,7 +195,7 @@ abstract class AbstractUtilizationStrategy implements UtilizationStrategyInterfa
 
     /**
      * @param Collection<int, Booking> $bookings
-     * @param array<string, float|int|null> $metrics
+     * @param array<string, float|int|null|string> $metrics
      */
     protected function buildResult(
         Room $room,
@@ -160,7 +228,7 @@ abstract class AbstractUtilizationStrategy implements UtilizationStrategyInterfa
             ghostBookings: $ghosts,
             ghostRate: $approved > 0 ? round($ghosts / $approved * 100, 1) : 0.0,
             category: $this->classify($rate, $period),
-            metrics: $metrics,
+            metrics: [...$this->capacityMetrics($room, $period, $bookings, $actualHours), ...$metrics],
         );
     }
 }

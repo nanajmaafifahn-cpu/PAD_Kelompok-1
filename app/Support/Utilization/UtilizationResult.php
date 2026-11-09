@@ -23,7 +23,7 @@ final readonly class UtilizationResult
     ];
 
     /**
-     * @param array<string, float|int|null> $metrics metrik khusus per Strategy
+     * @param array<string, float|int|null|string> $metrics metrik utilisasi umum dan khusus per Strategy
      */
     public function __construct(
         public int $roomId,

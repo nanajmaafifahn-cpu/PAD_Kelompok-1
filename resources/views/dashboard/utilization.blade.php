@@ -3,7 +3,8 @@
        $period         ['start', 'end', 'available_hours']
        $summary        ['total_rooms', 'underutilized', 'overutilized', 'occupied_now', 'booked_now', 'available_now',
                         'maintenance_now', 'total_scheduled_hours', 'total_actual_hours', 'total_ghost_bookings',
-                        'average_utilization_rate', 'average_scheduled_rate', 'open_sessions']
+                        'total_ghost_booking_hours', 'total_ghost_opportunity_loss_seat_hours',
+                        'average_utilization_rate', 'average_scheduled_rate', 'average_seat_occupancy_efficiency', 'open_sessions']
        $rooms          array per ruang (room_code, room_name, room_type, scheduled_rate, utilization_rate, scheduled_hours,
                        actual_hours, approved_bookings, ghost_bookings, ghost_rate, category, metrics, live_status, ...)
        $underutilized  daftar kode ruang underutilized;  $overutilized  daftar kode ruang overutilized
@@ -28,7 +29,33 @@
     $overRooms = $roomList->where('category', 'overutilized')->values();
     $ghostRooms = $roomList->where('ghost_bookings', '>', 0)->sortByDesc('ghost_bookings')->values();
     $maintenanceRooms = $roomList->where('live_status', 'maintenance')->values();
+    $capacityReviewRooms = $roomList->filter(fn ($room) => in_array(
+        $room['metrics']['capacity_recommendation'] ?? null,
+        ['consider_smaller_room', 'review_larger_room'],
+        true
+    ))->values();
     $roomRates = fn ($list) => $list->map(fn ($room) => $room['room_code'] . ' (' . $room['utilization_rate'] . '%)')->join(', ');
+    $metricLabels = [
+        'realization_ratio' => 'Realisasi jadwal',
+        'raw_actual_rate' => 'Utilisasi aktual sebelum penyesuaian',
+        'setup_hours' => 'Waktu setup',
+        'ghost_penalty_hours' => 'Penalti ghost',
+        'seat_hours_used' => 'Kursi-jam terpakai (estimasi)',
+        'seat_occupancy_ratio' => 'Okupansi kursi saat ruang dipakai',
+        'seat_occupancy_efficiency' => 'Efisiensi okupansi kursi',
+        'ghost_booking_hours' => 'Jam ruang tertahan (ghost)',
+        'ghost_opportunity_loss_seat_hours' => 'Estimasi kursi-jam tertahan',
+        'ghost_opportunity_loss_rate' => 'Porsi jam tersedia tertahan (ghost)',
+        'capacity_sample_sessions' => 'Sesi check-in untuk kapasitas',
+        'recommended_capacity' => 'Kapasitas indikatif',
+        'capacity_recommendation' => 'Evaluasi kapasitas',
+    ];
+    $recommendationLabels = [
+        'insufficient_data' => 'Data belum cukup',
+        'maintain' => 'Pertahankan kapasitas',
+        'consider_smaller_room' => 'Evaluasi ruang lebih kecil',
+        'review_larger_room' => 'Tinjau ruang lebih besar',
+    ];
 
     // Konstanta aturan dari backend, agar teks penjelasan selalu sesuai kode.
     $openingHour = \App\Support\Utilization\UtilizationPeriod::OPENING_HOUR;
@@ -77,13 +104,17 @@
     {{-- ===================== RINGKASAN (BE-09, dari summary) ===================== --}}
     <section aria-labelledby="kpi-heading" class="mb-8">
         <h2 id="kpi-heading" class="sr-only">Ringkasan periode {{ DateFormat::date($periodStart) }} s/d {{ DateFormat::date($periodEnd) }}</h2>
-        <dl class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <dl class="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
             <x-stat-card label="Jam terjadwal" :value="number_format($summary['total_scheduled_hours'], 1, ',', '.')"
                          caption="Dalam jam operasional yang sudah berlalu" icon="calendar" tone="scheduled" />
             <x-stat-card label="Jam aktual" :value="number_format($summary['total_actual_hours'], 1, ',', '.')"
                          caption="Dari check-in sampai check-out" icon="activity" tone="completed" />
             <x-stat-card label="Tidak digunakan" :value="$summary['total_ghost_bookings']"
                          caption="Peminjaman disetujui tanpa check-in (ghost)" icon="alert" tone="no_show" />
+            <x-stat-card label="Jam slot tertahan" :value="number_format($summary['total_ghost_booking_hours'], 1, ',', '.')"
+                         caption="{{ number_format($summary['total_ghost_opportunity_loss_seat_hours'], 0, ',', '.') }} kursi-jam estimasi" icon="clock" tone="no_show" />
+            <x-stat-card label="Efisiensi okupansi kursi" :value="$summary['average_seat_occupancy_efficiency'] . '%'"
+                         caption="Rata-rata estimasi per ruang" icon="activity" tone="completed" />
             <x-stat-card label="Sesi belum lengkap" :value="$summary['open_sessions']"
                          caption="Sudah check-in, belum check-out" icon="clock" tone="pending" />
         </dl>
@@ -258,7 +289,25 @@
                     </li>
                 @endif
 
-                @if ($overRooms->isEmpty() && $underRooms->isEmpty() && $ghostRooms->isEmpty() && $maintenanceRooms->isEmpty())
+                @if ($capacityReviewRooms->isNotEmpty())
+                    <li class="cs-card cs-card-body">
+                        <article>
+                            <h3 class="font-semibold text-ink">Evaluasi rekomendasi kapasitas</h3>
+                            <ul class="mt-1 list-disc space-y-1 pl-5 text-sm text-ink-soft">
+                                @foreach ($capacityReviewRooms as $room)
+                                    <li>
+                                        {{ $room['room_code'] }}:
+                                        {{ $room['metrics']['capacity_recommendation'] === 'consider_smaller_room' ? 'evaluasi ruang lebih kecil' : 'tinjau kebutuhan ruang lebih besar' }}
+                                        (kapasitas indikatif {{ $room['metrics']['recommended_capacity'] }} kursi; saat ini {{ $room['capacity'] }}).
+                                    </li>
+                                @endforeach
+                            </ul>
+                            <p class="cs-caption mt-2">Indikasi dari persentil ke-90 peserta terdaftar pada sesi check-in (minimal 5 sesi) ditambah buffer 10%; bukan pengukuran jumlah hadir aktual.</p>
+                        </article>
+                    </li>
+                @endif
+
+                @if ($overRooms->isEmpty() && $underRooms->isEmpty() && $ghostRooms->isEmpty() && $maintenanceRooms->isEmpty() && $capacityReviewRooms->isEmpty())
                     <li class="cs-card cs-card-body">
                         <article>
                             <h3 class="font-semibold text-ink">Pertahankan pola jadwal</h3>
@@ -378,10 +427,14 @@
                                     <dl class="space-y-1">
                                         @foreach ($room['metrics'] as $key => $val)
                                             <div class="flex items-center justify-between gap-2 border-b border-border pb-0.5 last:border-0 last:pb-0">
-                                                <dt class="capitalize text-ink-muted">{{ str_replace('_', ' ', $key) }}:</dt>
+                                                <dt class="text-ink-muted">{{ $metricLabels[$key] ?? str_replace('_', ' ', $key) }}:</dt>
                                                 <dd class="font-medium tabular-nums text-ink-body">
-                                                    @if (is_numeric($val))
-                                                        {{ str_contains($key, 'ratio') || str_contains($key, 'rate') ? $val . '%' : (str_contains($key, 'hours') ? $val . ' jam' : $val) }}
+                                                    @if ($key === 'capacity_recommendation')
+                                                        {{ $recommendationLabels[$val] ?? $val }}
+                                                    @elseif ($key === 'recommended_capacity')
+                                                        {{ $val === null ? '-' : $val . ' kursi' }}
+                                                    @elseif (is_numeric($val))
+                                                        {{ str_contains($key, 'ratio') || str_contains($key, 'rate') || str_contains($key, 'efficiency') ? $val . '%' : (str_contains($key, 'seat_hours') ? $val . ' kursi-jam' : (str_contains($key, 'hours') ? $val . ' jam' : $val)) }}
                                                     @else
                                                         {{ $val ?? '-' }}
                                                     @endif
@@ -418,7 +471,10 @@
             <ul class="mt-1 list-disc space-y-0.5 pl-5">
                 <li>Jam tersedia = jam operasional {{ sprintf('%02d.00', $openingHour) }}–{{ sprintf('%02d.00', $closingHour) }}, Senin–Jumat; jam yang belum terjadi tidak dihitung.</li>
                 <li>Terjadwal = jadwal resmi + peminjaman disetujui. Aktual = durasi check-in sampai check-out; rumus laboratorium ikut memperhitungkan waktu setup dan penalti peminjaman tidak hadir.</li>
+                <li>Efisiensi okupansi kursi = estimasi kursi-jam terpakai dibanding kapasitas kursi-jam tersedia. Okupansi saat ruang dipakai membandingkan kursi-jam terpakai dengan kapasitas selama jam aktual.</li>
                 <li>Tidak hadir (<i>ghost booking</i>) = peminjaman disetujui yang tidak check-in lebih dari {{ $ghostTolerance }} menit setelah jadwal mulai.</li>
+                <li>Efisiensi okupansi kursi dan kursi-jam ghost adalah estimasi dari jumlah peserta yang didaftarkan dan jam booking; sistem tidak mencatat jumlah hadir aktual atau permintaan lain yang gagal mendapat ruang.</li>
+                <li>Rekomendasi kapasitas memakai persentil ke-90 peserta terdaftar pada sesi check-in (minimal 5 sesi) ditambah buffer 10%; validasi manajemen tetap diperlukan sebelum mengubah kapasitas.</li>
                 <li>Konflik jadwal dicegah saat pengajuan (pengajuan yang bentrok ditolak), sehingga tidak muncul sebagai metrik di dashboard.</li>
             </ul>
         </div>
