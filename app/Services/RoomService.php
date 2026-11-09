@@ -22,6 +22,10 @@ class RoomService
 
         if ($photo) {
             $data['photo_path'] = $photo->store(self::PHOTO_DIRECTORY, 'public');
+
+            if ($data['photo_path'] === false) {
+                throw new RoomException('Foto ruang gagal disimpan. Pilih kembali foto dan coba lagi.');
+            }
         }
 
         return Room::create($data);
@@ -35,6 +39,10 @@ class RoomService
 
         if ($photo) {
             $data['photo_path'] = $photo->store(self::PHOTO_DIRECTORY, 'public');
+
+            if ($data['photo_path'] === false) {
+                throw new RoomException('Foto ruang gagal disimpan. Pilih kembali foto dan coba lagi.');
+            }
         } elseif ($removePhoto) {
             $data['photo_path'] = null;
         }
