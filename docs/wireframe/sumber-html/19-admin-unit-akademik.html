@@ -1,0 +1,134 @@
+<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Unit Akademik</title><style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DejaVu Sans',Arial,sans-serif;background:#f4f4f2;color:#2b2b2b;font-size:13px;line-height:1.45}
+.tag{position:absolute;top:-9px;right:8px;background:#fff;border:1px solid #2a78d6;color:#1c5cab;font:600 10px/1 'DejaVu Sans Mono',monospace;padding:3px 5px;border-radius:3px;z-index:3;white-space:nowrap}
+.sem{position:relative;outline:1.5px dashed #86b6ef;outline-offset:3px}
+.app{display:grid;grid-template-columns:232px 1fr;min-height:100vh}
+aside.side{background:#d9d9d6;padding:18px 14px;display:flex;flex-direction:column;gap:14px;position:relative}
+.logo{display:flex;gap:8px;align-items:center}
+.logo .mark{width:34px;height:34px;border:2px solid #555;border-radius:8px;background:#fff;display:grid;place-items:center;font-weight:700}
+.logo b{display:block;font-size:14px}.logo small{font-size:9px;letter-spacing:2px;color:#666}
+.menu-h{font-size:9px;letter-spacing:2px;color:#666;margin-top:8px}
+.menu a{display:flex;gap:8px;align-items:center;padding:8px 10px;border-radius:6px;color:#333;text-decoration:none;font-weight:600}
+.menu a.on{background:#fff;border:1.5px solid #777}
+.ico{width:14px;height:14px;border:1.5px solid #777;border-radius:3px;display:inline-block;flex:none}
+.side .promo{margin-top:auto;border:1.5px solid #999;border-radius:8px;padding:10px;background:#e8e8e5;font-size:11px}
+.col{display:flex;flex-direction:column;min-width:0}
+header.top{height:58px;background:#fff;border-bottom:1.5px solid #bbb;display:flex;align-items:center;gap:12px;padding:0 24px;position:relative}
+.burger{display:none;width:34px;height:34px;border:1.5px solid #777;border-radius:6px;place-items:center;font-size:16px}
+.top .fac{color:#666}.top .sp{flex:1}
+.avatar{width:32px;height:32px;border-radius:50%;border:1.5px solid #777;background:#e5e5e2;display:grid;place-items:center;font-size:11px;font-weight:700}
+.who b{display:block;font-size:12px}.who small{color:#777;font-size:10px}
+main.content{padding:26px 40px 30px;display:flex;flex-direction:column;gap:20px;position:relative;flex:1}
+footer.foot{display:flex;justify-content:space-between;padding:14px 40px;color:#777;font-size:11px;border-top:1px solid #ddd;position:relative}
+.crumb{color:#777;font-size:11px}
+.ph{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap}
+.eyebrow{font-size:10px;letter-spacing:2.5px;color:#666;font-weight:700}
+h1{font-size:30px;line-height:1.15;margin:4px 0 4px}
+h2{font-size:16px}
+.sub{color:#666}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1.5px solid #555;border-radius:7px;padding:8px 14px;font-weight:700;font-size:12px;background:#fff;white-space:nowrap}
+.btn.pri{background:#555;color:#fff}
+.btn.sm{padding:4px 9px;font-size:11px}
+.btn.ghost{border-style:dashed}
+.card{background:#fff;border:1.5px solid #aaa;border-radius:10px;padding:16px;position:relative}
+.grid{display:grid;gap:14px}
+.g4{grid-template-columns:repeat(4,1fr)}.g3{grid-template-columns:repeat(3,1fr)}.g2{grid-template-columns:1fr 1fr}
+.g21{grid-template-columns:2fr 1fr}
+.stat .lbl{font-weight:600;font-size:12px}.stat .num{font-size:28px;font-weight:700;margin:4px 0}.stat .hint{color:#777;font-size:11px}
+.stat .ico{position:absolute;right:14px;top:14px;width:26px;height:26px;border-radius:6px}
+.line{height:8px;background:#ddd;border-radius:4px;margin:5px 0}
+.badge{display:inline-block;border:1.5px solid #888;border-radius:10px;padding:1px 8px;font-size:10px;font-weight:700;background:#f0f0ee}
+.badge.d{border-style:dashed}
+.img{background:repeating-linear-gradient(135deg,#e6e6e3 0 10px,#ededeb 10px 20px);border:1.5px solid #aaa;border-radius:8px;display:grid;place-items:center;color:#777;font-size:11px;position:relative}
+.img::before{content:'';position:absolute;inset:0;background:linear-gradient(to top right,transparent calc(50% - 1px),#c9c9c6 50%,transparent calc(50% + 1px)),linear-gradient(to top left,transparent calc(50% - 1px),#c9c9c6 50%,transparent calc(50% + 1px));border-radius:8px}
+.img span{position:relative;background:#f4f4f2;padding:2px 6px;border-radius:4px}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;font-size:10px;letter-spacing:1px;color:#666;padding:8px 10px;background:#ececea;border-bottom:1.5px solid #bbb}
+td{padding:10px;border-bottom:1px solid #ddd;vertical-align:top}
+td small{display:block;color:#888;font-size:10px}
+.tbl{padding:0}
+.tbl table{border-radius:0 0 10px 10px;overflow:hidden}
+.tag.in{top:4px}
+.tag.hd{right:auto;left:8px;top:auto;bottom:-9px}
+.filter4{display:grid;grid-template-columns:1fr 1fr 2fr auto;gap:10px;align-items:end}
+.list.block > div{display:block}
+.tbl .th{display:flex;justify-content:space-between;align-items:center;padding:14px 16px}
+.field{display:flex;flex-direction:column;gap:4px;position:relative}
+.field label{font-weight:700;font-size:11px}
+.req{color:#555}
+.input{height:34px;border:1.5px solid #999;border-radius:6px;background:#fff;padding:0 9px;display:flex;align-items:center;color:#999;font-size:11px;justify-content:space-between}
+.input.area{height:70px;align-items:flex-start;padding-top:8px}
+.attr{font:10px 'DejaVu Sans Mono',monospace;color:#1c5cab}
+.filter{display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto;gap:10px;align-items:end}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.pag{display:flex;justify-content:space-between;align-items:center;color:#777;font-size:11px}
+.pag .p{display:flex;gap:6px}.pag .p span{border:1.5px solid #aaa;border-radius:6px;padding:3px 9px;background:#fff}.pag .p .on{background:#555;color:#fff;border-color:#555}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
+.day{background:#fff;border:1.5px solid #aaa;border-radius:8px;padding:8px;min-height:230px}
+.day.today{border-width:2.5px;border-color:#555}
+.day .d{font-size:10px;color:#777}.day .n{font-size:20px;font-weight:700;margin-bottom:6px}
+.ev{border:1.5px solid #888;border-left-width:4px;border-radius:5px;padding:5px;margin-bottom:6px;font-size:10px;background:#f5f5f3}
+.ev.b{border-style:dashed;border-left-style:solid}
+.legend{display:flex;gap:14px;color:#666;font-size:11px;align-items:center}
+.sw{display:inline-block;width:12px;height:10px;border:1.5px solid #777;margin-right:4px;vertical-align:-1px}
+.sw.b{border-style:dashed}
+.bar{display:grid;grid-template-columns:150px 1fr 60px;gap:10px;align-items:center;font-size:11px;margin:6px 0}
+.track{height:14px;background:#f0f0ee;border:1px solid #ddd;border-radius:3px;position:relative}
+.track i{position:absolute;left:0;height:6px;border-radius:2px}
+.track i.s{top:1px;background:#888}.track i.a{top:7px;background:#c4c4c1;border:1px solid #888}
+.dl{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.dl dt{font-size:10px;color:#777}.dl dd{font-weight:700}
+.qr{width:120px;height:120px;margin:10px auto;border:1.5px solid #777;background:
+ linear-gradient(90deg,#999 25%,transparent 25% 50%,#999 50% 75%,transparent 75%) 0 0/24px 24px,
+ linear-gradient(#fff 50%,transparent 50%) 0 0/24px 24px;position:relative}
+.qr::before,.qr::after{content:'';position:absolute;width:30px;height:30px;border:6px solid #555;background:#fff}
+.qr::before{top:4px;left:4px}.qr::after{bottom:4px;right:4px}
+.note{border:1.5px dashed #999;border-radius:8px;padding:10px 12px;color:#555;background:#fafaf8;font-size:11px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.list > div{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #e3e3e0;gap:8px}
+.mobile-only{display:none}
+/* ---------- MOBILE ---------- */
+@media (max-width:700px){
+ .app{grid-template-columns:1fr}
+ aside.side{display:none}
+ .burger{display:grid}
+ header.top{padding:0 12px;height:54px}
+ .who{display:none}
+ main.content{padding:16px 12px 20px;gap:16px}
+ footer.foot{padding:12px;flex-direction:column;gap:4px}
+ h1{font-size:24px}
+ .g4,.g3,.g2,.g21,.filter,.filter4{grid-template-columns:1fr}
+ .ph{align-items:flex-start;flex-direction:column}
+ .cal{grid-template-columns:1fr}
+ .day{min-height:0;display:grid;grid-template-columns:54px 1fr;gap:8px}
+ .day .evs{display:flex;flex-direction:column}
+ table,tbody,tr,td{display:block}
+ thead{display:none}
+ tr{border:1.5px solid #aaa;border-radius:8px;margin:10px;background:#fff}
+ td{border-bottom:1px solid #eee;padding:8px 12px}
+ td[data-l]::before{content:attr(data-l);display:block;font-size:9px;letter-spacing:1px;color:#888;font-weight:700;text-transform:uppercase}
+ .bar{grid-template-columns:90px 1fr 46px}
+ .mobile-only{display:block}
+ .desk-only{display:none}
+ .auth{grid-template-columns:1fr!important}
+ .auth .brand{min-height:160px!important;padding:20px!important}
+}
+</style></head><body>
+<div class="app">
+ <aside class="side sem"><span class="tag in">&lt;aside&gt;</span>
+  <div class="logo"><div class="mark">C</div><div><b>Campus Space</b><small>LABORATORIUM FRI</small></div></div>
+  <nav class="sem" style="outline-offset:1px"><span class="tag">&lt;nav&gt;</span><div class="menu-h">MENU UTAMA</div><div class="menu"><a class=""><i class="ico"></i>Dashboard</a><a class=""><i class="ico"></i>Jelajahi Ruangan</a><a class=""><i class="ico"></i>Jadwal Ruangan</a><a class=""><i class="ico"></i>Peminjaman</a><a class=""><i class="ico"></i>Laporan Utilisasi</a></div><div class="menu-h">PENGELOLAAN</div><div class="menu"><a class=""><i class="ico"></i>Ruangan & Foto</a><a class=""><i class="ico"></i>Fasilitas</a><a class=""><i class="ico"></i>Cetak QR Ruangan</a><a class=""><i class="ico"></i>Pengguna</a><a class="on"><i class="ico"></i>Unit Akademik</a></div></nav>
+  <div class="promo"><b>Ruang untuk setiap kegiatan.</b><div class="line" style="width:90%"></div><div class="line" style="width:70%"></div></div>
+ </aside>
+ <div class="col">
+  <header class="top sem"><span class="tag in hd">&lt;header&gt;</span><div class="burger">☰</div><span class="fac">Fakultas Rekayasa Industri</span><span class="sp"></span>
+   <div class="avatar">AA</div><div class="who"><b>Admin Akademik FRI</b><small>Admin</small></div><span class="btn sm pri">Keluar</span></header>
+  <main class="content sem"><span class="tag">&lt;main&gt;</span><section class="sem" style="outline-offset:6px"><span class="tag">&lt;section&gt;</span><div class="crumb">Campus Space / Administrasi / Unit Akademik</div>
+<div class="ph"><div><div class="eyebrow">ADMINISTRASI</div><h1>Unit akademik.</h1><div class="sub">Fakultas atau jurusan pemilik ruang. Unit yang masih dipakai ruang tidak dapat dihapus.</div></div></div></section><div class="grid g21"><section class="card tbl"><span class="tag">&lt;section&gt;</span><div class="th"><h2>Daftar unit akademik</h2></div><table><thead><tr><th>Kode</th><th>Nama</th><th>Ruang</th><th>Tindakan</th></tr></thead><tbody><tr><td data-l="Kode">FRI</td><td data-l="Nama">Fakultas Rekayasa Industri</td><td data-l="Ruang">19</td><td data-l="Tindakan"><div class="row"><span class="btn sm">Ubah</span><small>Tidak dapat dihapus</small></div></td></tr><tr><td data-l="Kode">FIF</td><td data-l="Nama">Fakultas Informatika</td><td data-l="Ruang">0</td><td data-l="Tindakan"><div class="row"><span class="btn sm">Ubah</span><span class="btn sm pri">Hapus</span></div></td></tr><tr><td data-l="Kode">FTE</td><td data-l="Nama">Fakultas Teknik Elektro</td><td data-l="Ruang">0</td><td data-l="Tindakan"><div class="row"><span class="btn sm">Ubah</span><span class="btn sm pri">Hapus</span></div></td></tr></tbody></table></section><aside class="card sem" style="align-self:start;display:flex;flex-direction:column;gap:12px"><span class="tag in">&lt;aside&gt;</span><h2>Tambah unit</h2>
+ <form class="sem" style="display:flex;flex-direction:column;gap:12px;outline-offset:6px"><span class="tag">&lt;form&gt;</span><div class="field"><label>Kode <span class="req">*</span></label><div class="input ">FEB</div><span class="attr">required maxlength=30</span></div><div class="field"><label>Nama <span class="req">*</span></label><div class="input ">Fakultas Ekonomi dan Bisnis</div><span class="attr">required maxlength=150</span></div><div class="field"><label>Deskripsi</label><div class="input area">Opsional</div></div><span class="btn pri">Tambah</span></form>
+</aside></div></main>
+  <footer class="foot sem"><span class="tag">&lt;footer&gt;</span><span>Campus Space</span><span>Kelola ruang. Catat penggunaan. Temukan peluang.</span></footer>
+ </div>
+</div></body></html>
