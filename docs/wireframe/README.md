@@ -50,10 +50,13 @@ File HTML ini juga bisa diimpor ke Figma memakai plugin *html.to.design*.
 5. **Kalender mingguan** (7 kolom) → daftar per hari, tanggal di kiri dan kegiatan di kanan.
 6. **Konten + panel samping** (`<article>` + `<aside>`) → panel samping turun ke bawah konten utama.
 
-Menu sidebar berbeda per role:
+Menu sidebar berbeda per role (rincian hak akses lengkap ada di [`docs/ROLE-PENGGUNA.md`](../ROLE-PENGGUNA.md)):
 
-| Peminjam (`borrower`) | Pengelola (`lab_head`) | Admin (`admin`) |
-|---|---|---|
+| Peminjam (`borrower`) | Pengelola (`lab_head`) | Admin (`admin`) | Pimpinan (`leader`) |
+|---|---|---|---|
+| Dashboard, Jelajahi Ruangan, Jadwal Ruangan, Peminjaman Saya, Pindai QR | Dashboard, Jelajahi Ruangan, Jadwal Ruangan, Peminjaman, Laporan Utilisasi + grup **Pengelolaan**: Ruangan & Foto, Fasilitas, Cetak QR Ruangan | Semua menu Pengelola + **Pengguna** dan **Unit Akademik** | Dashboard dan Laporan Utilisasi (baca saja) |
+
+---|---|---|
 | Dashboard, Jelajahi Ruangan, Jadwal Ruangan, Peminjaman Saya, Pindai QR | Dashboard, Jelajahi Ruangan, Jadwal Ruangan, Peminjaman, Laporan Utilisasi + grup **Pengelolaan**: Ruangan & Foto, Fasilitas, Cetak QR Ruangan | Semua menu Pengelola + **Pengguna** dan **Unit Akademik** |
 
 ---

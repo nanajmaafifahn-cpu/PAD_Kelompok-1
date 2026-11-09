@@ -322,6 +322,7 @@ docs/                      Dokumentasi proyek (lihat bagian 9)
 
 | Dokumen | Isi |
 |---|---|
+| [`docs/ROLE-PENGGUNA.md`](docs/ROLE-PENGGUNA.md) | Pembagian 4 role (Borrower, Lab Head, Admin, Pimpinan) beserta hak akses dan menu masing-masing |
 | [`docs/ANALISIS-TEKNIK-INDUSTRI.md`](docs/ANALISIS-TEKNIK-INDUSTRI.md) | Studi kasus Teknik Industri: interpretasi utilisasi ruang, ruang *underutilized*/*overutilized*, dampak *ghost booking*, rekomendasi untuk manajemen kampus |
 | [`docs/wireframe/README.md`](docs/wireframe/README.md) | Wireframe seluruh halaman (desktop dan mobile) beserta penjelasannya |
 | [`docs/fe/KONTRAK-VIEW.md`](docs/fe/KONTRAK-VIEW.md) | Kontrak data antara Controller dan view Blade |
